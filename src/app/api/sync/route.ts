@@ -16,14 +16,28 @@ export async function POST(request: NextRequest) {
     // --- Auth check ---
     const user = await requireApiAuth();
 
-    // --- Determine target clientId ---
+    // --- Determine target sheet sources ---
     const searchParams = request.nextUrl.searchParams;
-    let clientId = searchParams.get("clientId");
+    const reqClientId = searchParams.get("clientId");
+    let sheetSources;
 
-    if (user.role === UserRole.ADMIN && clientId) {
+    if (user.role === UserRole.ADMIN && reqClientId) {
       // Admin syncing specific client
+      const client = await db.client.findUnique({ where: { id: reqClientId } });
+      if (!client) {
+        return NextResponse.json({ error: "Client not found." }, { status: 404 });
+      }
+      sheetSources = await db.sheetSource.findMany({ where: { clientId: reqClientId } });
+    } else if (user.role === UserRole.ADMIN && !reqClientId) {
+      // Admin syncing ALL clients globally
+      sheetSources = await db.sheetSource.findMany();
     } else if (user.clientId) {
-      clientId = user.clientId;
+      // Client syncing their own sheets
+      const client = await db.client.findUnique({ where: { id: user.clientId } });
+      if (!client) {
+        return NextResponse.json({ error: "Client not found." }, { status: 404 });
+      }
+      sheetSources = await db.sheetSource.findMany({ where: { clientId: user.clientId } });
     } else {
       return NextResponse.json(
         { error: "No client is associated with this account." },
@@ -31,26 +45,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // --- Validate client exists ---
-    const client = await db.client.findUnique({
-      where: { id: clientId },
-    });
-
-    if (!client) {
-      return NextResponse.json(
-        { error: "Client not found." },
-        { status: 404 }
-      );
-    }
-
-    // --- Fetch all sheet sources for this client ---
-    const sheetSources = await db.sheetSource.findMany({
-      where: { clientId },
-    });
-
     if (sheetSources.length === 0) {
       return NextResponse.json(
-        { error: "No Google Sheet sources found for this client. Please add one first." },
+        { error: "No Google Sheet sources found. Please add one first." },
         { status: 404 }
       );
     }
@@ -150,7 +147,7 @@ export async function POST(request: NextRequest) {
         // Find duplicates in other sheets
         const otherSourceInterviews = await tx.interview.findMany({
           where: {
-            clientId,
+            clientId: source.clientId,
             NOT: { sheetSourceId: source.id },
           },
           select: {
@@ -222,7 +219,7 @@ export async function POST(request: NextRequest) {
           // Create new record
           const createdInterview = await tx.interview.create({
             data: {
-              clientId,
+              clientId: source.clientId,
               sheetSourceId: source.id,
               sourceRowNumber: record.sourceRowNumber,
               sourceRowHash: record.sourceRowHash,
