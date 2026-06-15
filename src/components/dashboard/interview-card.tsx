@@ -170,9 +170,7 @@ export function InterviewCard({ interview, onAction, onViewDetails }: InterviewC
               </p>
             )}
             <p className="text-[10px] text-slate-400 mt-2">
-              {interview.articleUrl.includes("/unpublished/")
-                ? "Once live, add the Authority Magazine Link to your sheet, set the status to 'LIVE', and re-sync."
-                : "Once live, change the status to 'LIVE' in your Google Sheet and re-sync."}
+              Once this interview is published, click "Sync Sheet" at the top of the page to check if it is live.
             </p>
           </div>
         </div>
