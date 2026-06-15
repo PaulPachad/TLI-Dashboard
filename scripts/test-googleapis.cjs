@@ -22,13 +22,15 @@ async function main() {
     private_key,
     ["https://www.googleapis.com/auth/spreadsheets.readonly"]
   );
+  
+  await jwt.authorize(); // <-- Need this!
 
   const sheets = google.sheets({ version: "v4", auth: jwt });
 
   const spreadsheetId = "1miLrYezf22XzCdDC5Q45JxBnSuYGeEdcG0UOf81zqXg";
   const res = await sheets.spreadsheets.get({
     spreadsheetId,
-    ranges: ["'Topics'!A1:F5"],
+    ranges: ["'Topics'!D1:D10"], // Just the questions column
     includeGridData: true,
   });
 
@@ -39,11 +41,11 @@ async function main() {
       if (row.values) {
         for (let c = 0; c < row.values.length; c++) {
           const cell = row.values[c];
-          console.log(`[Row ${r} Col ${c}] Formatted:`, cell.formattedValue);
-          console.log(`[Row ${r} Col ${c}] Hyperlink:`, cell.hyperlink);
-          if (cell.textFormatRuns) {
-             console.log(`[Row ${r} Col ${c}] textFormatRuns:`, JSON.stringify(cell.textFormatRuns));
-          }
+          console.log(`\n--- Row ${r} ---`);
+          console.log("formattedValue:", cell.formattedValue);
+          console.log("userEnteredValue:", cell.userEnteredValue);
+          console.log("hyperlink:", cell.hyperlink);
+          console.log("textFormatRuns:", JSON.stringify(cell.textFormatRuns, null, 2));
         }
       }
     }

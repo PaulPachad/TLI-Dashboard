@@ -136,20 +136,35 @@ export async function readSheetDataWithLinks(
     const response = await client.spreadsheets.get({
       spreadsheetId,
       ranges: [`'${sheetTitle}'`],
-      includeGridData: true,
+      fields: "sheets(data(rowData(values(formattedValue,userEnteredValue,hyperlink,textFormatRuns,chipRuns))))",
     });
 
     const rowData = response.data.sheets?.[0]?.data?.[0]?.rowData || [];
     
     return rowData.map(row => {
       return (row.values || []).map(cell => {
-        const text = cell.formattedValue || "";
+        let text = cell.formattedValue || cell.userEnteredValue?.stringValue || "";
         let url = cell.hyperlink || null;
 
+        // Extract from textFormatRuns
         if (!url && cell.textFormatRuns && cell.textFormatRuns.length > 0) {
           const runWithLink = cell.textFormatRuns.find(run => run.format?.link?.uri);
           if (runWithLink?.format?.link?.uri) {
             url = runWithLink.format.link.uri;
+          }
+        }
+
+        // Extract from Google Sheets API chipRuns (Smart Chips)
+        const anyCell = cell as any;
+        if (anyCell.chipRuns && anyCell.chipRuns.length > 0) {
+          const firstChip = anyCell.chipRuns[0]?.chip;
+          if (firstChip?.richLinkProperties?.uri) {
+            url = firstChip.richLinkProperties.uri;
+            // The formattedValue might just be '@' for a smart chip.
+            // If the chip has a title, we should use it. Otherwise, use the url.
+            if (text === "@" || text.trim() === "") {
+               text = firstChip.richLinkProperties.title || "Linked Document";
+            }
           }
         }
 
