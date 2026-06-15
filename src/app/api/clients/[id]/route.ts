@@ -66,3 +66,36 @@ export async function DELETE(
     );
   }
 }
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireApiAdmin();
+    const { id } = await params;
+    
+    if (!id) {
+      return NextResponse.json({ error: "Client ID is required." }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const { topicsSheetUrl } = body;
+
+    const client = await db.client.update({
+      where: { id },
+      data: {
+        topicsSheetUrl: String(topicsSheetUrl || "").trim() || null,
+      },
+    });
+
+    return NextResponse.json({ success: true, client });
+  } catch (error: unknown) {
+    const err = error as { status?: number; message?: string };
+    if (err.status) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    console.error("Error updating client:", error);
+    return NextResponse.json({ error: "Failed to update client." }, { status: 500 });
+  }
+}

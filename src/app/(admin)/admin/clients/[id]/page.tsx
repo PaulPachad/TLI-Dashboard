@@ -85,7 +85,7 @@ export default async function ClientDetailPage({ params }: Props) {
       {/* Sheet import */}
       <section>
         <h2 className="text-lg font-semibold text-slate-900 mb-4">Import Google Sheet</h2>
-        <SheetImportForm clientId={client.id} />
+        <SheetImportForm clientId={client.id} initialTopicsSheetUrl={client.topicsSheetUrl || ""} />
       </section>
 
       {/* Existing sheet sources */}

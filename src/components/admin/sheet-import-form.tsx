@@ -39,11 +39,15 @@ interface ImportPreview {
 
 interface SheetImportFormProps {
   clientId: string;
+  initialTopicsSheetUrl?: string;
   onImportComplete?: () => void;
 }
 
-export function SheetImportForm({ clientId, onImportComplete }: SheetImportFormProps) {
+export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportComplete }: SheetImportFormProps) {
   const [sheetUrl, setSheetUrl] = useState("");
+  const [topicsSheetUrl, setTopicsSheetUrl] = useState(initialTopicsSheetUrl || "");
+  const [isSavingTopics, setIsSavingTopics] = useState(false);
+  const [topicsSuccess, setTopicsSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
@@ -123,48 +127,141 @@ export function SheetImportForm({ clientId, onImportComplete }: SheetImportFormP
     }
   }
 
+  async function handleSaveTopicsSheet() {
+    try {
+      setIsSavingTopics(true);
+      setError(null);
+      setTopicsSuccess(false);
+
+      const res = await fetch(`/api/clients/${clientId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topicsSheetUrl: topicsSheetUrl.trim() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to save Topics sheet URL.");
+        return;
+      }
+
+      setTopicsSuccess(true);
+      // Wait a moment then clear success message
+      setTimeout(() => setTopicsSuccess(false), 3000);
+      
+      // Optionally trigger the sync right away
+      if (topicsSheetUrl.trim()) {
+        try {
+          await fetch("/api/sync-topics", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (e) {
+          console.error("Failed to trigger sync after saving topics sheet", e);
+        }
+      }
+      
+      onImportComplete?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred.");
+    } finally {
+      setIsSavingTopics(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
-      {/* URL Input */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <h3 className="font-semibold text-slate-900 mb-1">Import from Google Sheets</h3>
-        <p className="text-sm text-slate-500 mb-4">
-          Paste a normal Google Sheets link. It must be viewable by link or
-          shared with the configured service account.
-        </p>
+      {/* URL Inputs */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-8">
+        
+        {/* Interviews Sheet */}
+        <div>
+          <h3 className="font-semibold text-slate-900 mb-1">Import Interviews Sheet</h3>
+          <p className="text-sm text-slate-500 mb-4">
+            Paste the Interviews Google Sheets link. This will trigger a preview before importing.
+          </p>
 
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <input
-            id="sheet-url-input"
-            type="url"
-            placeholder="https://docs.google.com/spreadsheets/d/..."
-            value={sheetUrl}
-            onChange={(e) => setSheetUrl(e.target.value)}
-            className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm
-                       focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-                       placeholder:text-slate-400"
-            disabled={loading}
-          />
-          <button
-            id="preview-import-btn"
-            onClick={handlePreview}
-            disabled={loading || !sheetUrl.trim()}
-            className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium
-                       hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Reading...
-              </span>
-            ) : (
-              "Preview Import"
-            )}
-          </button>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <input
+              id="sheet-url-input"
+              type="url"
+              placeholder="https://docs.google.com/spreadsheets/d/..."
+              value={sheetUrl}
+              onChange={(e) => setSheetUrl(e.target.value)}
+              className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm
+                         focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                         placeholder:text-slate-400"
+              disabled={loading}
+            />
+            <button
+              id="preview-import-btn"
+              onClick={handlePreview}
+              disabled={loading || !sheetUrl.trim()}
+              className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium
+                         hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Reading...
+                </span>
+              ) : (
+                "Preview Import"
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* Divider */}
+        <div className="h-px bg-slate-100 w-full" />
+
+        {/* Topics & Events Sheet */}
+        <div>
+          <h3 className="font-semibold text-slate-900 mb-1">Topics & Events Sheet</h3>
+          <p className="text-sm text-slate-500 mb-4">
+            Paste the parallel Topics & Events Google Sheets link. Saving this will automatically trigger a sync.
+          </p>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <input
+              id="topics-sheet-url-input"
+              type="url"
+              placeholder="https://docs.google.com/spreadsheets/d/..."
+              value={topicsSheetUrl}
+              onChange={(e) => setTopicsSheetUrl(e.target.value)}
+              className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm
+                         focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent
+                         placeholder:text-slate-400"
+              disabled={isSavingTopics}
+            />
+            <button
+              id="save-topics-btn"
+              onClick={handleSaveTopicsSheet}
+              disabled={isSavingTopics}
+              className="px-5 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-medium
+                         hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[140px]"
+            >
+              {isSavingTopics ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Saving...
+                </span>
+              ) : topicsSuccess ? (
+                "Saved & Synced!"
+              ) : (
+                "Save & Sync"
+              )}
+            </button>
+          </div>
+        </div>
+
       </div>
 
       {/* Error */}
