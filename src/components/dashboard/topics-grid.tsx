@@ -1,6 +1,12 @@
+"use client";
+
+import { useState } from "react";
 import { Topic } from "@prisma/client";
+import { TopicDetailPanel } from "@/components/panels/topic-detail-panel";
 
 export function TopicsGrid({ topics }: { topics: Topic[] }) {
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+
   if (topics.length === 0) {
     return (
       <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-slate-500">
@@ -11,51 +17,56 @@ export function TopicsGrid({ topics }: { topics: Topic[] }) {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {topics.map((topic) => (
-        <div
-          key={topic.id}
-          className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md"
-        >
-          <div className="border-b border-slate-100 bg-slate-50 px-5 py-4">
-            <h3 className="text-lg font-semibold text-slate-900 leading-tight">
-              {topic.title}
-            </h3>
-          </div>
-          <div className="flex flex-col gap-4 p-5">
-            {topic.sourceRequests && (
-              <div>
-                <h4 className="mb-1 text-xs font-bold uppercase tracking-wider text-indigo-600">
-                  Source Requests
-                </h4>
-                <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                  {topic.sourceRequests}
-                </p>
+    <>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {topics.map((topic) => {
+          const hasPitch = !!topic.sourceRequests;
+          const hasResponses = !!topic.responses;
+          const hasQuestions = !!topic.interviewQuestions;
+
+          return (
+            <div
+              key={topic.id}
+              onClick={() => setSelectedTopic(topic)}
+              className="group flex flex-col cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-indigo-300"
+            >
+              <div className="flex-1 p-5 flex flex-col">
+                <h3 className="text-lg font-semibold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors line-clamp-3">
+                  {topic.title}
+                </h3>
+                
+                <div className="mt-auto pt-6 flex flex-wrap gap-2">
+                  {hasPitch && (
+                    <span className="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
+                      Pitch Form
+                    </span>
+                  )}
+                  {hasResponses && (
+                    <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/10">
+                      Responses
+                    </span>
+                  )}
+                  {hasQuestions && (
+                    <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/10">
+                      Template
+                    </span>
+                  )}
+                  {!hasPitch && !hasResponses && !hasQuestions && (
+                    <span className="text-xs text-slate-400">Title only</span>
+                  )}
+                </div>
               </div>
-            )}
-            {topic.responses && (
-              <div>
-                <h4 className="mb-1 text-xs font-bold uppercase tracking-wider text-emerald-600">
-                  Responses
-                </h4>
-                <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                  {topic.responses}
-                </p>
-              </div>
-            )}
-            {topic.interviewQuestions && (
-              <div>
-                <h4 className="mb-1 text-xs font-bold uppercase tracking-wider text-amber-600">
-                  Interview Questions
-                </h4>
-                <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                  {topic.interviewQuestions}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {selectedTopic && (
+        <TopicDetailPanel
+          topic={selectedTopic}
+          onClose={() => setSelectedTopic(null)}
+        />
+      )}
+    </>
   );
 }
