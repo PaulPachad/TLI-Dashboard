@@ -146,22 +146,29 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
         return;
       }
 
-      setTopicsSuccess(true);
-      // Wait a moment then clear success message
-      setTimeout(() => setTopicsSuccess(false), 3000);
-      
-      // Optionally trigger the sync right away
+      // Trigger the sync right away
       if (topicsSheetUrl.trim()) {
         try {
-          await fetch("/api/sync-topics", {
+          const syncRes = await fetch(`/api/sync-topics?clientId=${clientId}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
           });
+          const syncData = await syncRes.json();
+          if (!syncRes.ok) {
+            setError(syncData.error || "Saved URL, but failed to sync topics/events.");
+            setIsSavingTopics(false);
+            return;
+          }
         } catch (e) {
           console.error("Failed to trigger sync after saving topics sheet", e);
+          setError("Saved URL, but failed to reach sync server.");
+          setIsSavingTopics(false);
+          return;
         }
       }
       
+      setTopicsSuccess(true);
+      setTimeout(() => setTopicsSuccess(false), 3000);
       onImportComplete?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred.");

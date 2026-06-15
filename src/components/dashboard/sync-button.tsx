@@ -25,10 +25,8 @@ export function SyncButton() {
         throw new Error(dataInterviews.error || "Failed to sync interviews.");
       }
       
-      // We don't strictly throw if topics fail because they might not have set it up yet,
-      // but we can log it.
       if (!resTopics.ok) {
-        console.warn("Topics sync skipped or failed:", dataTopics.error || dataTopics.message);
+        throw new Error(dataTopics.error || "Failed to sync topics/events.");
       }
 
       setSuccess(true);
