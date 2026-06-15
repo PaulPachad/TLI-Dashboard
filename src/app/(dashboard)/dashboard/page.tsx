@@ -1,7 +1,7 @@
 import { DashboardPanels } from "@/components/dashboard/dashboard-panels";
 import { SyncButton } from "@/components/dashboard/sync-button";
 import { requireAuth } from "@/lib/auth-helpers";
-import prisma from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export default async function DashboardHomePage() {
   const user = await requireAuth();
@@ -11,11 +11,11 @@ export default async function DashboardHomePage() {
   let events: any[] = [];
   
   if (user.clientId) {
-    topics = await prisma.topic.findMany({
+    topics = await db.topic.findMany({
       where: { clientId: user.clientId },
       orderBy: { createdAt: "desc" },
     });
-    events = await prisma.event.findMany({
+    events = await db.event.findMany({
       where: { clientId: user.clientId },
       orderBy: { createdAt: "desc" },
     });
