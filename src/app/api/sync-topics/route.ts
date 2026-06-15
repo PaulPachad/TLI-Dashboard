@@ -119,8 +119,8 @@ export async function POST(request: NextRequest) {
           const headers = eventsData[0].map(String);
           let nameIdx = findColIndex(headers, ["event", "name", "title"]);
           let dateIdx = findColIndex(headers, ["date", "time"]);
-          let locationIdx = findColIndex(headers, ["location", "place"]);
-          let statusIdx = findColIndex(headers, ["status", "attendance"]);
+          let locationIdx = findColIndex(headers, ["location", "place", "city"]);
+          let statusIdx = findColIndex(headers, ["status", "attendance", "description"]);
 
           let startIndex = 1;
 
