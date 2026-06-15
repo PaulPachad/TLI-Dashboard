@@ -137,7 +137,7 @@ export default function AdminLayout({
     <nav className="flex flex-1 flex-col">
       {/* Brand */}
       <div className="flex h-16 items-center gap-2 border-b border-slate-100 px-6">
-        <Image src="/logo.svg" alt="" width={32} height={32} priority unoptimized />
+        <Image src="/logo.png" alt="" width={32} height={32} priority unoptimized />
         <span className="text-sm font-bold text-slate-900">TLI Leverage</span>
       </div>
 
