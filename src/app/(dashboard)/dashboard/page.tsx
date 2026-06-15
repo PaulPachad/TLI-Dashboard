@@ -2,6 +2,7 @@ import { DashboardPanels } from "@/components/dashboard/dashboard-panels";
 import { SyncButton } from "@/components/dashboard/sync-button";
 import { requireAuth } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
+import { UserRole } from "@/types/db";
 
 export default async function DashboardHomePage() {
   const user = await requireAuth();
@@ -17,6 +18,13 @@ export default async function DashboardHomePage() {
     });
     events = await db.event.findMany({
       where: { clientId: user.clientId },
+      orderBy: { createdAt: "desc" },
+    });
+  } else if (user.role === UserRole.ADMIN) {
+    topics = await db.topic.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+    events = await db.event.findMany({
       orderBy: { createdAt: "desc" },
     });
   }
