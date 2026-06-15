@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
           let titleIdx = findColIndex(headers, ["topic", "title", "name"]);
           let sourceReqIdx = findColIndex(headers, ["source request"]);
           let responseIdx = findColIndex(headers, ["response"]);
-          let questionsIdx = findColIndex(headers, ["interview question"]);
+          let questionsIdx = findColIndex(headers, ["interview question", "suggested question"]);
           
           let startIndex = 1;
           
@@ -99,11 +99,21 @@ export async function POST(request: NextRequest) {
         console.error(`Error syncing topics for client ${cid}:`, err);
       }
 
-      // SYNC EVENTS (we assume gid=450141736 from user data, or search for Events tab)
+      // SYNC EVENTS
       try {
-        // Fallback: If we don't know the GID or want to search by name:
-        const eventsTitle = await resolveTabTitle(parsedUrl.spreadsheetId, "450141736");
-        const eventsData = await readSheetData(parsedUrl.spreadsheetId, eventsTitle, "450141736");
+        const { getSheetTabs } = await import("@/lib/google-sheets");
+        const tabs = await getSheetTabs(parsedUrl.spreadsheetId);
+        
+        let eventsGid = "450141736"; // Fallback to original default
+        const eventsTab = tabs.find(t => t.title.toLowerCase().includes("event"));
+        if (eventsTab) {
+          eventsGid = eventsTab.sheetId.toString();
+        } else if (tabs.length > 1) {
+          eventsGid = tabs[1].sheetId.toString();
+        }
+
+        const eventsTitle = await resolveTabTitle(parsedUrl.spreadsheetId, eventsGid);
+        const eventsData = await readSheetData(parsedUrl.spreadsheetId, eventsTitle, eventsGid);
 
         if (eventsData.length > 1) {
           const headers = eventsData[0].map(String);
