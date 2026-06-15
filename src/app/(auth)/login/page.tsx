@@ -44,7 +44,7 @@ export default function LoginPage() {
       {/* Logo / Brand */}
       <div className="mb-8 text-center">
         <Image
-          src="/logo.svg"
+          src="/logo.png"
           alt="TLI Leverage"
           width={48}
           height={48}
