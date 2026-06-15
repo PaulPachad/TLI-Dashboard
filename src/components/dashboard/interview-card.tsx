@@ -24,7 +24,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 
 export function InterviewCard({ interview, onAction, onViewDetails }: InterviewCardProps) {
   const [imageIndex, setImageIndex] = useState(0);
-  const isUnpublished = interview.articleUrl.includes("/unpublished/");
+  const isUnpublished =
+    interview.articleUrl.includes("/unpublished/") ||
+    interview.liveEmailStatusImported?.toUpperCase() !== "LIVE";
   const statusConfig = STATUS_CONFIG[interview.currentStatus] || STATUS_CONFIG.new;
   const imageSources = buildInterviewImageSources(interview);
   const currentImage = imageSources[imageIndex];
@@ -144,7 +146,14 @@ export function InterviewCard({ interview, onAction, onViewDetails }: InterviewC
               </svg>
               Unpublished Interview
             </div>
-            {interview.estimatedPublishDate ? (
+            {interview.liveEmailStatusImported && interview.liveEmailStatusImported.toUpperCase() !== "LIVE" ? (
+              <p className="text-xs text-slate-600 mt-1 font-medium">
+                Publish Status:{" "}
+                <span className="text-slate-800 font-semibold">
+                  {interview.liveEmailStatusImported}
+                </span>
+              </p>
+            ) : interview.estimatedPublishDate ? (
               <p className="text-xs text-slate-600 mt-1 font-medium">
                 Estimated Publish Date:{" "}
                 <span className="text-slate-800 font-semibold">
@@ -161,7 +170,9 @@ export function InterviewCard({ interview, onAction, onViewDetails }: InterviewC
               </p>
             )}
             <p className="text-[10px] text-slate-400 mt-2">
-              Once live, add the Authority Magazine Link to your sheet and re-sync.
+              {interview.articleUrl.includes("/unpublished/")
+                ? "Once live, add the Authority Magazine Link to your sheet, set the status to 'LIVE', and re-sync."
+                : "Once live, change the status to 'LIVE' in your Google Sheet and re-sync."}
             </p>
           </div>
         </div>

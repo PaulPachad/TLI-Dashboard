@@ -34,6 +34,7 @@ export interface InterviewView {
   linkedinUrl?: string | null;
   twitterUrl?: string | null;
   estimatedPublishDate?: string | null;
+  liveEmailStatusImported?: string | null;
   currentStatus:
     | "new"
     | "needs_contact"

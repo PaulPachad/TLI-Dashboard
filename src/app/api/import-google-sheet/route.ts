@@ -126,16 +126,20 @@ export async function POST(request: NextRequest) {
     const deduplicated = deduplicateInterviewRecords(normResult.published);
     const importRecords = deduplicated.records;
 
+    const isRecordUnpublished = (r: typeof importRecords[0]) =>
+      r.articleUrl.includes("/unpublished/") ||
+      r.liveEmailStatusImported?.toUpperCase() !== "LIVE";
+
     const basePreview = {
       demoMode: isDemoMode(),
       sheetTitle: tabTitle,
       totalRows: normResult.totalRows,
-      published: importRecords.filter((r) => !r.articleUrl.includes("/unpublished/")).length,
+      published: importRecords.filter((r) => !isRecordUnpublished(r)).length,
       skippedNoArticle: 0,
       skippedInvalidArticle: 0,
       skippedEmpty: normResult.skippedEmptyRow,
       interviews: importRecords
-        .filter((r) => !r.articleUrl.includes("/unpublished/"))
+        .filter((r) => !isRecordUnpublished(r))
         .map((r) => ({
           rowNumber: r.sourceRowNumber,
           intervieweeName: r.intervieweeName,
@@ -144,13 +148,24 @@ export async function POST(request: NextRequest) {
           hasEmail: !!r.intervieweeEmail,
           hasPublicist: !!r.publicistName,
         })),
-      unpublished: normResult.unpublished.map((r) => ({
-        rowNumber: r.sourceRowNumber,
-        intervieweeName: r.intervieweeName,
-        topic: r.topic,
-        estimatedPublishDate: r.estimatedPublishDate,
-        reason: r.reason,
-      })),
+      unpublished: [
+        ...normResult.unpublished.map((r) => ({
+          rowNumber: r.sourceRowNumber,
+          intervieweeName: r.intervieweeName,
+          topic: r.topic,
+          estimatedPublishDate: r.estimatedPublishDate,
+          reason: r.reason,
+        })),
+        ...importRecords
+          .filter((r) => !r.articleUrl.includes("/unpublished/") && r.liveEmailStatusImported?.toUpperCase() !== "LIVE")
+          .map((r) => ({
+            rowNumber: r.sourceRowNumber,
+            intervieweeName: r.intervieweeName,
+            topic: r.topic,
+            estimatedPublishDate: r.estimatedPublishDate,
+            reason: `Authority Magazine Link exists, but status is "${r.liveEmailStatusImported || "blank"}" (needs "LIVE")`,
+          })),
+      ].sort((a, b) => a.rowNumber - b.rowNumber),
       headerMappings: headerResult.mappings.map((m) => ({
         field: m.field,
         matchedHeader: m.matchedHeader,
@@ -334,7 +349,7 @@ export async function POST(request: NextRequest) {
               videoUrl: record.videoUrl,
               linkedinUrl: existing.linkedinUrl || record.linkedinUrl,
               twitterUrl: existing.twitterUrl || record.twitterUrl,
-              liveEmailStatusImported: record.liveEmailStatusImported,
+              liveEmailStatusImported: record.estimatedPublishDate || record.liveEmailStatusImported,
               pressFollowupStatusImported:
                 record.pressFollowupStatusImported,
               estimatedPublishDate: parseOptionalDate(
@@ -369,7 +384,7 @@ export async function POST(request: NextRequest) {
             videoUrl: record.videoUrl,
             linkedinUrl: record.linkedinUrl,
             twitterUrl: record.twitterUrl,
-            liveEmailStatusImported: record.liveEmailStatusImported,
+            liveEmailStatusImported: record.estimatedPublishDate || record.liveEmailStatusImported,
             pressFollowupStatusImported:
               record.pressFollowupStatusImported,
             estimatedPublishDate: parseOptionalDate(

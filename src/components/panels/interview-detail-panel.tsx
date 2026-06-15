@@ -15,6 +15,9 @@ interface InterviewDetailPanelProps {
 export function InterviewDetailPanel({ interview, onClose }: InterviewDetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const isUnpublished =
+    interview.articleUrl.includes("/unpublished/") ||
+    interview.liveEmailStatusImported?.toUpperCase() !== "LIVE";
 
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
@@ -105,10 +108,14 @@ export function InterviewDetailPanel({ interview, onClose }: InterviewDetailPane
           {/* Article */}
           <Section title="Article">
             <DetailRow label="Topic" value={interview.topic} />
-            {interview.articleUrl.includes("/unpublished/") ? (
+            {isUnpublished ? (
               <div className="flex items-start gap-3">
                 <span className="text-xs text-slate-400 w-20 shrink-0 pt-0.5">Article</span>
-                <span className="text-sm text-slate-500 italic">Not published yet (Authority Magazine link missing)</span>
+                <span className="text-sm text-slate-500 italic">
+                  {interview.articleUrl.includes("/unpublished/")
+                    ? "Not published yet (Authority Magazine link missing)"
+                    : "Draft (Not published yet - status in sheet needs to be \"LIVE\")"}
+                </span>
               </div>
             ) : (
               <DetailRow label="Article" value={interview.articleUrl} isLink />

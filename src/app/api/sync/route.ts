@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
                 videoUrl: record.videoUrl,
                 linkedinUrl: existing.linkedinUrl || record.linkedinUrl,
                 twitterUrl: existing.twitterUrl || record.twitterUrl,
-                liveEmailStatusImported: record.liveEmailStatusImported,
+                liveEmailStatusImported: record.estimatedPublishDate || record.liveEmailStatusImported,
                 pressFollowupStatusImported:
                   record.pressFollowupStatusImported,
                 estimatedPublishDate: parseOptionalDate(
@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
               videoUrl: record.videoUrl,
               linkedinUrl: record.linkedinUrl,
               twitterUrl: record.twitterUrl,
-              liveEmailStatusImported: record.liveEmailStatusImported,
+              liveEmailStatusImported: record.estimatedPublishDate || record.liveEmailStatusImported,
               pressFollowupStatusImported:
                 record.pressFollowupStatusImported,
               estimatedPublishDate: parseOptionalDate(
