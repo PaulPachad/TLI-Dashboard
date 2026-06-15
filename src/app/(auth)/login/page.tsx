@@ -44,13 +44,13 @@ export default function LoginPage() {
       {/* Logo / Brand */}
       <div className="mb-8 text-center">
         <Image
-          src="/logo.png"
+          src="/logo-white.png"
           alt="TLI Leverage"
           width={48}
           height={48}
           priority
           unoptimized
-          className="mx-auto mb-4 rounded-xl bg-white/95 p-1.5 shadow-lg shadow-indigo-950/30"
+          className="mx-auto mb-4 rounded-xl bg-transparent p-1.5 shadow-lg shadow-indigo-950/30"
         />
         <h1 className="text-2xl font-bold tracking-tight text-white">
           TLI Leverage Dashboard
