@@ -19,6 +19,7 @@ interface InterviewGridProps {
 
 const STATUS_FILTERS = [
   { value: "all", label: "All" },
+  { value: "upcoming", label: "Upcoming" },
   { value: "new", label: "New" },
   { value: "needs_contact", label: "Needs Contact" },
   { value: "email_sent", label: "Email Sent" },
@@ -80,13 +81,30 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
     ? interviews.find((interview) => interview.id === selectedId)
     : null;
 
+  // Helper to determine if an interview is unpublished
+  const isUnpublished = (interview: InterviewView) => {
+    return interview.articleUrl.includes("/unpublished/") || 
+           interview.liveEmailStatusImported?.toUpperCase() !== "LIVE";
+  };
+
   // Stats
   const stats = {
     total: interviews.length,
-    needsAction: interviews.filter((interview) => interview.currentStatus !== "leveraged").length,
+    upcoming: interviews.filter(isUnpublished).length,
+    needsAction: interviews.filter((interview) => !isUnpublished(interview) && interview.currentStatus !== "leveraged").length,
     leveraged: interviews.filter((interview) => interview.currentStatus === "leveraged").length,
     needsContact: interviews.filter((interview) => interview.currentStatus === "needs_contact").length,
   };
+
+  // Sort interviews so that actionable ones are at the top, then upcoming, then leveraged.
+  const sortedInterviews = [...interviews].sort((a, b) => {
+    const getScore = (interview: InterviewView) => {
+      if (interview.currentStatus === "leveraged") return 3; // Lowest priority
+      if (isUnpublished(interview)) return 2; // Medium priority
+      return 1; // Highest priority (Needs Action / Live)
+    };
+    return getScore(a) - getScore(b);
+  });
 
   return (
     <div className="space-y-6">
@@ -107,8 +125,9 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
         </div>
       )}
       {/* Stats bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard label="Total Interviews" value={stats.total} color="indigo" />
+        <StatCard label="Upcoming" value={stats.upcoming} color="sky" />
         <StatCard label="Needs Action" value={stats.needsAction} color="amber" />
         <StatCard label="Fully Leveraged" value={stats.leveraged} color="emerald" />
         <StatCard label="Needs Contact" value={stats.needsContact} color="rose" />
@@ -209,9 +228,9 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
       )}
 
       {/* Interview cards grid */}
-      {!loading && !error && interviews.length > 0 && (
+      {!loading && !error && sortedInterviews.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {interviews.map((interview) => (
+          {sortedInterviews.map((interview) => (
             <InterviewCard
               key={interview.id}
               interview={interview}
@@ -267,6 +286,7 @@ function StatCard({
 }) {
   const colorClasses: Record<string, string> = {
     indigo: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    sky: "bg-sky-50 text-sky-700 border-sky-200",
     amber: "bg-amber-50 text-amber-700 border-amber-200",
     emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
     rose: "bg-rose-50 text-rose-700 border-rose-200",

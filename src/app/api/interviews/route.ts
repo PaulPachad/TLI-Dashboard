@@ -80,8 +80,12 @@ export async function GET(request: NextRequest) {
     let enriched = interviews.map(enrichInterview);
 
     // Client-side status filtering (based on actions)
-    if (status && status !== "all" && status !== "needs_contact") {
+    if (status && status !== "all") {
       enriched = enriched.filter((i) => {
+        const isUnpub = i.articleUrl.includes("/unpublished/") || i.liveEmailStatusImported?.toUpperCase() !== "LIVE";
+        if (status === "upcoming") return isUnpub;
+        if (status !== "needs_contact" && isUnpub) return false; // Hide unpublished from action-based tabs, but keep in needs_contact if needed
+
         if (status === "new") return i.currentStatus === "new";
         if (status === "email_sent") return i.currentStatus === "email_sent";
         if (status === "shared") return i.currentStatus === "shared";
