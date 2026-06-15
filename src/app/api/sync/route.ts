@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
 
           await tx.action.create({
             data: {
-              clientId,
+              clientId: source.clientId,
               interviewId: createdInterview.id,
               actionType: "IMPORT_CREATED",
               status: "SUCCESS",
