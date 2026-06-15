@@ -136,8 +136,9 @@ export default function AdminLayout({
   const SidebarContent = (
     <nav className="flex flex-1 flex-col">
       {/* Brand */}
-      <div className="flex h-16 items-center gap-2 border-b border-slate-100 px-6">
-        <Image src="/logo.png" alt="Authority Magazine" width={32} height={32} priority unoptimized />
+      <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-6">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo-white.png" alt="Authority Magazine" className="h-8 w-auto object-contain" />
         <span className="text-sm font-bold text-slate-900 tracking-tight">Authority Mag</span>
       </div>
 

@@ -43,14 +43,11 @@ export default function LoginPage() {
     <div className="mx-auto w-full max-w-md animate-fade-in">
       {/* Logo / Brand */}
       <div className="mb-8 text-center">
-        <Image
-          src="/logo-white.png"
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo.png"
           alt="TLI Leverage"
-          width={48}
-          height={48}
-          priority
-          unoptimized
-          className="mx-auto mb-4 rounded-xl bg-transparent p-1.5 shadow-lg shadow-indigo-950/30"
+          className="mx-auto mb-4 h-12 w-auto rounded-xl bg-transparent p-1.5 shadow-lg shadow-indigo-950/30 object-contain"
         />
         <h1 className="text-2xl font-bold tracking-tight text-white">
           TLI Leverage Dashboard
