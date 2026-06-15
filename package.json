@@ -1,0 +1,51 @@
+{
+  "name": "tli-leverage-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx prisma generate && next dev",
+    "dev:demo": "npx prisma generate --schema prisma/schema.sqlite.prisma && next dev",
+    "build": "npx prisma generate && next build",
+    "build:postgres": "npm run build",
+    "build:demo": "node scripts/build-demo.mjs",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "tsx --test tests/google-sheets.test.ts tests/workflow-logic.test.ts tests/email-templates.test.tsx",
+    "test:http": "node scripts/http-smoke.mjs",
+    "test:visual": "node scripts/visual-smoke.mjs",
+    "db:push": "npx prisma db push",
+    "db:push:postgres": "npm run db:push",
+    "db:demo:push": "npx prisma db push --schema prisma/schema.sqlite.prisma --accept-data-loss",
+    "db:demo:prepare": "npx prisma db push --schema prisma/schema.sqlite.prisma --accept-data-loss && npx prisma generate --schema prisma/schema.sqlite.prisma && npx prisma db seed --schema prisma/schema.sqlite.prisma",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:studio": "npx prisma studio",
+    "db:migrate": "npx prisma migrate dev",
+    "db:migrate:deploy": "npx prisma migrate deploy",
+    "db:reset": "npx prisma migrate reset",
+    "postinstall": "npx prisma generate"
+  },
+  "dependencies": {
+    "@google-cloud/local-auth": "^3.0.1",
+    "@prisma/client": "^6.4.1",
+    "bcryptjs": "^3.0.3",
+    "googleapis": "^173.0.0",
+    "next": "16.2.9",
+    "next-auth": "^5.0.0-beta.31",
+    "prisma": "^6.4.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "resend": "^6.12.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "tailwindcss": "^4",
+    "tsx": "^4.22.4",
+    "typescript": "^5"
+  }
+}
