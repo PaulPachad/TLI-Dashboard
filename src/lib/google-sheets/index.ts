@@ -9,6 +9,7 @@ export {
   getSheetTabs,
   isDemoMode,
   readSheetData,
+  readSheetDataWithLinks,
   resolveTabTitle,
   SheetsConfigError,
 } from "./client";

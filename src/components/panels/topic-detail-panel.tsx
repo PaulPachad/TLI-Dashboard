@@ -87,25 +87,25 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
         <div className="p-6 space-y-6">
           {topic.sourceRequests && (
             <Section title="Source Requests (Pitch Form)" colorClass="text-indigo-600">
-              <p className="text-slate-700 whitespace-pre-wrap leading-relaxed text-sm">
-                {topic.sourceRequests}
-              </p>
+              <div className="text-slate-700 whitespace-pre-wrap leading-relaxed text-sm">
+                {renderTextWithLinks(topic.sourceRequests)}
+              </div>
             </Section>
           )}
 
           {topic.responses && (
             <Section title="Responses" colorClass="text-emerald-600">
-              <p className="text-slate-700 whitespace-pre-wrap leading-relaxed text-sm">
-                {topic.responses}
-              </p>
+              <div className="text-slate-700 whitespace-pre-wrap leading-relaxed text-sm">
+                {renderTextWithLinks(topic.responses)}
+              </div>
             </Section>
           )}
 
           {topic.interviewQuestions && (
             <Section title="Interview Template / Suggested Questions" colorClass="text-amber-600">
-              <p className="text-slate-700 whitespace-pre-wrap leading-relaxed text-sm">
-                {topic.interviewQuestions}
-              </p>
+              <div className="text-slate-700 whitespace-pre-wrap leading-relaxed text-sm">
+                {renderTextWithLinks(topic.interviewQuestions)}
+              </div>
             </Section>
           )}
 
@@ -118,6 +118,70 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
       </div>
     </>
   );
+}
+
+function renderTextWithLinks(text: string) {
+  if (!text) return null;
+  
+  const mdRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = mdRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(...autoLinkRawUrls(text.substring(lastIndex, match.index)));
+    }
+    parts.push(
+      <a
+        key={match.index}
+        href={match[2]}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-indigo-600 hover:text-indigo-800 font-medium underline underline-offset-4 decoration-indigo-200 hover:decoration-indigo-400 transition-colors inline-flex items-center gap-1"
+      >
+        {match[1]}
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
+      </a>
+    );
+    lastIndex = mdRegex.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    parts.push(...autoLinkRawUrls(text.substring(lastIndex)));
+  }
+
+  return <>{parts}</>;
+}
+
+function autoLinkRawUrls(text: string) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = urlRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index));
+    }
+    parts.push(
+      <a
+        key={`raw-${match.index}`}
+        href={match[1]}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-indigo-500 hover:text-indigo-700 underline underline-offset-2 break-all"
+      >
+        {match[1]}
+      </a>
+    );
+    lastIndex = urlRegex.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+  return parts;
 }
 
 function Section({ title, children, colorClass }: { title: string; children: React.ReactNode; colorClass: string }) {

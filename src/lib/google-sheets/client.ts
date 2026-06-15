@@ -114,6 +114,46 @@ export async function readSheetData(
   }
 }
 
+export type CellDataWithLink = { text: string; url: string | null };
+
+/**
+ * Read all data from a specific tab, extracting hyperlinks if present.
+ * Uses spreadsheets.get with includeGridData instead of values.get.
+ */
+export async function readSheetDataWithLinks(
+  spreadsheetId: string,
+  sheetTitle: string,
+  gid: string | null = null
+): Promise<CellDataWithLink[][]> {
+  if (!hasSheetsCredentials()) {
+    const raw = await readPublicSheetData(spreadsheetId, gid);
+    return raw.map(row => row.map(text => ({ text, url: null })));
+  }
+
+  const client = getSheetsClient();
+
+  try {
+    const response = await client.spreadsheets.get({
+      spreadsheetId,
+      ranges: [`'${sheetTitle}'`],
+      includeGridData: true,
+    });
+
+    const rowData = response.data.sheets?.[0]?.data?.[0]?.rowData || [];
+    
+    return rowData.map(row => {
+      return (row.values || []).map(cell => {
+        const text = cell.formattedValue || "";
+        const url = cell.hyperlink || null;
+        return { text, url };
+      });
+    });
+  } catch (error: unknown) {
+    handleSheetsApiError(error, spreadsheetId);
+    throw error;
+  }
+}
+
 /**
  * Find the tab title that matches a given gid.
  * If gid is null, returns the first tab.

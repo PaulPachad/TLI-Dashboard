@@ -65,14 +65,15 @@ export async function POST(request: NextRequest) {
       // SYNC TOPICS
       try {
         const topicsTitle = await resolveTabTitle(parsedUrl.spreadsheetId, parsedUrl.gid || "0");
-        const topicsData = await readSheetData(parsedUrl.spreadsheetId, topicsTitle, parsedUrl.gid || "0");
+        const { readSheetDataWithLinks } = await import("@/lib/google-sheets");
+        const topicsData = await readSheetDataWithLinks(parsedUrl.spreadsheetId, topicsTitle, parsedUrl.gid || "0");
         
         if (topicsData.length > 1) {
-          const headers = topicsData[0].map(String);
+          const headers = topicsData[0].map(c => String(c.text));
           let titleIdx = findColIndex(headers, ["topic", "title", "name"]);
           let sourceReqIdx = findColIndex(headers, ["source request"]);
           let responseIdx = findColIndex(headers, ["response"]);
-          let questionsIdx = findColIndex(headers, ["interview question", "suggested question"]);
+          let questionsIdx = findColIndex(headers, ["interview question", "suggested question", "interview template"]);
           
           let startIndex = 1;
           
@@ -86,18 +87,27 @@ export async function POST(request: NextRequest) {
 
           await db.topic.deleteMany({ where: { clientId: cid } });
           
+          const formatCell = (cell: { text: string; url: string | null } | undefined) => {
+            if (!cell || !cell.text) return null;
+            if (cell.url && cell.url !== cell.text) {
+              return `[${cell.text}](${cell.url})`;
+            }
+            return cell.text;
+          };
+
           for (let i = startIndex; i < topicsData.length; i++) {
             const row = topicsData[i];
-            const title = row[titleIdx] ? String(row[titleIdx]).trim() : "";
+            const titleCell = row[titleIdx];
+            const title = titleCell?.text ? String(titleCell.text).trim() : "";
             if (!title) continue;
             
             await db.topic.create({
               data: {
                 clientId: cid,
                 title,
-                sourceRequests: sourceReqIdx !== -1 && row[sourceReqIdx] ? String(row[sourceReqIdx]) : null,
-                responses: responseIdx !== -1 && row[responseIdx] ? String(row[responseIdx]) : null,
-                interviewQuestions: questionsIdx !== -1 && row[questionsIdx] ? String(row[questionsIdx]) : null,
+                sourceRequests: sourceReqIdx !== -1 ? formatCell(row[sourceReqIdx]) : null,
+                responses: responseIdx !== -1 ? formatCell(row[responseIdx]) : null,
+                interviewQuestions: questionsIdx !== -1 ? formatCell(row[questionsIdx]) : null,
               }
             });
             topicsSynced++;
