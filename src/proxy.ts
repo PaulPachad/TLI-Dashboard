@@ -38,6 +38,6 @@ export default auth((req) => {
 export const config = {
   matcher: [
     // Match all routes except static files and api/auth
-    "/((?!_next/static|_next/image|favicon.ico|logo.svg|api/auth).*)",
+    "/((?!_next/static|_next/image|favicon.ico|logo.png|logo.svg|api/auth).*)",
   ],
 };
