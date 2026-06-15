@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  name         String?
+  role         String   @default("CLIENT")
+  clientId     String?
+  client       Client?  @relation(fields: [clientId], references: [id])
+  actions      Action[] @relation("CreatedByUser")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Client {
+  id              String  @id @default(cuid())
+  name            String
+  company         String?
+  email           String
+  title           String?
+  signature       String?
+  linkedinUrl     String?
+  schedulingLink  String?
+  defaultHashtags String? @default("#AuthorityMagazine #ThoughtLeadership #Leadership #Interview")
+  defaultSignoff  String? @default("Warmly")
+  replyToEmail    String?
+  users           User[]
+  sheetSources    SheetSource[]
+  interviews      Interview[]
+  actions         Action[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model SheetSource {
+  id            String  @id @default(cuid())
+  clientId      String
+  sheetUrl      String
+  spreadsheetId String
+  gid           String?
+  sheetTitle    String?
+  lastSyncedAt  DateTime?
+  client        Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  interviews    Interview[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([clientId])
+}
+
+model Interview {
+  id                          String @id @default(cuid())
+  clientId                    String
+  sheetSourceId               String?
+  sourceRowNumber             Int?
+  sourceRowHash               String?
+  intervieweeName             String
+  intervieweeCompany          String?
+  intervieweeEmail            String?
+  intervieweeTitle            String?
+  publicistName               String?
+  publicistEmail              String?
+  topic                       String?
+  articleUrl                  String
+  buzzfeedUrl                 String?
+  interviewDocUrl             String?
+  image1Url                   String?
+  image2Url                   String?
+  extraImagesUrl              String?
+  videoUrl                    String?
+  linkedinUrl                 String?
+  twitterUrl                  String?
+  liveEmailStatusImported     String?
+  pressFollowupStatusImported String?
+  estimatedPublishDate        DateTime?
+  client                      Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  sheetSource                 SheetSource? @relation(fields: [sheetSourceId], references: [id], onDelete: SetNull)
+  actions                     Action[]
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  @@unique([sheetSourceId, sourceRowNumber])
+  @@unique([clientId, articleUrl])
+  @@index([clientId])
+  @@index([sheetSourceId])
+}
+
+model Action {
+  id                String  @id @default(cuid())
+  clientId          String
+  interviewId       String
+  actionType        String
+  status            String  @default("SUCCESS")
+  recipient         String?
+  cc                String?
+  subject           String?
+  body              String?
+  generatedText     String?
+  linkedinPostUrl   String?
+  metadataJson      Json?
+  note              String?
+  createdByUserId   String?
+  createdByUser     User?   @relation("CreatedByUser", fields: [createdByUserId], references: [id])
+  client            Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  interview         Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([interviewId])
+  @@index([clientId])
+  @@index([actionType])
+}
