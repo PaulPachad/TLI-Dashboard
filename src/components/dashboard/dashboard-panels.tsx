@@ -57,7 +57,7 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
               initial="enter"
               animate="center"
               exit="exit"
-              style={{ transformOrigin: "center center", transformStyle: "preserve-3d" }}
+              style={{ transformOrigin: "center center", transformStyle: "preserve-3d", backfaceVisibility: "hidden", WebkitFontSmoothing: "antialiased" }}
               className="absolute inset-0 w-full"
             >
               <InterviewGrid />
@@ -71,7 +71,7 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
               initial="enter"
               animate="center"
               exit="exit"
-              style={{ transformOrigin: "center center", transformStyle: "preserve-3d" }}
+              style={{ transformOrigin: "center center", transformStyle: "preserve-3d", backfaceVisibility: "hidden", WebkitFontSmoothing: "antialiased" }}
               className="absolute inset-0 w-full"
             >
               <TopicsGrid topics={topics} />
@@ -85,7 +85,7 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
               initial="enter"
               animate="center"
               exit="exit"
-              style={{ transformOrigin: "center center", transformStyle: "preserve-3d" }}
+              style={{ transformOrigin: "center center", transformStyle: "preserve-3d", backfaceVisibility: "hidden", WebkitFontSmoothing: "antialiased" }}
               className="absolute inset-0 w-full"
             >
               <EventsGrid events={events} />
