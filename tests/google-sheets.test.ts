@@ -1,0 +1,209 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { resolveTabTitle } from "../src/lib/google-sheets/client";
+import { deduplicateInterviewRecords } from "../src/lib/google-sheets/deduplicate";
+import { mapHeaders } from "../src/lib/google-sheets/header-mapper";
+import { parseGoogleSheetUrl } from "../src/lib/google-sheets/parse-url";
+import {
+  extractSocialProfiles,
+  normalizeRows,
+} from "../src/lib/google-sheets/row-normalizer";
+import {
+  extractArticleImage,
+  normalizeSheetImageUrl,
+} from "../src/lib/images/interview-image";
+
+test("parses spreadsheet id and gid from a normal Google Sheets URL", () => {
+  assert.deepEqual(
+    parseGoogleSheetUrl(
+      "https://docs.google.com/spreadsheets/d/example-sheet_123/edit#gid=456"
+    ),
+    { spreadsheetId: "example-sheet_123", gid: "456" }
+  );
+});
+
+test("parses supported Google Sheets URL variants", () => {
+  const variants = [
+    "https://docs.google.com/spreadsheets/d/sheet-id/edit?gid=789#gid=789",
+    "https://docs.google.com/spreadsheets/d/sheet-id/edit?resourcekey=abc&gid=789",
+    "https://docs.google.com/spreadsheets/d/sheet-id/edit#gid=789",
+  ];
+
+  for (const url of variants) {
+    assert.deepEqual(parseGoogleSheetUrl(url), {
+      spreadsheetId: "sheet-id",
+      gid: "789",
+    });
+  }
+  assert.deepEqual(
+    parseGoogleSheetUrl(
+      "https://docs.google.com/spreadsheets/d/sheet-id/edit"
+    ),
+    { spreadsheetId: "sheet-id", gid: null }
+  );
+});
+
+test("rejects links that are not Google Sheets URLs", () => {
+  assert.throws(
+    () => parseGoogleSheetUrl("https://example.com/spreadsheet"),
+    /does not look like a Google Sheets URL/
+  );
+});
+
+test("link-accessible mode preserves a real spreadsheet tab gid", async () => {
+  const previousDemoMode = process.env.DEMO_MODE;
+  const previousEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const previousKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
+  process.env.DEMO_MODE = "true";
+  delete process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  delete process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
+
+  try {
+    assert.equal(
+      await resolveTabTitle("real-sheet-id", "892423731"),
+      "Google Sheet tab 892423731"
+    );
+  } finally {
+    if (previousDemoMode === undefined) {
+      delete process.env.DEMO_MODE;
+    } else {
+      process.env.DEMO_MODE = previousDemoMode;
+    }
+    if (previousEmail === undefined) {
+      delete process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    } else {
+      process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL = previousEmail;
+    }
+    if (previousKey === undefined) {
+      delete process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
+    } else {
+      process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY = previousKey;
+    }
+  }
+});
+
+test("maps common Authority Magazine sheet headers", () => {
+  const result = mapHeaders([
+    "Authority Magazine Link",
+    "Interviewee Name",
+    "Interviewee Email",
+    "Topic",
+  ]);
+
+  assert.equal(result.missingRequired.length, 0);
+  assert.equal(
+    result.mappings.find((mapping) => mapping.field === "articleUrl")
+      ?.columnIndex,
+    0
+  );
+});
+
+test("maps and extracts social profiles from the combined sheet question", () => {
+  const socialHeader =
+    "(Optional:) If you would like us to tag you on social media when we share it, please list your profiles: ";
+  const rows = [
+    ["Authority Magazine Link", "Interviewee Name", socialHeader],
+    [
+      "https://medium.com/authority-magazine/jane-doe",
+      "Jane Doe",
+      "LinkedIn: https://www.linkedin.com/in/jane-doe Instagram: https://instagram.com/janedoe",
+    ],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const result = normalizeRows(rows, mappings);
+
+  assert.equal(
+    mappings.find((mapping) => mapping.field === "socialProfiles")?.columnIndex,
+    2
+  );
+  assert.equal(
+    result.published[0].linkedinUrl,
+    "https://www.linkedin.com/in/jane-doe"
+  );
+  assert.equal(result.published[0].twitterUrl, null);
+  assert.deepEqual(extractSocialProfiles("Find me at https://x.com/janedoe"), {
+    linkedinUrl: null,
+    twitterUrl: "https://x.com/janedoe",
+  });
+});
+
+test("imports only Authority Magazine article URLs", () => {
+  const rows = [
+    ["Authority Magazine Link", "Interviewee Name"],
+    [
+      "https://medium.com/authority-magazine/a-valid-interview-123",
+      "Valid Guest",
+    ],
+    ["https://example.com/not-authority-magazine", "Wrong Publication"],
+    ["", "Unpublished Guest"],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const result = normalizeRows(rows, mappings);
+
+  assert.equal(result.published.length, 1);
+  assert.equal(result.published[0].intervieweeName, "Valid Guest");
+  assert.equal(result.unpublished.length, 2);
+  assert.equal(result.unpublished[0].intervieweeName, "Wrong Publication");
+  assert.equal(result.unpublished[1].reason, "Authority Magazine Link is missing");
+  assert.equal(result.skippedInvalidArticle, 1);
+  assert.equal(result.skippedNoArticle, 1);
+});
+
+test("deduplicates repeated article links within one sheet", () => {
+  const rows = [
+    ["Authority Magazine Link", "Interviewee Name"],
+    [
+      "https://medium.com/authority-magazine/repeated-article/",
+      "Original Guest",
+    ],
+    [
+      "https://medium.com/authority-magazine/repeated-article",
+      "Duplicate Guest",
+    ],
+    [
+      "https://medium.com/authority-magazine/unique-article",
+      "Unique Guest",
+    ],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const normalized = normalizeRows(rows, mappings);
+  const result = deduplicateInterviewRecords(normalized.published);
+
+  assert.deepEqual(
+    result.records.map((record) => record.intervieweeName),
+    ["Original Guest", "Unique Guest"]
+  );
+  assert.equal(result.duplicates.length, 1);
+  assert.equal(result.duplicates[0].duplicate.sourceRowNumber, 3);
+  assert.equal(result.duplicates[0].originalRowNumber, 2);
+});
+
+test("converts Google Drive image links to direct thumbnails", () => {
+  assert.equal(
+    normalizeSheetImageUrl(
+      "https://drive.google.com/open?id=example-drive-image"
+    ),
+    "https://drive.google.com/thumbnail?id=example-drive-image&sz=w800"
+  );
+  assert.equal(
+    normalizeSheetImageUrl(
+      "https://drive.google.com/file/d/example-file-image/view"
+    ),
+    "https://drive.google.com/thumbnail?id=example-file-image&sz=w800"
+  );
+});
+
+test("extracts article social images from metadata", () => {
+  assert.equal(
+    extractArticleImage(
+      '<meta property="og:image" content="https://cdn.example.com/photo.jpg">'
+    ),
+    "https://cdn.example.com/photo.jpg"
+  );
+  assert.equal(
+    extractArticleImage(
+      '<meta content="https://cdn.example.com/twitter.jpg" name="twitter:image">'
+    ),
+    "https://cdn.example.com/twitter.jpg"
+  );
+});

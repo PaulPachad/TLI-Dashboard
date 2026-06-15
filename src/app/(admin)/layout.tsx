@@ -89,7 +89,9 @@ export default function AdminLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { data: session, status } = useSession();
+  const sessionContext = useSession();
+  const session = sessionContext?.data;
+  const status = sessionContext?.status ?? "loading";
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);

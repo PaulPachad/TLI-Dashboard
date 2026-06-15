@@ -10,7 +10,8 @@ import Link from "next/link";
 import { SheetImportForm } from "@/components/admin/sheet-import-form";
 
 export default function SettingsPage() {
-  const { data: session } = useSession();
+  const sessionContext = useSession();
+  const session = sessionContext?.data;
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [bannerMessage, setBannerMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
