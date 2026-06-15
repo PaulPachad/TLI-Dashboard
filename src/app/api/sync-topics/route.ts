@@ -59,31 +59,40 @@ export async function POST(request: NextRequest) {
         
         if (topicsData.length > 1) {
           const headers = topicsData[0].map(String);
-          const titleIdx = findColIndex(headers, ["topic", "title", "name"]);
-          const sourceReqIdx = findColIndex(headers, ["source request"]);
-          const responseIdx = findColIndex(headers, ["response"]);
-          const questionsIdx = findColIndex(headers, ["interview question"]);
+          let titleIdx = findColIndex(headers, ["topic", "title", "name"]);
+          let sourceReqIdx = findColIndex(headers, ["source request"]);
+          let responseIdx = findColIndex(headers, ["response"]);
+          let questionsIdx = findColIndex(headers, ["interview question"]);
           
-          if (titleIdx !== -1) {
-            // Clear old topics
-            await db.topic.deleteMany({ where: { clientId: cid } });
+          let startIndex = 1;
+          
+          if (titleIdx === -1) {
+            // Unstructured sheet fallback
+            titleIdx = 0;
+            sourceReqIdx = 1;
+            responseIdx = 2;
+            questionsIdx = 3;
+            startIndex = 0; // First row is data
+          }
+
+          // Clear old topics
+          await db.topic.deleteMany({ where: { clientId: cid } });
+          
+          for (let i = startIndex; i < topicsData.length; i++) {
+            const row = topicsData[i];
+            const title = row[titleIdx] ? String(row[titleIdx]).trim() : "";
+            if (!title) continue; // Skip empty rows
             
-            for (let i = 1; i < topicsData.length; i++) {
-              const row = topicsData[i];
-              const title = row[titleIdx] ? String(row[titleIdx]).trim() : "";
-              if (!title) continue;
-              
-              await db.topic.create({
-                data: {
-                  clientId: cid,
-                  title,
-                  sourceRequests: sourceReqIdx !== -1 && row[sourceReqIdx] ? String(row[sourceReqIdx]) : null,
-                  responses: responseIdx !== -1 && row[responseIdx] ? String(row[responseIdx]) : null,
-                  interviewQuestions: questionsIdx !== -1 && row[questionsIdx] ? String(row[questionsIdx]) : null,
-                }
-              });
-              totalTopics++;
-            }
+            await db.topic.create({
+              data: {
+                clientId: cid,
+                title,
+                sourceRequests: sourceReqIdx !== -1 && row[sourceReqIdx] ? String(row[sourceReqIdx]) : null,
+                responses: responseIdx !== -1 && row[responseIdx] ? String(row[responseIdx]) : null,
+                interviewQuestions: questionsIdx !== -1 && row[questionsIdx] ? String(row[questionsIdx]) : null,
+              }
+            });
+            totalTopics++;
           }
         }
       } catch (err) {
@@ -98,31 +107,40 @@ export async function POST(request: NextRequest) {
 
         if (eventsData.length > 1) {
           const headers = eventsData[0].map(String);
-          const nameIdx = findColIndex(headers, ["event", "name", "title"]);
-          const dateIdx = findColIndex(headers, ["date", "time"]);
-          const locationIdx = findColIndex(headers, ["location", "place"]);
-          const statusIdx = findColIndex(headers, ["status", "attendance"]);
+          let nameIdx = findColIndex(headers, ["event", "name", "title"]);
+          let dateIdx = findColIndex(headers, ["date", "time"]);
+          let locationIdx = findColIndex(headers, ["location", "place"]);
+          let statusIdx = findColIndex(headers, ["status", "attendance"]);
 
-          if (nameIdx !== -1) {
-             // Clear old events
-             await db.event.deleteMany({ where: { clientId: cid } });
+          let startIndex = 1;
 
-             for (let i = 1; i < eventsData.length; i++) {
-               const row = eventsData[i];
-               const eventName = row[nameIdx] ? String(row[nameIdx]).trim() : "";
-               if (!eventName) continue;
+          if (nameIdx === -1) {
+            // Unstructured sheet fallback
+            nameIdx = 0;
+            dateIdx = 1;
+            locationIdx = 2;
+            statusIdx = 3;
+            startIndex = 0; // First row is data
+          }
 
-               await db.event.create({
-                 data: {
-                   clientId: cid,
-                   eventName,
-                   date: dateIdx !== -1 && row[dateIdx] ? String(row[dateIdx]) : null,
-                   location: locationIdx !== -1 && row[locationIdx] ? String(row[locationIdx]) : null,
-                   status: statusIdx !== -1 && row[statusIdx] ? String(row[statusIdx]) : null,
-                 }
-               });
-               totalEvents++;
-             }
+          // Clear old events
+          await db.event.deleteMany({ where: { clientId: cid } });
+
+          for (let i = startIndex; i < eventsData.length; i++) {
+            const row = eventsData[i];
+            const eventName = row[nameIdx] ? String(row[nameIdx]).trim() : "";
+            if (!eventName) continue; // Skip empty rows
+
+            await db.event.create({
+              data: {
+                clientId: cid,
+                eventName,
+                date: dateIdx !== -1 && row[dateIdx] ? String(row[dateIdx]) : null,
+                location: locationIdx !== -1 && row[locationIdx] ? String(row[locationIdx]) : null,
+                status: statusIdx !== -1 && row[statusIdx] ? String(row[statusIdx]) : null,
+              }
+            });
+            totalEvents++;
           }
         }
       } catch (err) {
