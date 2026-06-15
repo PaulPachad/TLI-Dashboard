@@ -24,6 +24,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 
 export function InterviewCard({ interview, onAction, onViewDetails }: InterviewCardProps) {
   const [imageIndex, setImageIndex] = useState(0);
+  const isUnpublished = interview.articleUrl.includes("/unpublished/");
   const statusConfig = STATUS_CONFIG[interview.currentStatus] || STATUS_CONFIG.new;
   const imageSources = buildInterviewImageSources(interview);
   const currentImage = imageSources[imageIndex];
@@ -71,11 +72,17 @@ export function InterviewCard({ interview, onAction, onViewDetails }: InterviewC
             </p>
           )}
           <div className="mt-1.5 flex items-center justify-between gap-2">
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConfig.bg} ${statusConfig.color}`}
-            >
-              {statusConfig.label}
-            </span>
+            {isUnpublished ? (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-amber-50 text-amber-700 border-amber-200">
+                Unpublished
+              </span>
+            ) : (
+              <span
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConfig.bg} ${statusConfig.color}`}
+              >
+                {statusConfig.label}
+              </span>
+            )}
             <button
               id={`view-details-${interview.id}`}
               onClick={() => onViewDetails?.(interview.id)}
@@ -118,46 +125,80 @@ export function InterviewCard({ interview, onAction, onViewDetails }: InterviewC
       </div>
 
       {/* Action badges */}
-      <div className="px-5 pb-3 flex flex-wrap gap-1.5">
-        <ActionBadge done={interview.actionSummary.liveEmailSent} label="Email" />
-        <ActionBadge done={interview.actionSummary.linkedinGenerated} label="LinkedIn" />
-        <ActionBadge done={interview.actionSummary.markedShared} label="Shared" />
-        <ActionBadge done={interview.actionSummary.zoomInviteSent} label="Zoom" />
-      </div>
+      {!isUnpublished && (
+        <div className="px-5 pb-3 flex flex-wrap gap-1.5">
+          <ActionBadge done={interview.actionSummary.liveEmailSent} label="Email" />
+          <ActionBadge done={interview.actionSummary.linkedinGenerated} label="LinkedIn" />
+          <ActionBadge done={interview.actionSummary.markedShared} label="Shared" />
+          <ActionBadge done={interview.actionSummary.zoomInviteSent} label="Zoom" />
+        </div>
+      )}
 
       {/* Primary actions */}
-      <div className="mt-auto grid grid-cols-2 gap-2 border-t border-slate-100 p-4">
-        <a
-          id={`read-article-${interview.id}`}
-          href={interview.articleUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex min-h-10 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-center text-xs font-semibold text-indigo-700 hover:border-indigo-300 hover:bg-indigo-100"
-        >
-          Read Article
-        </a>
-        <button
-          id={`send-live-email-${interview.id}`}
-          onClick={() => onAction?.(interview.id, "send_live_email")}
-          className="min-h-10 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
-        >
-          Send Live Link Email
-        </button>
-        <button
-          id={`request-zoom-${interview.id}`}
-          onClick={() => onAction?.(interview.id, "send_zoom_invite")}
-          className="min-h-10 rounded-lg bg-teal-600 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-700"
-        >
-          Request Zoom Interview
-        </button>
-        <button
-          id={`share-linkedin-${interview.id}`}
-          onClick={() => onAction?.(interview.id, "generate_linkedin")}
-          className="min-h-10 rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white hover:bg-sky-700"
-        >
-          Share on LinkedIn
-        </button>
-      </div>
+      {isUnpublished ? (
+        <div className="mt-auto border-t border-slate-100 p-4 bg-slate-50/50">
+          <div className="rounded-lg border border-amber-200 bg-amber-50/40 p-3 text-center">
+            <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-amber-800">
+              <svg className="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Unpublished Interview
+            </div>
+            {interview.estimatedPublishDate ? (
+              <p className="text-xs text-slate-600 mt-1 font-medium">
+                Estimated Publish Date:{" "}
+                <span className="text-slate-800 font-semibold">
+                  {new Date(interview.estimatedPublishDate).toLocaleDateString("en-US", {
+                    month: "2-digit",
+                    day: "2-digit",
+                    year: "2-digit",
+                  })}
+                </span>
+              </p>
+            ) : (
+              <p className="text-xs text-slate-500 mt-1">
+                No estimated publish date provided.
+              </p>
+            )}
+            <p className="text-[10px] text-slate-400 mt-2">
+              Once live, add the Authority Magazine Link to your sheet and re-sync.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-auto grid grid-cols-2 gap-2 border-t border-slate-100 p-4">
+          <a
+            id={`read-article-${interview.id}`}
+            href={interview.articleUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex min-h-10 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-center text-xs font-semibold text-indigo-700 hover:border-indigo-300 hover:bg-indigo-100"
+          >
+            Read Article
+          </a>
+          <button
+            id={`send-live-email-${interview.id}`}
+            onClick={() => onAction?.(interview.id, "send_live_email")}
+            className="min-h-10 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+          >
+            Send Live Link Email
+          </button>
+          <button
+            id={`request-zoom-${interview.id}`}
+            onClick={() => onAction?.(interview.id, "send_zoom_invite")}
+            className="min-h-10 rounded-lg bg-teal-600 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-700"
+          >
+            Request Zoom Interview
+          </button>
+          <button
+            id={`share-linkedin-${interview.id}`}
+            onClick={() => onAction?.(interview.id, "generate_linkedin")}
+            className="min-h-10 rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white hover:bg-sky-700"
+          >
+            Share on LinkedIn
+          </button>
+        </div>
+      )}
     </div>
   );
 }

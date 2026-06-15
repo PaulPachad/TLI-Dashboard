@@ -149,6 +149,28 @@ test("imports only Authority Magazine article URLs", () => {
   assert.equal(result.skippedNoArticle, 1);
 });
 
+test("imports unpublished guest rows when spreadsheetId is provided", () => {
+  const rows = [
+    ["Authority Magazine Link", "Interviewee Name"],
+    [
+      "https://medium.com/authority-magazine/a-valid-interview-123",
+      "Valid Guest",
+    ],
+    ["https://example.com/not-authority-magazine", "Wrong Publication"],
+    ["", "Unpublished Guest"],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const result = normalizeRows(rows, mappings, 0, "test-spreadsheet-id");
+
+  assert.equal(result.published.length, 3);
+  assert.equal(result.published[0].intervieweeName, "Valid Guest");
+  assert.equal(result.published[1].intervieweeName, "Wrong Publication");
+  assert.equal(result.published[2].intervieweeName, "Unpublished Guest");
+
+  assert.equal(result.published[1].articleUrl, "https://authoritymagazine.com/unpublished/test-spreadsheet-id/3");
+  assert.equal(result.published[2].articleUrl, "https://authoritymagazine.com/unpublished/test-spreadsheet-id/4");
+});
+
 test("deduplicates repeated article links within one sheet", () => {
   const rows = [
     ["Authority Magazine Link", "Interviewee Name"],

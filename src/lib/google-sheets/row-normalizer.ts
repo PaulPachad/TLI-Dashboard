@@ -85,12 +85,14 @@ export function extractSocialProfiles(value: string | null): {
 
 /**
  * Normalize sheet data rows into InterviewRecord objects.
- * Only rows with a non-empty Authority Magazine Link (articleUrl) are included.
+ * Only rows with a non-empty Authority Magazine Link (articleUrl) are included,
+ * unless spreadsheetId is provided, in which case unpublished rows get a placeholder URL.
  */
 export function normalizeRows(
   rows: string[][],
   mappings: HeaderMapping[],
-  headerRowIndex: number = 0
+  headerRowIndex: number = 0,
+  spreadsheetId?: string
 ): NormalizationResult {
   const dataRows = rows.slice(headerRowIndex + 1);
   const published: InterviewRecord[] = [];
@@ -125,32 +127,38 @@ export function normalizeRows(
       continue;
     }
 
-    // PUBLISHED RULE: Only import rows with Authority Magazine Link
-    const articleUrl = getVal(row, "articleUrl");
+    // Check if published or unpublished
+    let articleUrl = getVal(row, "articleUrl");
+    let isUnpublished = false;
+    let unpublishedReason = "";
+
     if (!articleUrl) {
+      isUnpublished = true;
+      unpublishedReason = "Authority Magazine Link is missing";
       skippedNoArticle++;
-      unpublished.push({
-        sourceRowNumber: rowNumber,
-        intervieweeName:
-          getVal(row, "intervieweeName") || `Interview (Row ${rowNumber})`,
-        topic: getVal(row, "topic"),
-        estimatedPublishDate: getVal(row, "estimatedPublishDate"),
-        reason: "Authority Magazine Link is missing",
-      });
-      continue;
+    } else if (!isAuthorityMagazineUrl(articleUrl)) {
+      isUnpublished = true;
+      unpublishedReason = "Authority Magazine Link is not valid";
+      skippedInvalidArticle++;
     }
 
-    if (!isAuthorityMagazineUrl(articleUrl)) {
-      skippedInvalidArticle++;
+    if (isUnpublished) {
       unpublished.push({
         sourceRowNumber: rowNumber,
         intervieweeName:
           getVal(row, "intervieweeName") || `Interview (Row ${rowNumber})`,
         topic: getVal(row, "topic"),
         estimatedPublishDate: getVal(row, "estimatedPublishDate"),
-        reason: "Authority Magazine Link is not valid",
+        reason: unpublishedReason,
       });
-      continue;
+
+      if (!spreadsheetId) {
+        // Old behavior: skip
+        continue;
+      }
+
+      // Generate placeholder URL for database insertion
+      articleUrl = `https://authoritymagazine.com/unpublished/${spreadsheetId}/${rowNumber}`;
     }
 
     // Extract interviewee name (required for display, use fallback)
@@ -191,7 +199,7 @@ export function normalizeRows(
       publicistName: getVal(row, "publicistName"),
       publicistEmail: normalizeEmail(getVal(row, "publicistEmail")),
       topic: getVal(row, "topic"),
-      articleUrl,
+      articleUrl: articleUrl!,
       buzzfeedUrl: getVal(row, "buzzfeedUrl"),
       interviewDocUrl: getVal(row, "interviewDocUrl"),
       image1Url: getVal(row, "image1Url"),

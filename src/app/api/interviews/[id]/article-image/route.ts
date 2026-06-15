@@ -24,6 +24,10 @@ export async function GET(
       return new NextResponse(null, { status: 403 });
     }
 
+    if (interview.articleUrl.includes("/unpublished/")) {
+      return new NextResponse(null, { status: 404 });
+    }
+
     if (imageCache.has(interview.articleUrl)) {
       return imageResponse(imageCache.get(interview.articleUrl) || null);
     }

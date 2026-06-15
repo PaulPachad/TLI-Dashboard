@@ -214,13 +214,9 @@ export function SheetImportForm({ clientId, onImportComplete }: SheetImportFormP
                 <p className="text-xs text-emerald-600">Published</p>
                 <p className="font-semibold text-emerald-700">{preview.published}</p>
               </div>
-              <div className="bg-slate-50 rounded-lg p-3">
-                <p className="text-xs text-slate-500">Skipped</p>
-                <p className="font-semibold text-slate-900">
-                  {preview.skippedNoArticle +
-                    preview.skippedInvalidArticle +
-                    preview.skippedEmpty}
-                </p>
+              <div className="bg-amber-50 rounded-lg p-3">
+                <p className="text-xs text-amber-600">Unpublished</p>
+                <p className="font-semibold text-amber-700">{preview.unpublished?.length ?? 0}</p>
               </div>
             </div>
 
@@ -343,15 +339,15 @@ export function SheetImportForm({ clientId, onImportComplete }: SheetImportFormP
             <button
               id="confirm-import-btn"
               onClick={handleConfirmImport}
-              disabled={loading || preview.published === 0}
+              disabled={loading || (preview.published === 0 && (!preview.unpublished || preview.unpublished.length === 0))}
               className="px-6 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium
                          hover:bg-emerald-700 disabled:opacity-50 transition-colors"
             >
               {loading
                 ? "Importing..."
-                : preview.published === 0
-                  ? "No Published Interviews"
-                  : `Import ${preview.published} Interview(s)`}
+                : preview.published === 0 && (!preview.unpublished || preview.unpublished.length === 0)
+                  ? "No Interviews Found"
+                  : `Import ${preview.published + (preview.unpublished?.length ?? 0)} Interview(s)`}
             </button>
           </div>
         </div>

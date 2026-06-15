@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     }
 
     // --- Normalize rows ---
-    const normResult = normalizeRows(rawData, headerResult.mappings, 0);
+    const normResult = normalizeRows(rawData, headerResult.mappings, 0, parsedUrl.spreadsheetId);
     const deduplicated = deduplicateInterviewRecords(normResult.published);
     const importRecords = deduplicated.records;
 
@@ -130,18 +130,20 @@ export async function POST(request: NextRequest) {
       demoMode: isDemoMode(),
       sheetTitle: tabTitle,
       totalRows: normResult.totalRows,
-      published: importRecords.length,
-      skippedNoArticle: normResult.skippedNoArticle,
-      skippedInvalidArticle: normResult.skippedInvalidArticle,
+      published: importRecords.filter((r) => !r.articleUrl.includes("/unpublished/")).length,
+      skippedNoArticle: 0,
+      skippedInvalidArticle: 0,
       skippedEmpty: normResult.skippedEmptyRow,
-      interviews: importRecords.map((r) => ({
-        rowNumber: r.sourceRowNumber,
-        intervieweeName: r.intervieweeName,
-        topic: r.topic,
-        articleUrl: r.articleUrl,
-        hasEmail: !!r.intervieweeEmail,
-        hasPublicist: !!r.publicistName,
-      })),
+      interviews: importRecords
+        .filter((r) => !r.articleUrl.includes("/unpublished/"))
+        .map((r) => ({
+          rowNumber: r.sourceRowNumber,
+          intervieweeName: r.intervieweeName,
+          topic: r.topic,
+          articleUrl: r.articleUrl,
+          hasEmail: !!r.intervieweeEmail,
+          hasPublicist: !!r.publicistName,
+        })),
       unpublished: normResult.unpublished.map((r) => ({
         rowNumber: r.sourceRowNumber,
         intervieweeName: r.intervieweeName,
@@ -160,9 +162,7 @@ export async function POST(request: NextRequest) {
     if (importRecords.length === 0) {
       return NextResponse.json(
         {
-          error:
-            "The real sheet was read successfully, but no published interviews " +
-            "were found. Add an Authority Magazine Link to a row before importing it.",
+          error: "The real sheet was read successfully, but no interviews were found.",
           preview: basePreview,
           warnings: [
             ...headerResult.warnings,
@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         preview,
         warnings,
-        message: `Found ${importRecords.length} published interview(s) ready to import. Send confirm: true to save.`,
+        message: `Found ${importRecords.length} interview(s) ready to import. Send confirm: true to save.`,
       });
     }
 

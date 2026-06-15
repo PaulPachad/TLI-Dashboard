@@ -33,6 +33,7 @@ export interface InterviewView {
   videoUrl?: string | null;
   linkedinUrl?: string | null;
   twitterUrl?: string | null;
+  estimatedPublishDate?: string | null;
   currentStatus:
     | "new"
     | "needs_contact"

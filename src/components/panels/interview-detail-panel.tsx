@@ -105,7 +105,14 @@ export function InterviewDetailPanel({ interview, onClose }: InterviewDetailPane
           {/* Article */}
           <Section title="Article">
             <DetailRow label="Topic" value={interview.topic} />
-            <DetailRow label="Article" value={interview.articleUrl} isLink />
+            {interview.articleUrl.includes("/unpublished/") ? (
+              <div className="flex items-start gap-3">
+                <span className="text-xs text-slate-400 w-20 shrink-0 pt-0.5">Article</span>
+                <span className="text-sm text-slate-500 italic">Not published yet (Authority Magazine link missing)</span>
+              </div>
+            ) : (
+              <DetailRow label="Article" value={interview.articleUrl} isLink />
+            )}
             {interview.buzzfeedUrl && (
               <DetailRow label="BuzzFeed" value={interview.buzzfeedUrl} isLink />
             )}
