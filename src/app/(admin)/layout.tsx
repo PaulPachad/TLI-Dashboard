@@ -137,8 +137,8 @@ export default function AdminLayout({
     <nav className="flex flex-1 flex-col">
       {/* Brand */}
       <div className="flex h-16 items-center gap-2 border-b border-slate-100 px-6">
-        <Image src="/logo-black.gif" alt="" width={32} height={32} priority unoptimized />
-        <span className="text-sm font-bold text-slate-900">TLI Leverage</span>
+        <Image src="/logo.png" alt="Authority Magazine" width={32} height={32} priority unoptimized />
+        <span className="text-sm font-bold text-slate-900 tracking-tight">Authority Mag</span>
       </div>
 
       <div className="flex-1 space-y-1 px-3 py-4">
@@ -257,7 +257,7 @@ export default function AdminLayout({
               <MenuIcon className="h-5 w-5" />
             </button>
             <h1 className="text-sm font-semibold text-slate-900 lg:text-base">
-              TLI Leverage Dashboard
+              Authority Magazine Admin
             </h1>
             <span className="hidden rounded-md bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 sm:inline">
               Admin

@@ -121,8 +121,8 @@ export default function DashboardLayout({
     <nav className="flex flex-1 flex-col">
       {/* Brand */}
       <div className="flex h-16 items-center gap-2 border-b border-slate-100 px-6">
-        <Image src="/logo-black.gif" alt="" width={32} height={32} priority unoptimized />
-        <span className="text-sm font-bold text-slate-900">TLI Leverage</span>
+        <Image src="/logo.png" alt="Authority Magazine" width={32} height={32} priority unoptimized />
+        <span className="text-sm font-bold text-slate-900 tracking-tight">Authority Mag</span>
       </div>
 
       {/* Main Nav */}
@@ -246,7 +246,7 @@ export default function DashboardLayout({
               <MenuIcon className="h-5 w-5" />
             </button>
             <h1 className="text-sm font-semibold text-slate-900 lg:text-base">
-              TLI Leverage Dashboard
+              Authority Magazine Dashboard
             </h1>
           </div>
 
