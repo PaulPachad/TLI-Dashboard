@@ -32,6 +32,7 @@ export function getInterviewProgress(
 
   const liveEmailSent = hasAction("LIVE_EMAIL_SENT");
   const linkedinGenerated = hasAction("LINKEDIN_POST_GENERATED");
+  const socialImageGenerated = hasAction("SOCIAL_IMAGE_GENERATED");
   const markedShared = hasAction("MARKED_SHARED");
   const zoomInviteSent = hasAction("ZOOM_INVITE_SENT");
   const hasEmail = Boolean(
@@ -75,6 +76,7 @@ export function getInterviewProgress(
     actionSummary: {
       liveEmailSent,
       linkedinGenerated,
+      socialImageGenerated,
       markedShared,
       zoomInviteSent,
     },

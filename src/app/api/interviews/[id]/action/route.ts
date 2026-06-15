@@ -29,7 +29,7 @@ interface ActionData {
 }
 
 interface ActionBody {
-  actionType: "add_contact" | "send_live_email" | "generate_linkedin" | "copy_linkedin" | "mark_shared" | "send_zoom_invite";
+  actionType: "add_contact" | "send_live_email" | "generate_linkedin" | "copy_linkedin" | "mark_shared" | "send_zoom_invite" | "generate_social_image";
   data?: ActionData;
 }
 
@@ -373,6 +373,20 @@ export async function POST(
             actionType: "LINKEDIN_POST_COPIED",
             status: "SUCCESS",
             note: "Copied LinkedIn post text to clipboard",
+            createdByUserId: user.id,
+          },
+        });
+        return NextResponse.json({ success: true });
+      }
+
+      case "generate_social_image": {
+        await db.action.create({
+          data: {
+            clientId: interview.clientId,
+            interviewId: id,
+            actionType: "SOCIAL_IMAGE_GENERATED",
+            status: "SUCCESS",
+            note: "Generated and downloaded social media image",
             createdByUserId: user.id,
           },
         });

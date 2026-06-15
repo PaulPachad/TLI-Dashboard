@@ -8,7 +8,7 @@ import { useState, useEffect, useRef } from "react";
 
 interface ActionModalProps {
   interviewId: string;
-  actionType: "add_contact" | "send_live_email" | "generate_linkedin" | "mark_shared" | "send_zoom_invite";
+  actionType: "add_contact" | "send_live_email" | "generate_linkedin" | "mark_shared" | "send_zoom_invite" | "generate_social_image";
   onClose: () => void;
   onSuccess: (message?: string) => void;
 }
@@ -268,6 +268,44 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
       }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to copy and share.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Handle Image Download
+  async function handleDownloadImage() {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`/api/interviews/${interviewId}/social-image`);
+      if (!response.ok) throw new Error("Failed to generate image.");
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `AuthorityMag_Social_${interviewId}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      const actionRes = await fetch(`/api/interviews/${interviewId}/action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actionType: "generate_social_image" }),
+      });
+      
+      if (!actionRes.ok) {
+        throw new Error("The image was downloaded, but tracking could not be saved.");
+      }
+      
+      onSuccess("Social image downloaded successfully.");
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to download image.");
     } finally {
       setLoading(false);
     }
@@ -559,6 +597,45 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
                   {copied ? "✓ Copied!" : "Copy & Go to LinkedIn"}
                 </button>
               </div>
+            </div>
+          </div>
+        );
+
+      case "generate_social_image":
+        return (
+          <div className="p-6 space-y-4">
+            <h3 className="text-lg font-semibold text-slate-900 font-sans">Get Social Image</h3>
+            <p className="text-xs text-slate-500 font-sans">
+              Download this beautifully branded image to share on Instagram or LinkedIn along with your post.
+            </p>
+            <ActionError message={error} />
+            
+            <div className="relative w-full aspect-square bg-slate-100 rounded-lg overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center">
+              {/* Using standard img tag for external API image to avoid Next/Image complexities with dynamic blobs in preview */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={`/api/interviews/${interviewId}/social-image`} 
+                alt="Social Media Preview"
+                className="object-contain w-full h-full"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 font-sans">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadImage}
+                disabled={loading}
+                className="px-5 py-2 bg-pink-600 text-white rounded-lg text-sm font-semibold hover:bg-pink-700 transition-colors disabled:opacity-50"
+              >
+                {loading ? "Downloading..." : "Download Image"}
+              </button>
             </div>
           </div>
         );

@@ -131,6 +131,7 @@ export function InterviewCard({ interview, onAction, onViewDetails }: InterviewC
         <div className="px-5 pb-3 flex flex-wrap gap-1.5">
           <ActionBadge done={interview.actionSummary.liveEmailSent} label="Email" />
           <ActionBadge done={interview.actionSummary.linkedinGenerated} label="LinkedIn" />
+          <ActionBadge done={interview.actionSummary.socialImageGenerated} label="Image" />
           <ActionBadge done={interview.actionSummary.markedShared} label="Shared" />
           <ActionBadge done={interview.actionSummary.zoomInviteSent} label="Zoom" />
         </div>
@@ -205,6 +206,13 @@ export function InterviewCard({ interview, onAction, onViewDetails }: InterviewC
             className="min-h-10 rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white hover:bg-sky-700"
           >
             Share on LinkedIn
+          </button>
+          <button
+            id={`generate-social-image-${interview.id}`}
+            onClick={() => onAction?.(interview.id, "generate_social_image")}
+            className="min-h-10 rounded-lg bg-pink-600 px-3 py-2 text-xs font-semibold text-white hover:bg-pink-700 col-span-2"
+          >
+            Get Social Image
           </button>
         </div>
       )}
