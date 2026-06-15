@@ -36,6 +36,9 @@ const FIELD_ALIASES: Record<string, string[]> = {
     "guest name",
     "person",
     "subject",
+    "name company",
+    "name & company",
+    "name and company",
   ],
   publicistName: [
     "publicist",

@@ -154,7 +154,26 @@ export function normalizeRows(
     }
 
     // Extract interviewee name (required for display, use fallback)
-    const intervieweeName = getVal(row, "intervieweeName") || `Interview (Row ${rowNumber})`;
+    let intervieweeName = getVal(row, "intervieweeName") || `Interview (Row ${rowNumber})`;
+    let intervieweeCompany = getVal(row, "intervieweeCompany");
+
+    // If company is empty, but name has a comma, semicolon, or dash, split them!
+    if (!intervieweeCompany && intervieweeName && !intervieweeName.startsWith("Interview (Row ")) {
+      const separators = [",", ";", " - "];
+      for (const sep of separators) {
+        if (intervieweeName.includes(sep)) {
+          const parts = intervieweeName.split(sep);
+          const potentialName = parts[0].trim();
+          const potentialCompany = parts.slice(1).join(sep).trim();
+
+          if (potentialName && potentialCompany) {
+            intervieweeName = potentialName;
+            intervieweeCompany = potentialCompany;
+            break;
+          }
+        }
+      }
+    }
 
     // Hash the row for dedup on re-sync
     const rowHash = hashRow(row);
@@ -166,7 +185,7 @@ export function normalizeRows(
       sourceRowNumber: rowNumber,
       sourceRowHash: rowHash,
       intervieweeName,
-      intervieweeCompany: getVal(row, "intervieweeCompany"),
+      intervieweeCompany,
       intervieweeEmail: normalizeEmail(getVal(row, "intervieweeEmail")),
       intervieweeTitle: getVal(row, "intervieweeTitle"),
       publicistName: getVal(row, "publicistName"),
