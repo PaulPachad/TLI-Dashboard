@@ -109,14 +109,28 @@ export function InterviewDetailPanel({ interview, onClose }: InterviewDetailPane
           <Section title="Article">
             <DetailRow label="Topic" value={interview.topic} />
             {isUnpublished ? (
-              <div className="flex items-start gap-3">
-                <span className="text-xs text-slate-400 w-20 shrink-0 pt-0.5">Article</span>
-                <span className="text-sm text-slate-500 italic">
-                  {interview.articleUrl.includes("/unpublished/")
-                    ? "Not published yet (Authority Magazine link missing)"
-                    : "Draft (Not published yet - status in sheet needs to be \"LIVE\")"}
-                </span>
-              </div>
+              <>
+                <div className="flex items-start gap-3">
+                  <span className="text-xs text-slate-400 w-20 shrink-0 pt-0.5">Article</span>
+                  <span className="text-sm text-slate-500 italic">
+                    {interview.articleUrl.includes("/unpublished/")
+                      ? "Not published yet (Authority Magazine link missing)"
+                      : "Draft (Not published yet - status in sheet needs to be \"LIVE\")"}
+                  </span>
+                </div>
+                {interview.estimatedPublishDate ? (
+                  <DetailRow
+                    label="Est. Publish"
+                    value={new Date(interview.estimatedPublishDate).toLocaleDateString("en-US", {
+                      month: "2-digit",
+                      day: "2-digit",
+                      year: "2-digit",
+                    })}
+                  />
+                ) : interview.liveEmailStatusImported && interview.liveEmailStatusImported.toUpperCase() !== "LIVE" ? (
+                  <DetailRow label="Status" value={interview.liveEmailStatusImported} />
+                ) : null}
+              </>
             ) : (
               <DetailRow label="Article" value={interview.articleUrl} isLink />
             )}

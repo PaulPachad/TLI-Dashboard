@@ -146,14 +146,7 @@ export function InterviewCard({ interview, onAction, onViewDetails }: InterviewC
               </svg>
               Unpublished Interview
             </div>
-            {interview.liveEmailStatusImported && interview.liveEmailStatusImported.toUpperCase() !== "LIVE" ? (
-              <p className="text-xs text-slate-600 mt-1 font-medium">
-                Publish Status:{" "}
-                <span className="text-slate-800 font-semibold">
-                  {interview.liveEmailStatusImported}
-                </span>
-              </p>
-            ) : interview.estimatedPublishDate ? (
+            {interview.estimatedPublishDate ? (
               <p className="text-xs text-slate-600 mt-1 font-medium">
                 Estimated Publish Date:{" "}
                 <span className="text-slate-800 font-semibold">
@@ -162,6 +155,13 @@ export function InterviewCard({ interview, onAction, onViewDetails }: InterviewC
                     day: "2-digit",
                     year: "2-digit",
                   })}
+                </span>
+              </p>
+            ) : interview.liveEmailStatusImported && interview.liveEmailStatusImported.toUpperCase() !== "LIVE" ? (
+              <p className="text-xs text-slate-600 mt-1 font-medium">
+                Publish Status:{" "}
+                <span className="text-slate-800 font-semibold">
+                  {interview.liveEmailStatusImported}
                 </span>
               </p>
             ) : (
