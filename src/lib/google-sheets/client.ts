@@ -144,7 +144,15 @@ export async function readSheetDataWithLinks(
     return rowData.map(row => {
       return (row.values || []).map(cell => {
         const text = cell.formattedValue || "";
-        const url = cell.hyperlink || null;
+        let url = cell.hyperlink || null;
+
+        if (!url && cell.textFormatRuns && cell.textFormatRuns.length > 0) {
+          const runWithLink = cell.textFormatRuns.find(run => run.format?.link?.uri);
+          if (runWithLink?.format?.link?.uri) {
+            url = runWithLink.format.link.uri;
+          }
+        }
+
         return { text, url };
       });
     });
