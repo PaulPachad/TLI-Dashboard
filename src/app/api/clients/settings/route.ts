@@ -54,6 +54,7 @@ export async function PUT(request: NextRequest) {
       defaultHashtags,
       defaultSignoff,
       replyToEmail,
+      topicsSheetUrl,
     } = body;
     const normalizedName = String(name || "").trim();
     const normalizedEmail = String(email || "").trim().toLowerCase();
@@ -105,6 +106,7 @@ export async function PUT(request: NextRequest) {
         defaultHashtags: String(defaultHashtags || "").trim() || null,
         defaultSignoff: String(defaultSignoff || "").trim() || "Warmly",
         replyToEmail: normalizedReplyTo || null,
+        topicsSheetUrl: String(topicsSheetUrl || "").trim() || null,
       },
     });
 

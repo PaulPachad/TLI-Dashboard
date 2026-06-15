@@ -13,14 +13,22 @@ export function SyncButton() {
       setError(null);
       setSuccess(false);
 
-      const res = await fetch("/api/sync", {
-        method: "POST",
-      });
+      const [resInterviews, resTopics] = await Promise.all([
+        fetch("/api/sync", { method: "POST" }),
+        fetch("/api/sync-topics", { method: "POST" }),
+      ]);
 
-      const data = await res.json();
+      const dataInterviews = await resInterviews.json();
+      const dataTopics = await resTopics.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to sync sheet.");
+      if (!resInterviews.ok) {
+        throw new Error(dataInterviews.error || "Failed to sync interviews.");
+      }
+      
+      // We don't strictly throw if topics fail because they might not have set it up yet,
+      // but we can log it.
+      if (!resTopics.ok) {
+        console.warn("Topics sync skipped or failed:", dataTopics.error || dataTopics.message);
       }
 
       setSuccess(true);
