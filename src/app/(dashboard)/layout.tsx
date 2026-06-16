@@ -228,7 +228,7 @@ export default function DashboardLayout({
       )}
 
       {/* Desktop Sidebar */}
-      <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white shadow-sm lg:flex lg:flex-col">
+      <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white shadow-sm lg:flex lg:flex-col sticky top-0 h-screen">
         {SidebarContent}
       </aside>
 
