@@ -190,9 +190,6 @@ export default function DashboardLayout({
             <p className="truncate text-sm font-medium text-slate-900">
               {session?.user?.name ?? session?.user?.email ?? "User"}
             </p>
-            <p className="truncate text-xs text-slate-500">
-              {session?.user?.email}
-            </p>
           </div>
         </div>
       </div>
@@ -252,9 +249,6 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="hidden text-sm text-slate-500 sm:inline">
-              {session?.user?.email}
-            </span>
             <button
               id="sign-out-button"
               onClick={handleSignOut}
