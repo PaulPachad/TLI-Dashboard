@@ -160,6 +160,19 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
           {topic.interviewQuestions && (
             <Section title="Invite Participants" colorClass="text-indigo-600">
               <form onSubmit={handleSendInvitation} className="space-y-4">
+                <div className="sticky top-0 z-20 -mx-5 -mt-5 flex items-center justify-between gap-3 border-b border-slate-100 bg-white/95 px-5 py-4 backdrop-blur">
+                  <p className="text-xs font-medium text-slate-500">
+                    Review the invitation and send it when ready.
+                  </p>
+                  <button
+                    type="submit"
+                    disabled={sending || !recipients.trim()}
+                    className="shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {sending ? "Sending..." : "Send Invitation"}
+                  </button>
+                </div>
+
                 {notice && (
                   <div role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
                     {notice}
@@ -214,15 +227,7 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
                   />
                 </div>
 
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={sending || !recipients.trim()}
-                    className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
-                  >
-                    {sending ? "Sending..." : "Send Invitation"}
-                  </button>
-                </div>
+                <div className="h-2" />
               </form>
             </Section>
           )}
