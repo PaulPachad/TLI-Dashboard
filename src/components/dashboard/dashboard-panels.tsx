@@ -22,24 +22,29 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
     enter: {
       rotateY: -90,
       opacity: 0,
-      scale: 0.95,
+      scale: 0.98,
+      translateZ: 0,
     },
     center: {
       rotateY: 0,
       opacity: 1,
       scale: 1,
+      translateZ: 0,
       transition: {
-        duration: 0.6,
         type: "spring" as const,
-        bounce: 0.1,
+        stiffness: 120,
+        damping: 20,
+        mass: 0.8,
       },
     },
     exit: {
       rotateY: 90,
       opacity: 0,
-      scale: 0.95,
+      scale: 0.98,
+      translateZ: 0,
       transition: {
-        duration: 0.4,
+        duration: 0.3,
+        ease: "easeInOut" as const,
       },
     },
   };
@@ -57,8 +62,14 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
               initial="enter"
               animate="center"
               exit="exit"
-              style={{ transformOrigin: "center center", transformStyle: "preserve-3d", backfaceVisibility: "hidden", WebkitFontSmoothing: "antialiased" }}
-              className="absolute inset-0 w-full"
+              style={{
+                transformOrigin: "center center",
+                transformStyle: "preserve-3d",
+                backfaceVisibility: "hidden",
+                WebkitFontSmoothing: "antialiased",
+                willChange: "transform, opacity"
+              }}
+              className="w-full"
             >
               <InterviewGrid />
             </motion.div>
@@ -71,8 +82,14 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
               initial="enter"
               animate="center"
               exit="exit"
-              style={{ transformOrigin: "center center", transformStyle: "preserve-3d", backfaceVisibility: "hidden", WebkitFontSmoothing: "antialiased" }}
-              className="absolute inset-0 w-full"
+              style={{
+                transformOrigin: "center center",
+                transformStyle: "preserve-3d",
+                backfaceVisibility: "hidden",
+                WebkitFontSmoothing: "antialiased",
+                willChange: "transform, opacity"
+              }}
+              className="w-full"
             >
               <TopicsGrid topics={topics} />
             </motion.div>
@@ -85,8 +102,14 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
               initial="enter"
               animate="center"
               exit="exit"
-              style={{ transformOrigin: "center center", transformStyle: "preserve-3d", backfaceVisibility: "hidden", WebkitFontSmoothing: "antialiased" }}
-              className="absolute inset-0 w-full"
+              style={{
+                transformOrigin: "center center",
+                transformStyle: "preserve-3d",
+                backfaceVisibility: "hidden",
+                WebkitFontSmoothing: "antialiased",
+                willChange: "transform, opacity"
+              }}
+              className="w-full"
             >
               <EventsGrid events={events} />
             </motion.div>
