@@ -3,13 +3,14 @@ import { SyncButton } from "@/components/dashboard/sync-button";
 import { requireAuth } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
 import { UserRole } from "@/types/db";
+import type { Event, Topic } from "@prisma/client";
 
 export default async function DashboardHomePage() {
   const user = await requireAuth();
 
   // Fetch topics and events for this client
-  let topics: any[] = [];
-  let events: any[] = [];
+  let topics: Topic[] = [];
+  let events: Event[] = [];
   
   if (user.clientId) {
     topics = await db.topic.findMany({

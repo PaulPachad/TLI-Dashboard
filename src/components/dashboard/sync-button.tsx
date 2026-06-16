@@ -25,7 +25,7 @@ export function SyncButton() {
         throw new Error(dataInterviews.error || "Failed to sync interviews.");
       }
       
-      if (!resTopics.ok) {
+      if (!resTopics.ok && dataTopics.optional !== true) {
         throw new Error(dataTopics.error || "Failed to sync topics/events.");
       }
 

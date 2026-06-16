@@ -110,7 +110,7 @@ model Action {
   body              String?
   generatedText     String?
   linkedinPostUrl   String?
-  metadataJson      Json?
+  metadataJson      String?
   note              String?
   createdByUserId   String?
   createdByUser     User?   @relation("CreatedByUser", fields: [createdByUserId], references: [id])

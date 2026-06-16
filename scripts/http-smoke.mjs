@@ -51,7 +51,7 @@ const prepareResult = spawnSync(
     "/d",
     "/s",
     "/c",
-    "npx.cmd prisma db push --schema prisma/schema.sqlite.prisma && npx.cmd prisma db seed --schema prisma/schema.sqlite.prisma",
+    "node scripts/prepare-sqlite-demo.mjs && npx.cmd prisma db seed --schema prisma/schema.sqlite.prisma",
   ],
   {
     cwd: root,
@@ -126,6 +126,26 @@ try {
       articleUrl:
         "https://medium.com/authority-magazine/http-smoke-guest-123",
     },
+  });
+  await db.action.createMany({
+    data: [
+      {
+        clientId: demoClient.id,
+        interviewId: shareReadyInterview.id,
+        actionType: "LIVE_EMAIL_SENT",
+        status: "SUCCESS",
+        recipient: "smoke@example.com",
+        subject: "HTTP smoke live-link prerequisite",
+        body: "HTTP smoke live-link prerequisite",
+      },
+      {
+        clientId: demoClient.id,
+        interviewId: shareReadyInterview.id,
+        actionType: "LINKEDIN_POST_GENERATED",
+        status: "SUCCESS",
+        generatedText: "HTTP smoke LinkedIn prerequisite",
+      },
+    ],
   });
 
   await waitFor(async () => {

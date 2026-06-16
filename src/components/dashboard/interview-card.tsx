@@ -171,7 +171,7 @@ export function InterviewCard({ interview, onAction, onViewDetails }: InterviewC
               </p>
             )}
             <p className="text-[10px] text-slate-400 mt-2">
-              Once this interview is published, click "Sync Sheet" at the top of the page to check if it is live.
+              Once this interview is published, click &quot;Sync Sheet&quot; at the top of the page to check if it is live.
             </p>
           </div>
         </div>

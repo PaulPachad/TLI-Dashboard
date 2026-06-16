@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
 import { UserRole } from "@/types/db";
 import {
+  type ParsedSheetUrl,
+  type SheetTab,
   parseGoogleSheetUrl,
   readSheetData,
   resolveTabTitle,
@@ -40,7 +42,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (clientIdsToSync.length === 0) {
-      return NextResponse.json({ message: "No clients with topicsSheetUrl found." });
+      return NextResponse.json({
+        success: true,
+        optional: true,
+        message: "No Topics & Events sheet is configured yet.",
+        details: { topicsSynced: 0, eventsSynced: 0 },
+      });
     }
 
     const errors: string[] = [];
@@ -50,14 +57,21 @@ export async function POST(request: NextRequest) {
     for (const cid of clientIdsToSync) {
       const client = await db.client.findUnique({ where: { id: cid } });
       if (!client?.topicsSheetUrl) {
-        errors.push(`Client ${cid} has no topics sheet URL configured.`);
+        if (clientIdsToSync.length === 1) {
+          return NextResponse.json({
+            success: true,
+            optional: true,
+            message: "No Topics & Events sheet is configured yet.",
+            details: { topicsSynced: 0, eventsSynced: 0 },
+          });
+        }
         continue;
       }
 
-      let parsedUrl;
+      let parsedUrl: ParsedSheetUrl;
       try {
         parsedUrl = parseGoogleSheetUrl(client.topicsSheetUrl);
-      } catch (err) {
+      } catch {
         errors.push(`Invalid Topics URL format for client ${cid}.`);
         continue;
       }
@@ -148,12 +162,12 @@ export async function POST(request: NextRequest) {
       // SYNC EVENTS
       try {
         const { getSheetTabs } = await import("@/lib/google-sheets");
-        let tabs: any[] = [];
+        let tabs: SheetTab[] = [];
         try {
           tabs = await getSheetTabs(parsedUrl.spreadsheetId);
-        } catch (e) {
+        } catch (error) {
           // If public endpoint without service account, tabs might be empty
-          console.warn("Could not fetch tabs", e);
+          console.warn("Could not fetch tabs", error);
         }
         
         let eventsGid = "450141736"; // Fallback
@@ -225,7 +239,7 @@ export async function POST(request: NextRequest) {
       details: { topicsSynced, eventsSynced }
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Sync topics error:", error);
     return NextResponse.json(
       { error: "An unexpected error occurred during topic sync." },

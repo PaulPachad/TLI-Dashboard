@@ -17,33 +17,27 @@ interface DashboardPanelsProps {
 export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
   const [activePanel, setActivePanel] = useState<PanelType>("interviews");
 
-  // Animation variants for the 3D rotating "secret door" effect
   const panelVariants = {
     enter: {
-      rotateY: -90,
       opacity: 0,
-      scale: 0.98,
-      translateZ: 0,
+      y: 4,
+      scale: 0.995,
     },
     center: {
-      rotateY: 0,
       opacity: 1,
+      y: 0,
       scale: 1,
-      translateZ: 0,
       transition: {
-        type: "spring" as const,
-        stiffness: 120,
-        damping: 20,
-        mass: 0.8,
+        duration: 0.18,
+        ease: "easeOut" as const,
       },
     },
     exit: {
-      rotateY: 90,
       opacity: 0,
-      scale: 0.98,
-      translateZ: 0,
+      y: -4,
+      scale: 0.995,
       transition: {
-        duration: 0.3,
+        duration: 0.14,
         ease: "easeInOut" as const,
       },
     },
@@ -53,7 +47,7 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
     <div className="flex flex-col w-full">
       <PanelToggle activePanel={activePanel} onChange={setActivePanel} />
 
-      <div style={{ perspective: "2000px" }} className="w-full relative min-h-[600px]">
+      <div className="w-full relative min-h-[600px]">
         <AnimatePresence mode="wait">
           {activePanel === "interviews" && (
             <motion.div
@@ -63,9 +57,6 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
               animate="center"
               exit="exit"
               style={{
-                transformOrigin: "center center",
-                transformStyle: "preserve-3d",
-                backfaceVisibility: "hidden",
                 WebkitFontSmoothing: "antialiased",
                 willChange: "transform, opacity"
               }}
@@ -83,9 +74,6 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
               animate="center"
               exit="exit"
               style={{
-                transformOrigin: "center center",
-                transformStyle: "preserve-3d",
-                backfaceVisibility: "hidden",
                 WebkitFontSmoothing: "antialiased",
                 willChange: "transform, opacity"
               }}
@@ -103,9 +91,6 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
               animate="center"
               exit="exit"
               style={{
-                transformOrigin: "center center",
-                transformStyle: "preserve-3d",
-                backfaceVisibility: "hidden",
                 WebkitFontSmoothing: "antialiased",
                 willChange: "transform, opacity"
               }}

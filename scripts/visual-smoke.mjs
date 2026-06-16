@@ -79,25 +79,105 @@ const report = {
   consoleErrors: [],
   failedResponses: [],
 };
+const appEnv = {
+  ...process.env,
+  DATABASE_URL: "file:./dev.db",
+  NEXTAUTH_SECRET:
+    "local-demo-secret-key-for-tli-leverage-dashboard-mvp-seeding-123456",
+  NEXTAUTH_URL: appUrl,
+  ADMIN_EMAIL: "admin@example.com",
+  ADMIN_PASSWORD: "admin123",
+  DEMO_MODE: "true",
+  NEXT_PUBLIC_DEMO_MODE: "true",
+};
 
 mkdirSync(outputDir, { recursive: true });
 
+const prepareResult = spawnSync(
+  process.env.ComSpec || "C:\\Windows\\System32\\cmd.exe",
+  [
+    "/d",
+    "/s",
+    "/c",
+    "node scripts/prepare-sqlite-demo.mjs && npx.cmd prisma generate --schema prisma/schema.sqlite.prisma && npx.cmd prisma db seed --schema prisma/schema.sqlite.prisma",
+  ],
+  {
+    cwd: root,
+    env: appEnv,
+    windowsHide: true,
+    stdio: ["ignore", "pipe", "pipe"],
+  }
+);
+if (prepareResult.status !== 0) {
+  process.stderr.write(prepareResult.stdout);
+  process.stderr.write(prepareResult.stderr);
+  console.error("Failed to prepare visual smoke database");
+  process.exit(1);
+}
+
+const { PrismaClient } = await import("@prisma/client");
+const fixtureDb = new PrismaClient();
+try {
+  const demoClient = await fixtureDb.client.findFirstOrThrow({
+    where: { email: "demo.client@example.com" },
+  });
+  const source = await fixtureDb.sheetSource.create({
+    data: {
+      clientId: demoClient.id,
+      sheetUrl:
+        "https://docs.google.com/spreadsheets/d/visual-smoke-sheet/edit#gid=0",
+      spreadsheetId: "visual-smoke-sheet",
+      gid: "0",
+      sheetTitle: "Visual Smoke Fixtures",
+      lastSyncedAt: new Date(),
+    },
+  });
+  await fixtureDb.interview.create({
+    data: {
+      clientId: demoClient.id,
+      sheetSourceId: source.id,
+      sourceRowNumber: 2,
+      sourceRowHash: "visual-smoke-interview",
+      intervieweeName: "Visual Smoke Guest",
+      intervieweeCompany: "Authority Magazine Test",
+      intervieweeEmail: "guest@example.com",
+      publicistEmail: "press@example.com",
+      topic: "Making dashboard QA smoother",
+      articleUrl:
+        "https://medium.com/authority-magazine/visual-smoke-guest-123",
+      liveEmailStatusImported: "LIVE",
+    },
+  });
+  await fixtureDb.topic.create({
+    data: {
+      clientId: demoClient.id,
+      title: "Future of Thought Leadership",
+      sourceRequests: "Sample pitch form",
+      responses: "Sample response notes",
+      interviewQuestions:
+        "https://example.com/upload\n\n1. What inspired this work?\n2. What are your five key lessons?",
+    },
+  });
+  await fixtureDb.event.create({
+    data: {
+      clientId: demoClient.id,
+      eventName: "Visual Smoke Summit",
+      date: "June 24",
+      location: "New York",
+      status: "Press applications open",
+      contactInfo: "press@example.com",
+    },
+  });
+} finally {
+  await fixtureDb.$disconnect();
+}
+
 const app = spawn(
   process.env.ComSpec || "C:\\Windows\\System32\\cmd.exe",
-  ["/d", "/s", "/c", "npm.cmd run dev:demo"],
+  ["/d", "/s", "/c", "npx.cmd next dev"],
   {
   cwd: root,
-  env: {
-    ...process.env,
-    DATABASE_URL: "file:./dev.db",
-    NEXTAUTH_SECRET:
-      "local-demo-secret-key-for-tli-leverage-dashboard-mvp-seeding-123456",
-    NEXTAUTH_URL: appUrl,
-    ADMIN_EMAIL: "admin@example.com",
-    ADMIN_PASSWORD: "admin123",
-    DEMO_MODE: "true",
-    NEXT_PUBLIC_DEMO_MODE: "true",
-  },
+  env: appEnv,
   windowsHide: true,
   stdio: ["ignore", "pipe", "pipe"],
   }

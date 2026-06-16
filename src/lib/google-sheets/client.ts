@@ -116,6 +116,17 @@ export async function readSheetData(
 
 export type CellDataWithLink = { text: string; url: string | null };
 
+interface GoogleSheetsCellWithChips extends sheets_v4.Schema$CellData {
+  chipRuns?: Array<{
+    chip?: {
+      richLinkProperties?: {
+        uri?: string;
+        title?: string;
+      };
+    };
+  }>;
+}
+
 /**
  * Read all data from a specific tab, extracting hyperlinks if present.
  * Uses spreadsheets.get with includeGridData instead of values.get.
@@ -155,9 +166,9 @@ export async function readSheetDataWithLinks(
         }
 
         // Extract from Google Sheets API chipRuns (Smart Chips)
-        const anyCell = cell as any;
-        if (anyCell.chipRuns && anyCell.chipRuns.length > 0) {
-          const firstChip = anyCell.chipRuns[0]?.chip;
+        const cellWithChips = cell as GoogleSheetsCellWithChips;
+        if (cellWithChips.chipRuns && cellWithChips.chipRuns.length > 0) {
+          const firstChip = cellWithChips.chipRuns[0]?.chip;
           if (firstChip?.richLinkProperties?.uri) {
             url = firstChip.richLinkProperties.uri;
             // The formattedValue might just be '@' for a smart chip.

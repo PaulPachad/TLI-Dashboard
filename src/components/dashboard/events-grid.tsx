@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Event } from "@prisma/client";
+import { buildEventOutreachEmailBody } from "@/lib/email/copy";
 
 function parseEventDate(dateStr: string | null): Date {
   if (!dateStr) return new Date(864000000000000); // Sort undated events at the very end
@@ -41,6 +42,8 @@ function parseEventDate(dateStr: string | null): Date {
 export function EventsGrid({ events }: { events: Event[] }) {
   const [viewMode, setViewMode] = useState<"grid" | "city">("grid");
   const [sortBy, setSortBy] = useState<"date" | "name">("date");
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   if (events.length === 0) {
     return (
@@ -153,12 +156,36 @@ export function EventsGrid({ events }: { events: Event[] }) {
             </div>
           </div>
         )}
+        <button
+          type="button"
+          onClick={() => setSelectedEvent(event)}
+          className="mt-2 inline-flex min-h-10 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 transition-colors hover:border-indigo-300 hover:bg-indigo-100"
+        >
+          Email Contact
+        </button>
       </div>
     </div>
   );
 
   return (
     <div className="space-y-6">
+      {notice && (
+        <div
+          role="status"
+          className="flex items-start justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+        >
+          <span>{notice}</span>
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            className="font-semibold text-emerald-700 hover:text-emerald-900"
+            aria-label="Dismiss notification"
+          >
+            Close
+          </button>
+        </div>
+      )}
+
       {/* Controls panel */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
         <div className="flex items-center gap-2">
@@ -257,6 +284,17 @@ export function EventsGrid({ events }: { events: Event[] }) {
           })}
         </div>
       )}
+
+      {selectedEvent && (
+        <EventOutreachModal
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+          onSuccess={(message) => {
+            setNotice(message);
+            setSelectedEvent(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -288,4 +326,153 @@ function renderContactLinks(contactStr: string) {
   });
 
   return <div className="flex flex-wrap items-center">{elements}</div>;
+}
+
+function EventOutreachModal({
+  event,
+  onClose,
+  onSuccess,
+}: {
+  event: Event;
+  onClose: () => void;
+  onSuccess: (message: string) => void;
+}) {
+  const defaultRecipients = useMemo(
+    () => extractEmails(event.contactInfo || "").join(", "),
+    [event.contactInfo]
+  );
+  const [recipients, setRecipients] = useState(defaultRecipients);
+  const [subject, setSubject] = useState(`Press opportunities for ${event.eventName}`);
+  const [body, setBody] = useState(buildEventOutreachEmailBody(event));
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(formEvent: React.FormEvent) {
+    formEvent.preventDefault();
+    try {
+      setSending(true);
+      setError(null);
+
+      const response = await fetch(`/api/outreach/events/${event.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipients, subject, body }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Could not send event outreach.");
+      }
+      onSuccess(data.note || "Event outreach sent.");
+    } catch (sendError) {
+      setError(
+        sendError instanceof Error
+          ? sendError.message
+          : "Could not send event outreach."
+      );
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto px-4 py-6">
+      <div className="fixed inset-0 bg-slate-950/35 backdrop-blur-[2px]" onClick={onClose} />
+      <form
+        onSubmit={handleSubmit}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Event outreach email"
+        className="relative z-50 flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl animate-slide-up"
+      >
+        <div className="border-b border-slate-100 p-5 pr-14">
+          <h3 className="text-lg font-semibold text-slate-900">Email Event Contact</h3>
+          <p className="mt-1 text-sm text-slate-500">
+            Send an Authority Magazine press-opportunity request for {event.eventName}.
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            aria-label="Close event outreach"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="space-y-4 p-5">
+          {error && (
+            <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+              {error}
+            </div>
+          )}
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-500">
+              To
+            </label>
+            <textarea
+              required
+              rows={2}
+              value={recipients}
+              onChange={(eventChange) => setRecipients(eventChange.target.value)}
+              placeholder="contact@example.com, press@example.com"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-500">
+              Subject
+            </label>
+            <input
+              required
+              value={subject}
+              onChange={(eventChange) => setSubject(eventChange.target.value)}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-500">
+              Body
+            </label>
+            <textarea
+              required
+              rows={12}
+              value={body}
+              onChange={(eventChange) => setBody(eventChange.target.value)}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs focus:border-indigo-500 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 px-5 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-white"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={sending || !recipients.trim()}
+            className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {sending ? "Sending..." : "Send Email"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function extractEmails(value: string): string[] {
+  return [
+    ...new Set(
+      value
+        .split(/[\s,;]+/)
+        .map((item) => item.replace(/[<>()]/g, "").trim().toLowerCase())
+        .filter((item) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item))
+    ),
+  ];
 }

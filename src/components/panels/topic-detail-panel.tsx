@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Topic } from "@prisma/client";
+import { buildTopicInvitationEmailBody } from "@/lib/email/copy";
 
 interface TopicDetailPanelProps {
   topic: Topic;
@@ -11,6 +12,14 @@ interface TopicDetailPanelProps {
 export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [recipients, setRecipients] = useState("");
+  const [subject, setSubject] = useState(
+    `Invitation to participate in Authority Magazine: ${topic.title}`
+  );
+  const [body, setBody] = useState(buildTopicInvitationEmailBody(topic));
+  const [sending, setSending] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
@@ -47,6 +56,35 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
       previouslyFocused?.focus();
     };
   }, [onClose]);
+
+  async function handleSendInvitation(event: React.FormEvent) {
+    event.preventDefault();
+    try {
+      setSending(true);
+      setError(null);
+      setNotice(null);
+
+      const response = await fetch(`/api/outreach/topics/${topic.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipients, subject, body }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Could not send topic invitation.");
+      }
+
+      setNotice(data.note || "Topic invitation sent.");
+    } catch (sendError) {
+      setError(
+        sendError instanceof Error
+          ? sendError.message
+          : "Could not send topic invitation."
+      );
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
     <>
@@ -106,6 +144,75 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
               <div className="text-slate-700 whitespace-pre-wrap leading-relaxed text-sm">
                 {renderTextWithLinks(topic.interviewQuestions)}
               </div>
+            </Section>
+          )}
+
+          {topic.interviewQuestions && (
+            <Section title="Invite Participants" colorClass="text-indigo-600">
+              <form onSubmit={handleSendInvitation} className="space-y-4">
+                {notice && (
+                  <div role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                    {notice}
+                  </div>
+                )}
+                {error && (
+                  <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                    {error}
+                  </div>
+                )}
+
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-500">
+                    Recipients
+                  </label>
+                  <textarea
+                    required
+                    rows={2}
+                    value={recipients}
+                    onChange={(event) => setRecipients(event.target.value)}
+                    placeholder="one@example.com, two@example.com"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                  />
+                  <p className="mt-1 text-xs text-slate-400">
+                    Separate multiple email addresses with commas, spaces, or semicolons.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-500">
+                    Subject
+                  </label>
+                  <input
+                    required
+                    value={subject}
+                    onChange={(event) => setSubject(event.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-500">
+                    Message
+                  </label>
+                  <textarea
+                    required
+                    rows={14}
+                    value={body}
+                    onChange={(event) => setBody(event.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={sending || !recipients.trim()}
+                    className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {sending ? "Sending..." : "Send Invitation"}
+                  </button>
+                </div>
+              </form>
             </Section>
           )}
 

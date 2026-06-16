@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "artifacts/**",
+    "scratch/**",
+    "scripts/*.cjs",
+    "scripts/download-csv.cjs",
+    "scripts/seed-postgres.js",
+    "scripts/test-sync.ts",
   ]),
 ]);
 
