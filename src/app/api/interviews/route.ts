@@ -10,17 +10,51 @@ import type { Prisma } from "@prisma/client";
 import { getInterviewProgress } from "@/lib/actions/progress";
 import { assessInterviewProminence } from "@/lib/prominence/signals";
 
-const interviewInclude = {
+const baseInterviewSelect = {
+  id: true,
+  clientId: true,
+  sheetSourceId: true,
+  sourceRowNumber: true,
+  sourceRowHash: true,
+  intervieweeName: true,
+  intervieweeCompany: true,
+  intervieweeEmail: true,
+  intervieweeTitle: true,
+  publicistName: true,
+  publicistEmail: true,
+  topic: true,
+  articleUrl: true,
+  buzzfeedUrl: true,
+  interviewDocUrl: true,
+  image1Url: true,
+  image2Url: true,
+  extraImagesUrl: true,
+  videoUrl: true,
+  linkedinUrl: true,
+  twitterUrl: true,
+  liveEmailStatusImported: true,
+  pressFollowupStatusImported: true,
+  estimatedPublishDate: true,
+  createdAt: true,
+  updatedAt: true,
   actions: {
     orderBy: { createdAt: "desc" as const },
   },
   client: {
     select: { name: true, company: true },
   },
-} satisfies Prisma.InterviewInclude;
+} satisfies Prisma.InterviewSelect;
+
+const interviewSelect = {
+  ...baseInterviewSelect,
+  companyEmployeeCount: true,
+  companyRevenueUsd: true,
+  largestSocialFollowerCount: true,
+  prominenceNotes: true,
+} satisfies Prisma.InterviewSelect;
 
 type InterviewWithActions = Prisma.InterviewGetPayload<{
-  include: typeof interviewInclude;
+  select: typeof interviewSelect;
 }>;
 
 export async function GET(request: NextRequest) {
@@ -41,8 +75,7 @@ export async function GET(request: NextRequest) {
       targetClientId = user.clientId;
     } else if (user.role === UserRole.ADMIN) {
       // Admin without specific client — return all
-      const interviews = await db.interview.findMany({
-        include: interviewInclude,
+      const interviews = await findInterviews({
         orderBy: { createdAt: "desc" },
       });
       return NextResponse.json({ interviews: interviews.map(enrichInterview) });
@@ -72,9 +105,8 @@ export async function GET(request: NextRequest) {
       where.publicistEmail = null;
     }
 
-    const interviews = await db.interview.findMany({
+    const interviews = await findInterviews({
       where,
-      include: interviewInclude,
       orderBy: { createdAt: "desc" },
     });
 
@@ -110,6 +142,45 @@ export async function GET(request: NextRequest) {
 }
 
 // --- Interview enrichment: compute status and next action ---
+
+async function findInterviews(
+  args: Pick<Prisma.InterviewFindManyArgs, "where" | "orderBy">
+): Promise<InterviewWithActions[]> {
+  try {
+    return await db.interview.findMany({
+      ...args,
+      select: interviewSelect,
+    });
+  } catch (error) {
+    if (!isMissingProminenceColumnError(error)) {
+      throw error;
+    }
+
+    const interviews = await db.interview.findMany({
+      ...args,
+      select: baseInterviewSelect,
+    });
+
+    return interviews.map((interview) => ({
+      ...interview,
+      companyEmployeeCount: null,
+      companyRevenueUsd: null,
+      largestSocialFollowerCount: null,
+      prominenceNotes: null,
+    }));
+  }
+}
+
+function isMissingProminenceColumnError(error: unknown): boolean {
+  const message =
+    error instanceof Error ? error.message : JSON.stringify(error);
+  return (
+    /companyEmployeeCount|companyRevenueUsd|largestSocialFollowerCount|prominenceNotes/.test(
+      message
+    ) &&
+    /does not exist|no such column|unknown column|invalid/i.test(message)
+  );
+}
 
 function enrichInterview(
   interview: InterviewWithActions
