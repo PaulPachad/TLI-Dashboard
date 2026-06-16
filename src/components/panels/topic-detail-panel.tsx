@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Topic } from "@prisma/client";
 import { buildTopicInvitationEmailBody } from "@/lib/email/copy";
 
@@ -11,7 +11,9 @@ interface TopicDetailPanelProps {
 
 export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
   const [recipients, setRecipients] = useState("");
   const [subject, setSubject] = useState(
     `Invitation to participate in Authority Magazine: ${topic.title}`
@@ -20,6 +22,14 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useLayoutEffect(() => {
+    const messageElement = messageRef.current;
+    if (!messageElement) return;
+
+    messageElement.style.height = "auto";
+    messageElement.style.height = `${messageElement.scrollHeight}px`;
+  }, [body]);
 
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
@@ -100,7 +110,7 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
         role="dialog"
         aria-modal="true"
         aria-label="Topic details"
-        className="fixed right-0 top-0 h-full w-full max-w-lg bg-slate-50 shadow-2xl z-50 overflow-y-auto
+        className="fixed right-0 top-0 z-50 flex h-dvh w-full max-w-lg flex-col overflow-hidden bg-slate-50 shadow-2xl
                       animate-slide-in-right"
       >
         {/* Header */}
@@ -122,7 +132,7 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div ref={contentRef} className="flex-1 space-y-6 overflow-y-auto p-6">
           {topic.sourceRequests && (
             <Section title="Source Requests (Pitch Form)" colorClass="text-indigo-600">
               <div className="text-slate-700 whitespace-pre-wrap leading-relaxed text-sm">
@@ -195,11 +205,12 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
                     Message
                   </label>
                   <textarea
+                    ref={messageRef}
                     required
-                    rows={14}
+                    rows={1}
                     value={body}
                     onChange={(event) => setBody(event.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs focus:border-indigo-500 focus:outline-none"
+                    className="w-full resize-none overflow-hidden rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs leading-relaxed focus:border-indigo-500 focus:outline-none"
                   />
                 </div>
 
