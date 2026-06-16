@@ -48,7 +48,7 @@ export function TopicsGrid({ topics }: { topics: Topic[] }) {
                   )}
                   {hasQuestions && (
                     <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/10">
-                      Template
+                      Interview Template
                     </span>
                   )}
                   {!hasPitch && !hasResponses && !hasQuestions && (
