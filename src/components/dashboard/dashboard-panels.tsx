@@ -38,39 +38,30 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
     : {
         enter: (turnDirection: number) => ({
           opacity: 0,
-          rotateY: turnDirection * 22,
-          x: turnDirection * 18,
-          scale: 0.985,
+          rotateY: turnDirection * 72,
+          scale: 0.98,
         }),
         center: {
           opacity: 1,
           rotateY: 0,
-          x: 0,
           scale: 1,
           transition: {
             rotateY: {
               type: "spring" as const,
-              stiffness: 150,
-              damping: 24,
-              mass: 0.85,
+              stiffness: 115,
+              damping: 22,
+              mass: 0.9,
             },
-            x: {
-              type: "spring" as const,
-              stiffness: 170,
-              damping: 26,
-              mass: 0.8,
-            },
-            scale: { duration: 0.24, ease: "easeOut" as const },
-            opacity: { duration: 0.16, ease: "easeOut" as const },
+            scale: { duration: 0.28, ease: "easeOut" as const },
+            opacity: { duration: 0.18, ease: "easeOut" as const },
           },
         },
         exit: (turnDirection: number) => ({
           opacity: 0,
-          rotateY: turnDirection * -18,
-          x: turnDirection * -14,
-          scale: 0.99,
+          rotateY: turnDirection * -72,
+          scale: 0.98,
           transition: {
-            duration: 0.2,
+            duration: 0.24,
             ease: [0.4, 0, 0.2, 1] as const,
           },
         }),
@@ -86,7 +77,7 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
         animate="center"
         exit="exit"
         style={{
-          transformOrigin: direction > 0 ? "left center" : "right center",
+          transformOrigin: "center center",
           transformStyle: "preserve-3d",
           backfaceVisibility: "hidden",
           WebkitFontSmoothing: "antialiased",
