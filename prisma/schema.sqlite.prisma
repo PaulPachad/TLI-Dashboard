@@ -32,12 +32,17 @@ model Client {
   defaultHashtags String? @default("#AuthorityMagazine #ThoughtLeadership #Leadership #Interview")
   defaultSignoff  String? @default("Warmly")
   replyToEmail    String?
-  users           User[]
-  sheetSources    SheetSource[]
-  interviews      Interview[]
-  actions         Action[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  topicsSheetUrl  String?
+
+  users        User[]
+  sheetSources SheetSource[]
+  interviews   Interview[]
+  actions      Action[]
+  topics       Topic[]
+  events       Event[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model SheetSource {
@@ -117,4 +122,39 @@ model Action {
   @@index([interviewId])
   @@index([clientId])
   @@index([actionType])
+}
+
+model Topic {
+  id                 String  @id @default(cuid())
+  clientId           String
+  
+  title              String
+  sourceRequests     String?
+  responses          String?
+  interviewQuestions String?
+
+  client             Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([clientId])
+}
+
+model Event {
+  id                 String  @id @default(cuid())
+  clientId           String
+  
+  eventName          String
+  date               String?
+  location           String?
+  status             String?
+  contactInfo        String?
+
+  client             Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([clientId])
 }

@@ -183,6 +183,7 @@ model Event {
   date               String?
   location           String?
   status             String?
+  contactInfo        String?
 
   client             Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 

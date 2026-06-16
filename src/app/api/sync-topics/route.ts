@@ -73,7 +73,8 @@ export async function POST(request: NextRequest) {
           let titleIdx = findColIndex(headers, ["topic", "title", "name"]);
           let sourceReqIdx = findColIndex(headers, ["source request"]);
           let responseIdx = findColIndex(headers, ["response"]);
-          let questionsIdx = findColIndex(headers, ["interview question", "suggested question", "interview template"]);
+          let suggestedQuestionsIdx = findColIndex(headers, ["suggested question", "interview question"]);
+          let interviewTemplateIdx = findColIndex(headers, ["interview template", "template"]);
           
           let startIndex = 1;
           
@@ -81,18 +82,24 @@ export async function POST(request: NextRequest) {
             titleIdx = 0;
             sourceReqIdx = 1;
             responseIdx = 2;
-            questionsIdx = 3;
+            suggestedQuestionsIdx = 3;
+            interviewTemplateIdx = 4;
             startIndex = 0;
           }
 
           await db.topic.deleteMany({ where: { clientId: cid } });
           
           const formatCell = (cell: { text: string; url: string | null } | undefined) => {
-            if (!cell || !cell.text) return null;
-            if (cell.url && cell.url !== cell.text) {
-              return `[${cell.text}](${cell.url})`;
+            if (!cell) return null;
+            const text = cell.text ? cell.text.trim() : "";
+            if (!text) return null;
+            if (cell.url) {
+              const url = cell.url.trim();
+              if (url && url !== text) {
+                return `[${text}](${url})`;
+              }
             }
-            return cell.text;
+            return text;
           };
 
           for (let i = startIndex; i < topicsData.length; i++) {
@@ -101,13 +108,33 @@ export async function POST(request: NextRequest) {
             const title = titleCell?.text ? String(titleCell.text).trim() : "";
             if (!title) continue;
             
+            const qText = suggestedQuestionsIdx !== -1 ? formatCell(row[suggestedQuestionsIdx]) : null;
+            const tText = interviewTemplateIdx !== -1 ? formatCell(row[interviewTemplateIdx]) : null;
+            
+            let interviewQuestionsValue: string | null = null;
+            if (qText && tText) {
+              const qt = qText.trim();
+              const tt = tText.trim();
+              if (qt && tt) {
+                if (qt === tt) {
+                  interviewQuestionsValue = qt;
+                } else {
+                  interviewQuestionsValue = `${qt}\n\n${tt}`;
+                }
+              } else {
+                interviewQuestionsValue = qt || tt || null;
+              }
+            } else {
+              interviewQuestionsValue = qText || tText || null;
+            }
+
             await db.topic.create({
               data: {
                 clientId: cid,
                 title,
                 sourceRequests: sourceReqIdx !== -1 ? formatCell(row[sourceReqIdx]) : null,
                 responses: responseIdx !== -1 ? formatCell(row[responseIdx]) : null,
-                interviewQuestions: questionsIdx !== -1 ? formatCell(row[questionsIdx]) : null,
+                interviewQuestions: interviewQuestionsValue,
               }
             });
             topicsSynced++;
@@ -148,6 +175,7 @@ export async function POST(request: NextRequest) {
           let dateIdx = findColIndex(headers, ["date", "time"]);
           let locationIdx = findColIndex(headers, ["location", "place", "city"]);
           let statusIdx = findColIndex(headers, ["status", "attendance", "description"]);
+          let contactIdx = findColIndex(headers, ["contact email", "contact info", "contact"]);
 
           let startIndex = 1;
 
@@ -156,6 +184,7 @@ export async function POST(request: NextRequest) {
             dateIdx = 1;
             locationIdx = 2;
             statusIdx = 3;
+            contactIdx = 4;
             startIndex = 0;
           }
 
@@ -170,9 +199,10 @@ export async function POST(request: NextRequest) {
               data: {
                 clientId: cid,
                 eventName,
-                date: dateIdx !== -1 && row[dateIdx] ? String(row[dateIdx]) : null,
-                location: locationIdx !== -1 && row[locationIdx] ? String(row[locationIdx]) : null,
-                status: statusIdx !== -1 && row[statusIdx] ? String(row[statusIdx]) : null,
+                date: dateIdx !== -1 && row[dateIdx] ? String(row[dateIdx]).trim() : null,
+                location: locationIdx !== -1 && row[locationIdx] ? String(row[locationIdx]).trim() : null,
+                status: statusIdx !== -1 && row[statusIdx] ? String(row[statusIdx]).trim() : null,
+                contactInfo: contactIdx !== -1 && row[contactIdx] ? String(row[contactIdx]).trim() : null,
               }
             });
             eventsSynced++;
