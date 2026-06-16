@@ -327,7 +327,7 @@ export async function POST(
             subject: emailSubject,
             body: emailBody,
             note,
-            metadataJson: { simulated, providerMessageId },
+            metadataJson: JSON.stringify({ simulated, providerMessageId }),
             createdByUserId: user.id,
           },
         });
@@ -595,7 +595,7 @@ export async function POST(
             subject: emailSubject,
             body: emailBody,
             note,
-            metadataJson: { simulated, providerMessageId },
+            metadataJson: JSON.stringify({ simulated, providerMessageId }),
             createdByUserId: user.id,
           },
         });

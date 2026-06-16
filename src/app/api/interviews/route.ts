@@ -8,6 +8,7 @@ import { requireApiAuth } from "@/lib/auth-helpers";
 import { UserRole } from "@/types/db";
 import type { Prisma } from "@prisma/client";
 import { getInterviewProgress } from "@/lib/actions/progress";
+import { assessInterviewProminence } from "@/lib/prominence/signals";
 
 const interviewInclude = {
   actions: {
@@ -112,9 +113,13 @@ export async function GET(request: NextRequest) {
 
 function enrichInterview(
   interview: InterviewWithActions
-): InterviewWithActions & ReturnType<typeof getInterviewProgress> {
+): InterviewWithActions &
+  ReturnType<typeof getInterviewProgress> & {
+    prominence: ReturnType<typeof assessInterviewProminence>;
+  } {
   return {
     ...interview,
     ...getInterviewProgress(interview),
+    prominence: assessInterviewProminence(interview),
   };
 }

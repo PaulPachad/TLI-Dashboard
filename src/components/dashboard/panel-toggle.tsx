@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 
-export type PanelType = "interviews" | "topics" | "events";
+export type PanelType = "interviews" | "topics" | "events" | "tutorial";
 
 interface PanelToggleProps {
   activePanel: PanelType;
@@ -14,11 +14,12 @@ export function PanelToggle({ activePanel, onChange }: PanelToggleProps) {
     { id: "interviews", label: "Interviews" },
     { id: "topics", label: "Topics" },
     { id: "events", label: "Events" },
+    { id: "tutorial", label: "Tutorial" },
   ];
 
   return (
     <div className="flex justify-center mb-8">
-      <div className="relative flex space-x-1 rounded-full bg-slate-100 p-1 shadow-inner border border-slate-200">
+      <div className="relative flex max-w-full space-x-1 overflow-x-auto rounded-full bg-slate-100 p-1 shadow-inner border border-slate-200">
         {tabs.map((tab) => (
           <button
             key={tab.id}

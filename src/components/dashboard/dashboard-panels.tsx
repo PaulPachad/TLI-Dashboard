@@ -7,13 +7,14 @@ import { TopicsGrid } from "./topics-grid";
 import { EventsGrid } from "./events-grid";
 import { Topic, Event } from "@prisma/client";
 import { InterviewGrid } from "./interview-grid";
+import { TutorialPanel } from "./tutorial-panel";
 
 interface DashboardPanelsProps {
   topics: Topic[];
   events: Event[];
 }
 
-const PANEL_ORDER: PanelType[] = ["interviews", "topics", "events"];
+const PANEL_ORDER: PanelType[] = ["interviews", "topics", "events", "tutorial"];
 
 export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
   const [activePanel, setActivePanel] = useState<PanelType>("interviews");
@@ -96,6 +97,9 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
 
           {activePanel === "events" &&
             renderPanel("events", <EventsGrid events={events} />)}
+
+          {activePanel === "tutorial" &&
+            renderPanel("tutorial", <TutorialPanel />)}
         </AnimatePresence>
       </div>
     </div>

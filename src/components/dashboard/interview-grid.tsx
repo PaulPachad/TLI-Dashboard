@@ -27,6 +27,13 @@ const STATUS_FILTERS = [
   { value: "leveraged", label: "Leveraged" },
 ];
 
+const PROMINENCE_PRIORITY: Record<string, number> = {
+  elite: 3,
+  high_value: 2,
+  notable: 1,
+  standard: 0,
+};
+
 export function InterviewGrid({ clientId }: InterviewGridProps) {
   const [interviews, setInterviews] = useState<InterviewView[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +44,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
   const [activeAction, setActiveAction] =
     useState<InterviewActionType | null>(null);
   const [activeInterviewId, setActiveInterviewId] = useState<string | null>(null);
+  const [researchingId, setResearchingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const fetchInterviews = useCallback(async () => {
@@ -81,6 +89,33 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
     ? interviews.find((interview) => interview.id === selectedId)
     : null;
 
+  const researchProminence = async (interviewId: string) => {
+    try {
+      setResearchingId(interviewId);
+      setNotice(null);
+      setError(null);
+
+      const res = await fetch(`/api/interviews/${interviewId}/prominence`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "VIP research failed.");
+      }
+
+      setNotice(data.note || "VIP research complete.");
+      await fetchInterviews();
+      if (selectedId === interviewId) {
+        setSelectedId(null);
+        setTimeout(() => setSelectedId(interviewId), 50);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "VIP research failed.");
+    } finally {
+      setResearchingId(null);
+    }
+  };
+
   // Helper to determine if an interview is unpublished
   const isUnpublished = (interview: InterviewView) => {
     return interview.articleUrl.includes("/unpublished/") || 
@@ -94,6 +129,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
     needsAction: interviews.filter((interview) => !isUnpublished(interview) && interview.currentStatus !== "leveraged").length,
     leveraged: interviews.filter((interview) => interview.currentStatus === "leveraged").length,
     needsContact: interviews.filter((interview) => interview.currentStatus === "needs_contact").length,
+    spotlight: interviews.filter((interview) => interview.prominence?.tier !== "standard").length,
   };
 
   // Sort interviews so that actionable ones are at the top, then upcoming, then leveraged.
@@ -103,7 +139,13 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
       if (isUnpublished(interview)) return 2; // Medium priority
       return 1; // Highest priority (Needs Action / Live)
     };
-    return getScore(a) - getScore(b);
+    const workflowSort = getScore(a) - getScore(b);
+    if (workflowSort !== 0) return workflowSort;
+
+    return (
+      (PROMINENCE_PRIORITY[b.prominence?.tier ?? "standard"] ?? 0) -
+      (PROMINENCE_PRIORITY[a.prominence?.tier ?? "standard"] ?? 0)
+    );
   });
 
   return (
@@ -125,12 +167,13 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
         </div>
       )}
       {/* Stats bar */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         <StatCard label="Total Interviews" value={stats.total} color="indigo" />
         <StatCard label="Upcoming" value={stats.upcoming} color="sky" />
         <StatCard label="Needs Action" value={stats.needsAction} color="amber" />
         <StatCard label="Fully Leveraged" value={stats.leveraged} color="emerald" />
         <StatCard label="Needs Contact" value={stats.needsContact} color="rose" />
+        <StatCard label="VIP Signals" value={stats.spotlight} color="violet" />
       </div>
 
       {/* Search and filters */}
@@ -239,6 +282,8 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
                 setActiveAction(action);
               }}
               onViewDetails={(id) => setSelectedId(id)}
+              onResearchProminence={researchProminence}
+              researchingProminence={researchingId === interview.id}
             />
           ))}
         </div>
@@ -290,6 +335,7 @@ function StatCard({
     amber: "bg-amber-50 text-amber-700 border-amber-200",
     emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
     rose: "bg-rose-50 text-rose-700 border-rose-200",
+    violet: "bg-violet-50 text-violet-700 border-violet-200",
   };
 
   return (

@@ -147,6 +147,13 @@ export async function POST(request: NextRequest) {
           articleUrl: r.articleUrl,
           hasEmail: !!r.intervieweeEmail,
           hasPublicist: !!r.publicistName,
+          hasProminenceSignals:
+            r.companyEmployeeCount ||
+            r.companyRevenueUsd ||
+            r.largestSocialFollowerCount ||
+            r.prominenceNotes
+              ? true
+              : false,
         })),
       unpublished: [
         ...normResult.unpublished.map((r) => ({
@@ -334,6 +341,10 @@ export async function POST(request: NextRequest) {
               intervieweeName: record.intervieweeName,
               intervieweeCompany: record.intervieweeCompany,
               intervieweeTitle: record.intervieweeTitle,
+              companyEmployeeCount: record.companyEmployeeCount,
+              companyRevenueUsd: record.companyRevenueUsd,
+              largestSocialFollowerCount: record.largestSocialFollowerCount,
+              prominenceNotes: record.prominenceNotes,
               intervieweeEmail:
                 existing.intervieweeEmail || record.intervieweeEmail,
               publicistName: record.publicistName,
@@ -372,6 +383,10 @@ export async function POST(request: NextRequest) {
             intervieweeCompany: record.intervieweeCompany,
             intervieweeEmail: record.intervieweeEmail,
             intervieweeTitle: record.intervieweeTitle,
+            companyEmployeeCount: record.companyEmployeeCount,
+            companyRevenueUsd: record.companyRevenueUsd,
+            largestSocialFollowerCount: record.largestSocialFollowerCount,
+            prominenceNotes: record.prominenceNotes,
             publicistName: record.publicistName,
             publicistEmail: record.publicistEmail,
             topic: record.topic,

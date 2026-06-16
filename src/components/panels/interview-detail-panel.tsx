@@ -97,6 +97,37 @@ export function InterviewDetailPanel({ interview, onClose }: InterviewDetailPane
             <DetailRow label="Email" value={interview.intervieweeEmail} isEmail />
           </Section>
 
+          {interview.prominence && interview.prominence.tier !== "standard" && (
+            <Section title="VIP Signals">
+              <DetailRow label="Tier" value={interview.prominence.tierLabel} />
+              <DetailRow label="Score" value={`${interview.prominence.score}/100`} />
+              <DetailRow label="Confidence" value={capitalize(interview.prominence.confidence)} />
+              <div className="flex items-start gap-3">
+                <span className="text-xs text-slate-400 w-20 shrink-0 pt-0.5">Badges</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {interview.prominence.badges.map((badge) => (
+                    <span
+                      key={badge.label}
+                      className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800"
+                    >
+                      {badge.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              {interview.prominence.reasons.length > 0 && (
+                <div className="flex items-start gap-3">
+                  <span className="text-xs text-slate-400 w-20 shrink-0 pt-0.5">Why</span>
+                  <ul className="space-y-1 text-sm text-slate-700">
+                    {interview.prominence.reasons.map((reason) => (
+                      <li key={reason}>{reason}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </Section>
+          )}
+
           {/* Publicist info */}
           {(interview.publicistName || interview.publicistEmail) && (
             <Section title="Publicist">
@@ -332,6 +363,11 @@ function formatActionType(type: string): string {
     NOTE_ADDED: "Note added",
     CONTACT_INFO_UPDATED: "Contact info updated",
     IMPORT_CREATED: "Interview imported",
+    PROMINENCE_RESEARCHED: "VIP signals researched",
   };
   return labels[type] || type;
+}
+
+function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }

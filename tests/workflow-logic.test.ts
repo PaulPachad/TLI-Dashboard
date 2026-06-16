@@ -5,6 +5,17 @@ import {
   generateLinkedInVariations,
   normalizeLinkedInPostUrl,
 } from "../src/lib/linkedin/generator";
+import {
+  assessInterviewProminence,
+  parseCountMetric,
+  parseMoneyMetric,
+} from "../src/lib/prominence/signals";
+import {
+  buildProminenceQueries,
+  extractProminenceSignals,
+  researchInterviewProminence,
+  type SearchProvider,
+} from "../src/lib/prominence/research";
 
 const contact = {
   intervieweeEmail: "guest@example.com",
@@ -96,4 +107,94 @@ test("LinkedIn post URL validation accepts LinkedIn and rejects other hosts", ()
     /linkedin\.com/i
   );
   assert.throws(() => normalizeLinkedInPostUrl("not a url"), /valid LinkedIn/i);
+});
+
+test("prominence assessment flags elite leads from company scale and audience", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Taylor Chen",
+    intervieweeCompany: "Acme Robotics",
+    intervieweeTitle: "Founder and CEO",
+    companyEmployeeCount: 2500,
+    companyRevenueUsd: 150_000_000,
+    largestSocialFollowerCount: 125_000,
+    prominenceNotes: "Featured in Forbes and keynote speaker.",
+    articleUrl: "https://authoritymagazine.com/example",
+  });
+
+  assert.equal(assessment.tier, "elite");
+  assert.ok(assessment.score >= 70);
+  assert.ok(assessment.badges.some((badge) => badge.label === "Elite Lead"));
+  assert.ok(assessment.badges.some((badge) => badge.label === "100K+ Audience"));
+});
+
+test("prominence metric parsers handle shorthand values", () => {
+  assert.equal(parseCountMetric("25k followers"), 25_000);
+  assert.equal(parseCountMetric("1.2 million employees"), 1_200_000);
+  assert.equal(parseMoneyMetric("$100M annual revenue"), 100_000_000);
+  assert.equal(parseMoneyMetric("1.5 billion"), 1_500_000_000);
+});
+
+test("prominence research extracts search-backed metrics", async () => {
+  const provider: SearchProvider = {
+    async search() {
+      return [
+        {
+          title: "Taylor Chen featured in Forbes",
+          url: "https://example.com/forbes",
+          snippet:
+            "Founder and CEO Taylor Chen has 125K followers and is a keynote speaker.",
+        },
+        {
+          title: "Acme Robotics company profile",
+          url: "https://example.com/company",
+          snippet:
+            "Acme Robotics has 2,500 employees and $150M annual revenue.",
+        },
+      ];
+    },
+  };
+
+  const result = await researchInterviewProminence(
+    {
+      intervieweeName: "Taylor Chen",
+      intervieweeCompany: "Acme Robotics",
+      intervieweeTitle: "Founder and CEO",
+      articleUrl: "https://authoritymagazine.com/example",
+    },
+    provider
+  );
+
+  assert.equal(result.companyEmployeeCount, 2500);
+  assert.equal(result.companyRevenueUsd, 150_000_000);
+  assert.equal(result.largestSocialFollowerCount, 125_000);
+  assert.equal(result.assessment.tier, "elite");
+});
+
+test("prominence research queries include person and company identity", () => {
+  const queries = buildProminenceQueries({
+    intervieweeName: "Taylor Chen",
+    intervieweeCompany: "Acme Robotics",
+  });
+
+  assert.ok(queries.some((query) => query.includes('"Taylor Chen"')));
+  assert.ok(queries.some((query) => query.includes('"Acme Robotics"')));
+});
+
+test("prominence extraction chooses largest matching metrics", () => {
+  const extracted = extractProminenceSignals([
+    {
+      title: "Profile",
+      url: "https://example.com/one",
+      snippet: "25K followers, 1,000 employees and $25M revenue.",
+    },
+    {
+      title: "Company",
+      url: "https://example.com/two",
+      snippet: "100K followers, 5,500 employees and $250M annual revenue.",
+    },
+  ]);
+
+  assert.equal(extracted.companyEmployeeCount, 5500);
+  assert.equal(extracted.companyRevenueUsd, 250_000_000);
+  assert.equal(extracted.largestSocialFollowerCount, 100_000);
 });

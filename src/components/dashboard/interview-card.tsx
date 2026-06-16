@@ -12,6 +12,8 @@ interface InterviewCardProps {
   interview: InterviewView;
   onAction?: (interviewId: string, action: InterviewActionType) => void;
   onViewDetails?: (interviewId: string) => void;
+  onResearchProminence?: (interviewId: string) => void;
+  researchingProminence?: boolean;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -22,7 +24,21 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   leveraged: { label: "Leveraged", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
 };
 
-export function InterviewCard({ interview, onAction, onViewDetails }: InterviewCardProps) {
+const PROMINENCE_TONES: Record<string, string> = {
+  amber: "border-amber-200 bg-amber-50 text-amber-800",
+  emerald: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  sky: "border-sky-200 bg-sky-50 text-sky-700",
+  violet: "border-violet-200 bg-violet-50 text-violet-700",
+  slate: "border-slate-200 bg-slate-50 text-slate-700",
+};
+
+export function InterviewCard({
+  interview,
+  onAction,
+  onViewDetails,
+  onResearchProminence,
+  researchingProminence,
+}: InterviewCardProps) {
   const [imageIndex, setImageIndex] = useState(0);
   const isUnpublished =
     interview.articleUrl.includes("/unpublished/") ||
@@ -30,12 +46,20 @@ export function InterviewCard({ interview, onAction, onViewDetails }: InterviewC
   const statusConfig = STATUS_CONFIG[interview.currentStatus] || STATUS_CONFIG.new;
   const imageSources = buildInterviewImageSources(interview);
   const currentImage = imageSources[imageIndex];
+  const prominence = interview.prominence;
+  const isSpotlight = prominence && prominence.tier !== "standard";
 
   return (
     <div
       id={`interview-card-${interview.id}`}
-      className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm
-                 transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg"
+      className={`group flex flex-col overflow-hidden rounded-xl border bg-white shadow-sm
+                 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
+                   prominence?.tier === "elite"
+                     ? "border-amber-300 ring-1 ring-amber-100 hover:border-amber-400"
+                     : isSpotlight
+                       ? "border-violet-200 hover:border-violet-300"
+                       : "border-slate-200 hover:border-indigo-200"
+                 }`}
     >
       {/* Interview image */}
       <div className="relative aspect-[16/7] overflow-hidden bg-gradient-to-br from-indigo-50 to-cyan-50">
@@ -60,6 +84,14 @@ export function InterviewCard({ interview, onAction, onViewDetails }: InterviewC
           </div>
         )}
         <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-slate-900/20 to-transparent" />
+        {isSpotlight && (
+          <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-xs font-semibold text-slate-900 shadow-sm backdrop-blur">
+            <svg className="h-3.5 w-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.539 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81H7.03a1 1 0 00.95-.69l1.07-3.292z" />
+            </svg>
+            {prominence.tierLabel}
+          </div>
+        )}
       </div>
 
       {/* Header with name */}
@@ -72,6 +104,32 @@ export function InterviewCard({ interview, onAction, onViewDetails }: InterviewC
             <p className="text-sm text-slate-500 truncate">
               {interview.intervieweeCompany}
             </p>
+          )}
+          {interview.intervieweeTitle && (
+            <p className="text-xs text-slate-400 truncate">
+              {interview.intervieweeTitle}
+            </p>
+          )}
+          {isSpotlight && (
+            <div className="mt-3 border-l-2 border-amber-300 pl-3">
+              <div className="flex flex-wrap gap-1.5">
+                {prominence.badges.map((badge) => (
+                  <span
+                    key={badge.label}
+                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                      PROMINENCE_TONES[badge.tone]
+                    }`}
+                  >
+                    {badge.label}
+                  </span>
+                ))}
+              </div>
+              {prominence.reasons[0] && (
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-500 line-clamp-2">
+                  {prominence.reasons[0]}
+                </p>
+              )}
+            </div>
           )}
           <div className="mt-1.5 flex items-center justify-between gap-2">
             {isUnpublished ? (
@@ -93,6 +151,26 @@ export function InterviewCard({ interview, onAction, onViewDetails }: InterviewC
               Details
             </button>
           </div>
+          <button
+            id={`research-vip-${interview.id}`}
+            type="button"
+            onClick={() => onResearchProminence?.(interview.id)}
+            disabled={researchingProminence}
+            className="mt-2 inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 hover:border-amber-300 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {researchingProminence ? (
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-amber-700 border-t-transparent" />
+            ) : (
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.977 2.89a1 1 0 00-.363 1.118l1.519 4.674c.3.921-.755 1.688-1.539 1.118l-3.977-2.89a1 1 0 00-1.176 0l-3.977 2.89c-.784.57-1.838-.197-1.539-1.118l1.519-4.674a1 1 0 00-.363-1.118l-3.977-2.89c-.783-.57-.38-1.81.588-1.81h4.915a1 1 0 00.95-.69l1.519-4.674z" />
+              </svg>
+            )}
+            {researchingProminence
+              ? "Researching..."
+              : isSpotlight
+                ? "Refresh VIP research"
+                : "Research VIP signals"}
+          </button>
         </div>
       </div>
 

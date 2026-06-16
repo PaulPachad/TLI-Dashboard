@@ -4,6 +4,10 @@
 
 import { createHash } from "crypto";
 import { HeaderMapping } from "./header-mapper";
+import {
+  parseCountMetric,
+  parseMoneyMetric,
+} from "@/lib/prominence/signals";
 
 export interface InterviewRecord {
   sourceRowNumber: number;
@@ -13,6 +17,10 @@ export interface InterviewRecord {
   intervieweeCompany: string | null;
   intervieweeEmail: string | null;
   intervieweeTitle: string | null;
+  companyEmployeeCount: number | null;
+  companyRevenueUsd: number | null;
+  largestSocialFollowerCount: number | null;
+  prominenceNotes: string | null;
   publicistName: string | null;
   publicistEmail: string | null;
   topic: string | null;
@@ -196,6 +204,12 @@ export function normalizeRows(
       intervieweeCompany,
       intervieweeEmail: normalizeEmail(getVal(row, "intervieweeEmail")),
       intervieweeTitle: getVal(row, "intervieweeTitle"),
+      companyEmployeeCount: parseCountMetric(getVal(row, "companyEmployeeCount")),
+      companyRevenueUsd: parseMoneyMetric(getVal(row, "companyRevenueUsd")),
+      largestSocialFollowerCount: parseCountMetric(
+        getVal(row, "largestSocialFollowerCount")
+      ),
+      prominenceNotes: getVal(row, "prominenceNotes"),
       publicistName: getVal(row, "publicistName"),
       publicistEmail: normalizeEmail(getVal(row, "publicistEmail")),
       topic: getVal(row, "topic"),

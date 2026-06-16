@@ -23,6 +23,10 @@ export interface InterviewView {
   intervieweeCompany?: string | null;
   intervieweeEmail?: string | null;
   intervieweeTitle?: string | null;
+  companyEmployeeCount?: number | null;
+  companyRevenueUsd?: number | null;
+  largestSocialFollowerCount?: number | null;
+  prominenceNotes?: string | null;
   publicistName?: string | null;
   publicistEmail?: string | null;
   topic?: string | null;
@@ -51,5 +55,16 @@ export interface InterviewView {
     socialImageGenerated: boolean;
     markedShared: boolean;
     zoomInviteSent: boolean;
+  };
+  prominence?: {
+    score: number;
+    tier: "elite" | "high_value" | "notable" | "standard";
+    tierLabel: string;
+    confidence: "high" | "medium" | "low";
+    badges: Array<{
+      label: string;
+      tone: "amber" | "emerald" | "sky" | "violet" | "slate";
+    }>;
+    reasons: string[];
   };
 }

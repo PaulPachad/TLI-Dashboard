@@ -71,6 +71,10 @@ model Interview {
   intervieweeCompany          String?
   intervieweeEmail            String?
   intervieweeTitle            String?
+  companyEmployeeCount        Int?
+  companyRevenueUsd           Float?
+  largestSocialFollowerCount  Int?
+  prominenceNotes             String?
   publicistName               String?
   publicistEmail              String?
   topic                       String?
