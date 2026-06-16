@@ -38,31 +38,22 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
     : {
         enter: (turnDirection: number) => ({
           opacity: 0,
-          rotateY: turnDirection * 72,
-          scale: 0.98,
+          rotateY: turnDirection * 88,
         }),
         center: {
           opacity: 1,
           rotateY: 0,
-          scale: 1,
           transition: {
-            rotateY: {
-              type: "spring" as const,
-              stiffness: 115,
-              damping: 22,
-              mass: 0.9,
-            },
-            scale: { duration: 0.28, ease: "easeOut" as const },
-            opacity: { duration: 0.18, ease: "easeOut" as const },
+            rotateY: { duration: 0.34, ease: [0.22, 1, 0.36, 1] as const },
+            opacity: { duration: 0.14, ease: "linear" as const },
           },
         },
         exit: (turnDirection: number) => ({
           opacity: 0,
-          rotateY: turnDirection * -72,
-          scale: 0.98,
+          rotateY: turnDirection * -88,
           transition: {
-            duration: 0.24,
-            ease: [0.4, 0, 0.2, 1] as const,
+            duration: 0.22,
+            ease: [0.64, 0, 0.78, 0] as const,
           },
         }),
       };
@@ -79,6 +70,7 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
         style={{
           transformOrigin: "center center",
           transformStyle: "preserve-3d",
+          transformPerspective: 8000,
           backfaceVisibility: "hidden",
           WebkitFontSmoothing: "antialiased",
           willChange: "transform, opacity",
@@ -94,7 +86,7 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
     <div className="flex flex-col w-full">
       <PanelToggle activePanel={activePanel} onChange={handlePanelChange} />
 
-      <div className="relative w-full min-h-[600px] [perspective:1800px]">
+      <div className="relative w-full min-h-[600px] [perspective:8000px] [perspective-origin:center_center]">
         <AnimatePresence mode="wait" custom={direction}>
           {activePanel === "interviews" &&
             renderPanel("interviews", <InterviewGrid />)}
