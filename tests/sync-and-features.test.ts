@@ -86,3 +86,53 @@ test("parseContactEmails parses various formatted emails", () => {
     ["hello@pne-uk.com", "info@pne-uk.com", "support@pne.com"]
   );
 });
+
+// Event date parsing function extracted for testing
+function parseEventDate(dateStr: string | null): Date {
+  if (!dateStr) return new Date(864000000000000);
+  const months = [
+    "january", "february", "march", "april", "may", "june",
+    "july", "august", "september", "october", "november", "december"
+  ];
+  const str = dateStr.toLowerCase();
+  let foundMonthIndex = -1;
+  let earliestPos = Infinity;
+  months.forEach((m, idx) => {
+    const pos = str.indexOf(m);
+    if (pos !== -1 && pos < earliestPos) {
+      earliestPos = pos;
+      foundMonthIndex = idx;
+    }
+  });
+  if (foundMonthIndex === -1) return new Date(864000000000000);
+  const afterMonth = str.substring(earliestPos + months[foundMonthIndex].length);
+  const dayMatch = afterMonth.match(/\d+/);
+  const day = dayMatch ? parseInt(dayMatch[0], 10) : 1;
+  return new Date(2026, foundMonthIndex, day);
+}
+
+test("parseEventDate parses and chronologically sorts date strings", () => {
+  const dateJune = parseEventDate("June 28–July 1");
+  const dateJulyEarly = parseEventDate("July 7–8");
+  const dateJulyLate = parseEventDate("July 22–27");
+  const dateSeptEarly = parseEventDate("September 4–7");
+  const dateSeptLate = parseEventDate("September 15–17");
+
+  assert.equal(dateJune.getMonth(), 5); // June
+  assert.equal(dateJune.getDate(), 28);
+  
+  assert.equal(dateJulyEarly.getMonth(), 6); // July
+  assert.equal(dateJulyEarly.getDate(), 7);
+
+  // June 28 < July 7
+  assert.ok(dateJune.getTime() < dateJulyEarly.getTime());
+  
+  // July 7 < July 22
+  assert.ok(dateJulyEarly.getTime() < dateJulyLate.getTime());
+
+  // July 22 < Sept 4
+  assert.ok(dateJulyLate.getTime() < dateSeptEarly.getTime());
+
+  // Sept 4 < Sept 15
+  assert.ok(dateSeptEarly.getTime() < dateSeptLate.getTime());
+});
