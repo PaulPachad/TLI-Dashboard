@@ -62,7 +62,7 @@ export function InterviewCard({
                  }`}
     >
       {/* Interview image */}
-      <div className="relative aspect-[16/7] overflow-hidden bg-gradient-to-br from-indigo-50 to-cyan-50">
+      <div className="relative aspect-[16/8] overflow-hidden bg-gradient-to-br from-indigo-50 to-cyan-50">
         {currentImage ? (
           // Sheet images can come from arbitrary hosts; the browser handles the
           // source fallback chain without requiring a broad Next image allowlist.
@@ -71,6 +71,7 @@ export function InterviewCard({
             src={currentImage}
             alt={`${interview.intervieweeName} interview`}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            style={{ objectPosition: "center 28%" }}
             referrerPolicy="no-referrer"
             onError={() => setImageIndex((current) => current + 1)}
           />
