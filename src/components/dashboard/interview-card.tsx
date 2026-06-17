@@ -14,6 +14,7 @@ interface InterviewCardProps {
   onViewDetails?: (interviewId: string) => void;
   onResearchProminence?: (interviewId: string) => void;
   researchingProminence?: boolean;
+  autoScanQueued?: boolean;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -38,6 +39,7 @@ export function InterviewCard({
   onViewDetails,
   onResearchProminence,
   researchingProminence,
+  autoScanQueued,
 }: InterviewCardProps) {
   const [imageIndex, setImageIndex] = useState(0);
   const isUnpublished =
@@ -168,6 +170,8 @@ export function InterviewCard({
             )}
             {researchingProminence
               ? "Researching..."
+              : autoScanQueued
+                ? "VIP auto-scan queued"
               : isSpotlight
                 ? "Refresh VIP research"
                 : "Research VIP signals"}

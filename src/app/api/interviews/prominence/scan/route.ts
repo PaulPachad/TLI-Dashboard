@@ -11,7 +11,7 @@ import {
 import { saveProminenceResearch } from "@/lib/prominence/service";
 
 const DEFAULT_SCAN_LIMIT = 3;
-const MAX_SCAN_LIMIT = 5;
+const MAX_SCAN_LIMIT = 6;
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
     const body = (await request.json().catch(() => ({}))) as {
       clientId?: string;
       limit?: number;
+      interviewIds?: string[];
     };
     const limit = Math.min(
       Math.max(Number(body.limit) || DEFAULT_SCAN_LIMIT, 1),
@@ -39,8 +40,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const requestedInterviewIds = Array.isArray(body.interviewIds)
+      ? body.interviewIds
+          .filter((id): id is string => typeof id === "string" && id.length > 0)
+          .slice(0, limit)
+      : [];
+
     const where: Prisma.InterviewWhereInput = {
       ...(targetClientId ? { clientId: targetClientId } : {}),
+      ...(requestedInterviewIds.length > 0
+        ? { id: { in: requestedInterviewIds } }
+        : {}),
       companyEmployeeCount: null,
       companyRevenueUsd: null,
       largestSocialFollowerCount: null,
@@ -58,6 +68,14 @@ export async function POST(request: NextRequest) {
       ],
       take: limit,
     });
+    const candidateOrder = new Map(
+      requestedInterviewIds.map((id, index) => [id, index])
+    );
+    candidates.sort(
+      (left, right) =>
+        (candidateOrder.get(left.id) ?? Number.MAX_SAFE_INTEGER) -
+        (candidateOrder.get(right.id) ?? Number.MAX_SAFE_INTEGER)
+    );
 
     let updated = 0;
     let failed = 0;

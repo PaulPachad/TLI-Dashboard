@@ -33,6 +33,7 @@ const PROMINENCE_PRIORITY: Record<string, number> = {
   notable: 1,
   standard: 0,
 };
+const QUIET_SCAN_LIMIT = 6;
 
 type NoticeTone = "success" | "warning";
 
@@ -102,12 +103,16 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
   }, [fetchInterviews]);
 
   useEffect(() => {
+    const queuedInterviewIds = interviews
+      .filter(shouldQuietScanProminence)
+      .slice(0, QUIET_SCAN_LIMIT)
+      .map((interview) => interview.id);
+
     if (
       quietScanStarted.current ||
       loading ||
       error ||
-      interviews.length === 0 ||
-      !interviews.some(shouldQuietScanProminence)
+      queuedInterviewIds.length === 0
     ) {
       return;
     }
@@ -119,7 +124,11 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
       const res = await fetch("/api/interviews/prominence/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId, limit: 3 }),
+        body: JSON.stringify({
+          clientId,
+          limit: queuedInterviewIds.length,
+          interviewIds: queuedInterviewIds,
+        }),
       });
 
       if (!res.ok || cancelled) return;
@@ -365,6 +374,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
               onViewDetails={(id) => setSelectedId(id)}
               onResearchProminence={researchProminence}
               researchingProminence={researchingId === interview.id}
+              autoScanQueued={shouldQuietScanProminence(interview)}
             />
           ))}
         </div>

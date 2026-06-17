@@ -282,7 +282,7 @@ function summarizeProminenceNotes(value?: string | null): string {
     return "Search found press, awards, authorship, speaking, or public-figure signals.";
   }
 
-  return cleanText.length > 180 ? `${cleanText.slice(0, 177)}...` : cleanText;
+  return cleanText;
 }
 
 function cleanProminenceText(value: string): string {
@@ -296,6 +296,7 @@ function cleanProminenceText(value: string): string {
     .replace(/Here are the key prominence signals and facts for .*?:/i, "")
     .replace(/\bLeadership\s*&\s*Company\s*Prominence\b/gi, "")
     .replace(/\bRole:\s*/gi, "")
+    .replace(/(?:^|\s)[*-]\s+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/^[-:;,\s]+/, "");
