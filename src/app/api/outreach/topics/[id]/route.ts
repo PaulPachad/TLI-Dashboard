@@ -5,6 +5,7 @@ import { requireApiAuth } from "@/lib/auth-helpers";
 import { isDemoMode } from "@/lib/google-sheets";
 import { buildTopicInvitationEmailBody } from "@/lib/email/copy";
 import { OutreachEmail } from "@/lib/email/templates/outreach";
+import { renderToStaticMarkup } from "react-dom/server";
 
 interface OutreachBody {
   recipients?: string;
@@ -116,7 +117,7 @@ async function sendOutreach({
     replyTo: replyTo || undefined,
     subject,
     text: body,
-    react: OutreachEmail({ body, heading }),
+    html: renderToStaticMarkup(OutreachEmail({ body, heading })),
   });
 
   if (sendResult.error) {
