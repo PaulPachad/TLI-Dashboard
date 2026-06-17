@@ -143,6 +143,38 @@ test("prominence assessment keeps normal executives out of VIP spotlight", () =>
   assert.equal(assessment.badges.length, 0);
 });
 
+test("prominence assessment treats Wikipedia as notable", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Jordan Park",
+    prominenceNotes:
+      "Jordan Park has a Wikipedia page covering their public career.",
+  });
+
+  assert.equal(assessment.tier, "notable");
+  assert.ok(assessment.badges.some((badge) => badge.label === "Wikipedia"));
+});
+
+test("prominence assessment treats million follower audiences as standout", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Ari Lane",
+    largestSocialFollowerCount: 1_200_000,
+  });
+
+  assert.equal(assessment.tier, "high_value");
+  assert.ok(assessment.badges.some((badge) => badge.label === "1M+ Audience"));
+});
+
+test("prominence assessment treats major award recognition as notable", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Robin Vale",
+    prominenceNotes:
+      "Robin Vale was nominated for an Emmy and later won a Grammy.",
+  });
+
+  assert.equal(assessment.tier, "notable");
+  assert.ok(assessment.badges.some((badge) => badge.label === "Major Award"));
+});
+
 test("prominence reasons clean AI markdown and source prefixes", () => {
   const assessment = assessInterviewProminence({
     intervieweeName: "Dion Clarke",

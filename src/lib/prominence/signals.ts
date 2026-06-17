@@ -62,6 +62,11 @@ const LEADER_TITLE_PATTERN =
   /\b(vp|vice president|svp|evp|partner|principal|head of|director|executive director|publisher|editor-in-chief)\b/i;
 const STRONG_PROMINENCE_PATTERN =
   /\b(forbes|fortune|fast company|nyt|new york times|wsj|wall street journal|bloomberg|cnbc|tedx?|bestseller|best-selling|award|winner|honoree|keynote|wikipedia|verified|shark tank|unicorn|public company|fortune 500|inc\. 500|inc 500)\b/i;
+const WIKIPEDIA_PATTERN = /\bwikipedia\b/i;
+const MAJOR_AWARD_PATTERN =
+  /\b(oscar|academy award|academy awards|emmy|emmys|grammy|grammys|tony award|tony awards|tony|golden globe|bafta|pulitzer|macarthur|nobel)\b/i;
+const AWARD_RECOGNITION_PATTERN =
+  /\b(won|winner|winning|recipient|received|nominee|nominated|nomination|finalist)\b/i;
 
 export function assessInterviewProminence(
   input: ProminenceInput
@@ -70,6 +75,8 @@ export function assessInterviewProminence(
   const reasons: string[] = [];
   let score = 0;
   let hardEvidenceCount = 0;
+  let forceNotable = false;
+  let forceHighValue = false;
 
   const employees = input.companyEmployeeCount ?? null;
   if (employees !== null) {
@@ -112,6 +119,7 @@ export function assessInterviewProminence(
       score += 32;
       badges.push({ label: "1M+ Audience", tone: "sky" });
       reasons.push(`Largest social audience is ${formatCount(followers)} followers.`);
+      forceHighValue = true;
     } else if (followers >= 500_000) {
       score += 22;
       badges.push({ label: "500K+ Audience", tone: "sky" });
@@ -141,11 +149,34 @@ export function assessInterviewProminence(
   const notes = [input.prominenceNotes, input.topic, input.intervieweeCompany]
     .filter(Boolean)
     .join(" ");
+  if (WIKIPEDIA_PATTERN.test(notes)) {
+    score += 20;
+    hardEvidenceCount++;
+    forceNotable = true;
+    badges.push({ label: "Wikipedia", tone: "amber" });
+    reasons.push(summarizeProminenceNotes(input.prominenceNotes));
+  }
+  if (
+    MAJOR_AWARD_PATTERN.test(notes) &&
+    AWARD_RECOGNITION_PATTERN.test(notes)
+  ) {
+    score += 20;
+    hardEvidenceCount++;
+    forceNotable = true;
+    badges.push({ label: "Major Award", tone: "amber" });
+    reasons.push(summarizeProminenceNotes(input.prominenceNotes));
+  }
   if (STRONG_PROMINENCE_PATTERN.test(notes)) {
     score += 14;
     hardEvidenceCount++;
-    badges.push({ label: "Prominent Person", tone: "amber" });
-    reasons.push(summarizeProminenceNotes(input.prominenceNotes));
+    if (
+      !badges.some((badge) =>
+        ["Wikipedia", "Major Award", "Prominent Person"].includes(badge.label)
+      )
+    ) {
+      badges.push({ label: "Prominent Person", tone: "amber" });
+      reasons.push(summarizeProminenceNotes(input.prominenceNotes));
+    }
   }
 
   if (input.linkedinUrl || input.twitterUrl) {
@@ -159,7 +190,7 @@ export function assessInterviewProminence(
   }
 
   const cappedScore = Math.min(100, score);
-  const tier = getTier(cappedScore, badges);
+  const tier = getTier(cappedScore, badges, { forceNotable, forceHighValue });
   const tierLabel = getTierLabel(tier);
   const visibleBadges = getVisibleBadges(tier, badges);
 
@@ -205,7 +236,11 @@ export function parseMoneyMetric(value: string | null): number | null {
   return amount;
 }
 
-function getTier(score: number, badges: ProminenceBadge[]): ProminenceTier {
+function getTier(
+  score: number,
+  badges: ProminenceBadge[],
+  options: { forceNotable?: boolean; forceHighValue?: boolean } = {}
+): ProminenceTier {
   const hasHardBadge = badges.some((badge) =>
     [
       "50K+ Employees",
@@ -232,8 +267,12 @@ function getTier(score: number, badges: ProminenceBadge[]): ProminenceTier {
     ).length >= 2;
 
   if (score >= 75 && hasMultipleHardBadges) return "elite";
-  if (score >= 55 && hasHardBadge) return "high_value";
-  if (score >= 40 && hasHardBadge) return "notable";
+  if (options.forceHighValue || (score >= 55 && hasHardBadge)) {
+    return "high_value";
+  }
+  if (options.forceNotable || (score >= 40 && hasHardBadge)) {
+    return "notable";
+  }
   return "standard";
 }
 
