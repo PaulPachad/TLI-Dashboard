@@ -84,7 +84,7 @@ export async function POST(
         {
           code: GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
           error:
-            "VIP research cannot see a search key in this deployment yet. Add GEMINI_API_KEY in Vercel for the same environment, then redeploy.",
+            "VIP research cannot see GEMINI_API_KEY in this project environment yet. Add it under Project Settings > Environment Variables, not AI Gateway > Bring Your Own Key, then redeploy.",
           config,
         },
         { status: 503 }
