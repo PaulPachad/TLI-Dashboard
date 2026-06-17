@@ -10,7 +10,7 @@
     "build:demo": "node scripts/build-demo.mjs",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test tests/google-sheets.test.ts tests/workflow-logic.test.ts tests/email-templates.test.tsx tests/sync-and-features.test.ts",
+    "test": "tsx --test tests/google-sheets.test.ts tests/workflow-logic.test.ts tests/email-templates.test.tsx tests/sync-and-features.test.ts tests/automation.test.ts",
     "test:http": "node scripts/http-smoke.mjs",
     "test:visual": "node scripts/visual-smoke.mjs",
     "db:push": "npx prisma db push",

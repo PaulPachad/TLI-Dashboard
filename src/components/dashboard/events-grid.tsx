@@ -40,6 +40,7 @@ function parseEventDate(dateStr: string | null): Date {
 }
 
 export function EventsGrid({ events }: { events: Event[] }) {
+  const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "city">("grid");
   const [sortBy, setSortBy] = useState<"date" | "name">("date");
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -68,8 +69,23 @@ export function EventsGrid({ events }: { events: Event[] }) {
     });
   };
 
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const filteredEvents = events.filter((event) => {
+    if (!normalizedSearch) return true;
+
+    return [
+      event.eventName,
+      event.date,
+      event.location,
+      event.status,
+      event.contactInfo,
+    ]
+      .filter(Boolean)
+      .some((value) => value!.toLowerCase().includes(normalizedSearch));
+  });
+
   // Group events by city
-  const groupedByCity = events.reduce((acc, event) => {
+  const groupedByCity = filteredEvents.reduce((acc, event) => {
     const city = event.location ? event.location.trim() : "Other / Virtual";
     if (!acc[city]) acc[city] = [];
     acc[city].push(event);
@@ -196,29 +212,64 @@ export function EventsGrid({ events }: { events: Event[] }) {
         data-tour="events-controls"
         className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm"
       >
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">View Mode:</span>
-          <div className="inline-flex rounded-lg bg-slate-200 p-0.5">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`rounded-md px-3 py-1 text-xs font-semibold transition-all ${
-                viewMode === "grid"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
+        <div className="flex flex-col gap-3 md:min-w-0 md:flex-1">
+          <label className="relative block w-full max-w-md">
+            <span className="sr-only">Search events</span>
+            <svg
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden="true"
             >
-              Show All
-            </button>
-            <button
-              onClick={() => setViewMode("city")}
-              className={`rounded-md px-3 py-1 text-xs font-semibold transition-all ${
-                viewMode === "city"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              Group by City
-            </button>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 21l-4.35-4.35m1.1-5.15a6.25 6.25 0 11-12.5 0 6.25 6.25 0 0112.5 0z"
+              />
+            </svg>
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search events"
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm font-medium text-slate-700 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+            />
+          </label>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">View Mode:</span>
+            <div className="inline-flex rounded-lg bg-slate-200 p-0.5">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`rounded-md px-3 py-1 text-xs font-semibold transition-all ${
+                  viewMode === "grid"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Show All
+              </button>
+              <button
+                onClick={() => setViewMode("city")}
+                className={`rounded-md px-3 py-1 text-xs font-semibold transition-all ${
+                  viewMode === "city"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Group by City
+              </button>
+            </div>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="text-xs text-slate-500 hover:text-indigo-600 font-semibold px-2 py-1 transition-colors cursor-pointer"
+              >
+                Clear
+              </button>
+            )}
           </div>
         </div>
 
@@ -250,9 +301,19 @@ export function EventsGrid({ events }: { events: Event[] }) {
       </div>
 
       {/* Events Listing */}
-      {viewMode === "grid" ? (
+      {filteredEvents.length === 0 ? (
+        <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-slate-500 animate-fadeIn">
+          <p>No events match the selected search.</p>
+          <button
+            onClick={() => setSearchQuery("")}
+            className="mt-3 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Clear Search
+          </button>
+        </div>
+      ) : viewMode === "grid" ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {sortEvents(events).map(renderEventCard)}
+          {sortEvents(filteredEvents).map(renderEventCard)}
         </div>
       ) : (
         <div className="space-y-10">

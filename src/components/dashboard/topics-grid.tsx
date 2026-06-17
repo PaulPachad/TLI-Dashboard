@@ -7,6 +7,7 @@ import { TopicDetailPanel } from "@/components/panels/topic-detail-panel";
 export function TopicsGrid({ topics }: { topics: Topic[] }) {
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "tag">("grid");
   const [sortBy, setSortBy] = useState<"name" | "tags">("name");
 
@@ -49,6 +50,8 @@ export function TopicsGrid({ topics }: { topics: Topic[] }) {
     );
   };
 
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+
   const filteredTopics = topics.filter((topic) => {
     if (selectedTags.length === 0) return true;
     return selectedTags.every((tagId) => {
@@ -57,6 +60,17 @@ export function TopicsGrid({ topics }: { topics: Topic[] }) {
       if (tagId === "template") return !!topic.interviewQuestions;
       return true;
     });
+  }).filter((topic) => {
+    if (!normalizedSearch) return true;
+
+    return [
+      topic.title,
+      topic.sourceRequests,
+      topic.responses,
+      topic.interviewQuestions,
+    ]
+      .filter(Boolean)
+      .some((value) => value!.toLowerCase().includes(normalizedSearch));
   });
 
   // Sort helper
@@ -158,38 +172,68 @@ export function TopicsGrid({ topics }: { topics: Topic[] }) {
         data-tour="topics-controls"
         className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm md:flex-row md:items-center md:justify-between"
       >
-        {/* Left: Tag Filters */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1">Filter:</span>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {tags.map((tag) => {
-              const isActive = selectedTags.includes(tag.id);
-              return (
+        <div className="flex flex-col gap-3 md:min-w-0 md:flex-1">
+          <label className="relative block w-full max-w-md">
+            <span className="sr-only">Search topics</span>
+            <svg
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 21l-4.35-4.35m1.1-5.15a6.25 6.25 0 11-12.5 0 6.25 6.25 0 0112.5 0z"
+              />
+            </svg>
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search topics"
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm font-medium text-slate-700 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+            />
+          </label>
+
+          {/* Left: Tag Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1">Filter:</span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {tags.map((tag) => {
+                const isActive = selectedTags.includes(tag.id);
+                return (
+                  <button
+                    key={tag.id}
+                    onClick={() => toggleTag(tag.id)}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition-all shadow-sm ${
+                      isActive ? tag.activeColorClass : tag.colorClass
+                    }`}
+                  >
+                    {isActive && (
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                    {tag.label}
+                  </button>
+                );
+              })}
+
+              {(selectedTags.length > 0 || searchQuery) && (
                 <button
-                  key={tag.id}
-                  onClick={() => toggleTag(tag.id)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition-all shadow-sm ${
-                    isActive ? tag.activeColorClass : tag.colorClass
-                  }`}
+                  onClick={() => {
+                    setSelectedTags([]);
+                    setSearchQuery("");
+                  }}
+                  className="text-xs text-slate-500 hover:text-indigo-600 font-semibold px-2 py-1 transition-colors cursor-pointer"
                 >
-                  {isActive && (
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                  {tag.label}
+                  Clear
                 </button>
-              );
-            })}
-            
-            {selectedTags.length > 0 && (
-              <button
-                onClick={() => setSelectedTags([])}
-                className="text-xs text-slate-500 hover:text-indigo-600 font-semibold px-2 py-1 transition-colors cursor-pointer"
-              >
-                Clear
-              </button>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
@@ -251,12 +295,15 @@ export function TopicsGrid({ topics }: { topics: Topic[] }) {
 
       {filteredTopics.length === 0 ? (
         <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-slate-500 animate-fadeIn">
-          <p>No topics match the selected filters.</p>
+          <p>No topics match the selected search or filters.</p>
           <button
-            onClick={() => setSelectedTags([])}
+            onClick={() => {
+              setSelectedTags([]);
+              setSearchQuery("");
+            }}
             className="mt-3 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
-            Clear Filters
+            Clear Search
           </button>
         </div>
       ) : viewMode === "grid" ? (
