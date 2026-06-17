@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
 import { UserRole } from "@/types/db";
@@ -10,6 +11,8 @@ import {
   normalizeRows,
   deduplicateInterviewRecords,
 } from "@/lib/google-sheets";
+
+const SYNC_BATCH_SIZE = 250;
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,6 +59,8 @@ export async function POST(request: NextRequest) {
     let totalUpdated = 0;
     let totalUnchanged = 0;
     let totalDuplicatesSkipped = 0;
+    let totalProcessed = 0;
+    let totalBatches = 0;
     const warnings: string[] = [];
 
     // --- Sync each sheet source ---
@@ -113,90 +118,166 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Sync with database inside a transaction
-      const result = await db.$transaction(async (tx) => {
-        // Update SheetSource lastSyncedAt
-        await tx.sheetSource.update({
-          where: { id: source.id },
-          data: {
-            lastSyncedAt: new Date(),
-          },
-        });
+      await db.sheetSource.update({
+        where: { id: source.id },
+        data: { lastSyncedAt: new Date() },
+      });
 
-        // Query existing interviews for this sheet source
-        const currentSourceInterviews = await tx.interview.findMany({
-          where: { sheetSourceId: source.id },
-        });
+      const currentSourceInterviews = await db.interview.findMany({
+        where: { sheetSourceId: source.id },
+      });
 
-        const byArticleUrl = new Map(
-          currentSourceInterviews.map((i) => [i.articleUrl, i])
-        );
-        const byRowNumber = new Map(
-          currentSourceInterviews
-            .filter((i) => i.sourceRowNumber !== null)
-            .map((i) => [i.sourceRowNumber, i])
-        );
-        const usedInterviewIds = new Set<string>();
+      const byArticleUrl = new Map(
+        currentSourceInterviews.map((i) => [i.articleUrl, i])
+      );
+      const byRowNumber = new Map(
+        currentSourceInterviews
+          .filter((i) => i.sourceRowNumber !== null)
+          .map((i) => [i.sourceRowNumber, i])
+      );
+      const usedInterviewIds = new Set<string>();
 
-        // Temporarily nullify row numbers to prevent unique constraint conflicts
-        await tx.interview.updateMany({
-          where: { sheetSourceId: source.id },
-          data: { sourceRowNumber: null },
-        });
+      const otherSourceInterviews = await db.interview.findMany({
+        where: {
+          clientId: source.clientId,
+          NOT: { sheetSourceId: source.id },
+        },
+        select: { articleUrl: true },
+      });
+      const duplicateArticleUrls = new Set(
+        otherSourceInterviews.map((i) => i.articleUrl)
+      );
 
-        // Find duplicates in other sheets
-        const otherSourceInterviews = await tx.interview.findMany({
-          where: {
-            clientId: source.clientId,
-            NOT: { sheetSourceId: source.id },
-          },
-          select: {
-            articleUrl: true,
-          },
-        });
-        const duplicateArticleUrls = new Set(
-          otherSourceInterviews.map((i) => i.articleUrl)
-        );
+      let created = 0;
+      let updated = 0;
+      let unchanged = 0;
+      let duplicatesSkipped = deduplicated.duplicates.length;
+      let processed = 0;
+      const recordBatches = chunk(importRecords, SYNC_BATCH_SIZE);
 
-        let created = 0;
-        let updated = 0;
-        let unchanged = 0;
-        let duplicatesSkipped = deduplicated.duplicates.length;
+      for (const recordBatch of recordBatches) {
+        const batchResult = await db.$transaction(async (tx) => {
+          let batchCreated = 0;
+          let batchUpdated = 0;
+          let batchUnchanged = 0;
+          let batchDuplicatesSkipped = 0;
 
-        for (const record of importRecords) {
-          if (duplicateArticleUrls.has(record.articleUrl)) {
-            duplicatesSkipped++;
-            continue;
-          }
+          for (const record of recordBatch) {
+            if (duplicateArticleUrls.has(record.articleUrl)) {
+              batchDuplicatesSkipped++;
+              continue;
+            }
 
-          const articleMatch = byArticleUrl.get(record.articleUrl);
-          const rowMatch = byRowNumber.get(record.sourceRowNumber);
-          const existing =
-            articleMatch && !usedInterviewIds.has(articleMatch.id)
-              ? articleMatch
-              : rowMatch && !usedInterviewIds.has(rowMatch.id)
-                ? rowMatch
-                : null;
+            const articleMatch = byArticleUrl.get(record.articleUrl);
+            const rowMatch = byRowNumber.get(record.sourceRowNumber);
+            const existing =
+              articleMatch && !usedInterviewIds.has(articleMatch.id)
+                ? articleMatch
+                : rowMatch && !usedInterviewIds.has(rowMatch.id)
+                  ? rowMatch
+                  : null;
 
-          if (existing) {
-            usedInterviewIds.add(existing.id);
-            await tx.interview.update({
-              where: { id: existing.id },
+            if (existing) {
+              usedInterviewIds.add(existing.id);
+              if (
+                existing.sourceRowHash === record.sourceRowHash &&
+                existing.sourceRowNumber === record.sourceRowNumber
+              ) {
+                batchUnchanged++;
+                continue;
+              }
+
+              await clearRowNumberConflict(
+                tx,
+                source.id,
+                record.sourceRowNumber,
+                existing.id
+              );
+              const conflictingRow = byRowNumber.get(record.sourceRowNumber);
+              if (conflictingRow && conflictingRow.id !== existing.id) {
+                byRowNumber.delete(record.sourceRowNumber);
+              }
+
+              const updatedInterview = await tx.interview.update({
+                where: { id: existing.id },
+                data: {
+                  sourceRowNumber: record.sourceRowNumber,
+                  sourceRowHash: record.sourceRowHash,
+                  intervieweeName: record.intervieweeName,
+                  intervieweeCompany: record.intervieweeCompany,
+                  intervieweeTitle: record.intervieweeTitle,
+                  companyEmployeeCount:
+                    record.companyEmployeeCount ?? existing.companyEmployeeCount,
+                  companyRevenueUsd:
+                    record.companyRevenueUsd ?? existing.companyRevenueUsd,
+                  largestSocialFollowerCount:
+                    record.largestSocialFollowerCount ??
+                    existing.largestSocialFollowerCount,
+                  prominenceNotes:
+                    record.prominenceNotes ?? existing.prominenceNotes,
+                  intervieweeEmail:
+                    existing.intervieweeEmail || record.intervieweeEmail,
+                  publicistName: record.publicistName,
+                  publicistEmail:
+                    existing.publicistEmail || record.publicistEmail,
+                  topic: record.topic,
+                  articleUrl: record.articleUrl,
+                  buzzfeedUrl: record.buzzfeedUrl,
+                  interviewDocUrl: record.interviewDocUrl,
+                  image1Url: record.image1Url,
+                  image2Url: record.image2Url,
+                  extraImagesUrl: record.extraImagesUrl,
+                  videoUrl: record.videoUrl,
+                  linkedinUrl: existing.linkedinUrl || record.linkedinUrl,
+                  twitterUrl: existing.twitterUrl || record.twitterUrl,
+                  liveEmailStatusImported:
+                    record.estimatedPublishDate || record.liveEmailStatusImported,
+                  pressFollowupStatusImported:
+                    record.pressFollowupStatusImported,
+                  estimatedPublishDate: parseOptionalDate(
+                    record.estimatedPublishDate
+                  ),
+                },
+              });
+
+              byArticleUrl.delete(existing.articleUrl);
+              byArticleUrl.set(updatedInterview.articleUrl, updatedInterview);
+              if (existing.sourceRowNumber !== null) {
+                byRowNumber.delete(existing.sourceRowNumber);
+              }
+              if (updatedInterview.sourceRowNumber !== null) {
+                byRowNumber.set(
+                  updatedInterview.sourceRowNumber,
+                  updatedInterview
+                );
+              }
+              batchUpdated++;
+              continue;
+            }
+
+            await clearRowNumberConflict(
+              tx,
+              source.id,
+              record.sourceRowNumber
+            );
+            byRowNumber.delete(record.sourceRowNumber);
+
+            const createdInterview = await tx.interview.create({
               data: {
+                clientId: source.clientId,
+                sheetSourceId: source.id,
                 sourceRowNumber: record.sourceRowNumber,
                 sourceRowHash: record.sourceRowHash,
                 intervieweeName: record.intervieweeName,
                 intervieweeCompany: record.intervieweeCompany,
+                intervieweeEmail: record.intervieweeEmail,
                 intervieweeTitle: record.intervieweeTitle,
                 companyEmployeeCount: record.companyEmployeeCount,
                 companyRevenueUsd: record.companyRevenueUsd,
                 largestSocialFollowerCount: record.largestSocialFollowerCount,
                 prominenceNotes: record.prominenceNotes,
-                intervieweeEmail:
-                  existing.intervieweeEmail || record.intervieweeEmail,
                 publicistName: record.publicistName,
-                publicistEmail:
-                  existing.publicistEmail || record.publicistEmail,
+                publicistEmail: record.publicistEmail,
                 topic: record.topic,
                 articleUrl: record.articleUrl,
                 buzzfeedUrl: record.buzzfeedUrl,
@@ -205,9 +286,10 @@ export async function POST(request: NextRequest) {
                 image2Url: record.image2Url,
                 extraImagesUrl: record.extraImagesUrl,
                 videoUrl: record.videoUrl,
-                linkedinUrl: existing.linkedinUrl || record.linkedinUrl,
-                twitterUrl: existing.twitterUrl || record.twitterUrl,
-                liveEmailStatusImported: record.estimatedPublishDate || record.liveEmailStatusImported,
+                linkedinUrl: record.linkedinUrl,
+                twitterUrl: record.twitterUrl,
+                liveEmailStatusImported:
+                  record.estimatedPublishDate || record.liveEmailStatusImported,
                 pressFollowupStatusImported:
                   record.pressFollowupStatusImported,
                 estimatedPublishDate: parseOptionalDate(
@@ -215,71 +297,58 @@ export async function POST(request: NextRequest) {
                 ),
               },
             });
-            if (existing.sourceRowHash === record.sourceRowHash) unchanged++;
-            else updated++;
-            continue;
+
+            await tx.action.create({
+              data: {
+                clientId: source.clientId,
+                interviewId: createdInterview.id,
+                actionType: "IMPORT_CREATED",
+                status: "SUCCESS",
+                note: `Imported during sync from ${tabTitle}, row ${record.sourceRowNumber}.`,
+              },
+            });
+
+            byArticleUrl.set(createdInterview.articleUrl, createdInterview);
+            if (createdInterview.sourceRowNumber !== null) {
+              byRowNumber.set(
+                createdInterview.sourceRowNumber,
+                createdInterview
+              );
+            }
+            usedInterviewIds.add(createdInterview.id);
+            batchCreated++;
           }
 
-          // Create new record
-          const createdInterview = await tx.interview.create({
-            data: {
-              clientId: source.clientId,
-              sheetSourceId: source.id,
-              sourceRowNumber: record.sourceRowNumber,
-              sourceRowHash: record.sourceRowHash,
-              intervieweeName: record.intervieweeName,
-              intervieweeCompany: record.intervieweeCompany,
-              intervieweeEmail: record.intervieweeEmail,
-              intervieweeTitle: record.intervieweeTitle,
-              companyEmployeeCount: record.companyEmployeeCount,
-              companyRevenueUsd: record.companyRevenueUsd,
-              largestSocialFollowerCount: record.largestSocialFollowerCount,
-              prominenceNotes: record.prominenceNotes,
-              publicistName: record.publicistName,
-              publicistEmail: record.publicistEmail,
-              topic: record.topic,
-              articleUrl: record.articleUrl,
-              buzzfeedUrl: record.buzzfeedUrl,
-              interviewDocUrl: record.interviewDocUrl,
-              image1Url: record.image1Url,
-              image2Url: record.image2Url,
-              extraImagesUrl: record.extraImagesUrl,
-              videoUrl: record.videoUrl,
-              linkedinUrl: record.linkedinUrl,
-              twitterUrl: record.twitterUrl,
-              liveEmailStatusImported: record.estimatedPublishDate || record.liveEmailStatusImported,
-              pressFollowupStatusImported:
-                record.pressFollowupStatusImported,
-              estimatedPublishDate: parseOptionalDate(
-                record.estimatedPublishDate
-              ),
-            },
-          });
+          return {
+            created: batchCreated,
+            updated: batchUpdated,
+            unchanged: batchUnchanged,
+            duplicatesSkipped: batchDuplicatesSkipped,
+          };
+        }, { timeout: 30_000 });
 
-          await tx.action.create({
-            data: {
-              clientId: source.clientId,
-              interviewId: createdInterview.id,
-              actionType: "IMPORT_CREATED",
-              status: "SUCCESS",
-              note: `Imported during sync from ${tabTitle}, row ${record.sourceRowNumber}.`,
-            },
-          });
-          created++;
-        }
+        created += batchResult.created;
+        updated += batchResult.updated;
+        unchanged += batchResult.unchanged;
+        duplicatesSkipped += batchResult.duplicatesSkipped;
+        processed += recordBatch.length;
+      }
 
-        return {
-          created,
-          updated,
-          unchanged,
-          duplicatesSkipped,
-        };
-      }, { timeout: 60_000 });
+      const result = {
+        created,
+        updated,
+        unchanged,
+        duplicatesSkipped,
+        processed,
+        batches: recordBatches.length,
+      };
 
       totalCreated += result.created;
       totalUpdated += result.updated;
       totalUnchanged += result.unchanged;
       totalDuplicatesSkipped += result.duplicatesSkipped;
+      totalProcessed += result.processed;
+      totalBatches += result.batches;
     }
 
     return NextResponse.json({
@@ -289,9 +358,11 @@ export async function POST(request: NextRequest) {
         updated: totalUpdated,
         unchanged: totalUnchanged,
         duplicatesSkipped: totalDuplicatesSkipped,
+        processed: totalProcessed,
+        batches: totalBatches,
       },
       warnings,
-      message: `Sync complete. ${totalCreated} created, ${totalUpdated} updated, ${totalUnchanged} unchanged.`,
+      message: `Sync complete. ${totalCreated} created, ${totalUpdated} updated, ${totalUnchanged} skipped unchanged across ${totalBatches} batch(es).`,
     });
   } catch (error: unknown) {
     console.error("Sync API error:", error);
@@ -307,4 +378,28 @@ function parseOptionalDate(value: string | null): Date | null {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
+
+async function clearRowNumberConflict(
+  tx: Prisma.TransactionClient,
+  sheetSourceId: string,
+  sourceRowNumber: number,
+  keepInterviewId?: string
+) {
+  await tx.interview.updateMany({
+    where: {
+      sheetSourceId,
+      sourceRowNumber,
+      ...(keepInterviewId ? { NOT: { id: keepInterviewId } } : {}),
+    },
+    data: { sourceRowNumber: null },
+  });
 }

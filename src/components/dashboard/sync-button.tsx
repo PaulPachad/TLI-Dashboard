@@ -6,12 +6,14 @@ export function SyncButton() {
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [summary, setSummary] = useState<string | null>(null);
 
   async function handleSync() {
     try {
       setSyncing(true);
       setError(null);
       setSuccess(false);
+      setSummary(null);
 
       const [resInterviews, resTopics] = await Promise.all([
         fetch("/api/sync", { method: "POST" }),
@@ -29,11 +31,19 @@ export function SyncButton() {
         throw new Error(dataTopics.error || "Failed to sync topics/events.");
       }
 
+      const result = dataInterviews.result;
+      if (result) {
+        setSummary(
+          `${result.created ?? 0} created, ${result.updated ?? 0} updated, ${
+            result.unchanged ?? 0
+          } skipped unchanged`
+        );
+      }
       setSuccess(true);
       // Wait a moment so the user sees the success state, then refresh
       setTimeout(() => {
         window.location.reload();
-      }, 1000);
+      }, 2500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to sync sheet.");
     } finally {
@@ -105,6 +115,16 @@ export function SyncButton() {
       {error && (
         <span className="text-xs text-rose-600 bg-rose-50 border border-rose-100 rounded-md px-2 py-1 max-w-[240px] text-right truncate">
           {error}
+        </span>
+      )}
+      {!error && syncing && (
+        <span className="max-w-[280px] rounded-md border border-indigo-100 bg-indigo-50 px-2 py-1 text-right text-xs text-indigo-600">
+          Checking the sheet and only saving changed rows...
+        </span>
+      )}
+      {!error && success && summary && (
+        <span className="max-w-[280px] rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-right text-xs text-emerald-700">
+          {summary}
         </span>
       )}
     </div>
