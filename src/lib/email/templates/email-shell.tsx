@@ -15,6 +15,10 @@ export function EmailShell({
   accent,
   children,
 }: EmailShellProps) {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "https://tli-dashboard.vercel.app";
+  const cleanBaseUrl = baseUrl.replace(/\/$/, "");
+  const logoUrl = `${cleanBaseUrl}/logo.png`;
+
   return (
     <html lang="en">
       <body
@@ -64,18 +68,29 @@ export function EmailShell({
                     </tr>
                     <tr>
                       <td style={{ padding: "36px 40px 12px" }}>
-                        <p
+                        <img
+                          src={logoUrl}
+                          alt="Authority Magazine"
                           style={{
-                            margin: "0 0 10px",
-                            color: accent,
-                            fontSize: "12px",
-                            fontWeight: 700,
-                            letterSpacing: "0.1em",
-                            textTransform: "uppercase",
+                            height: "28px",
+                            marginBottom: "16px",
+                            display: "block",
                           }}
-                        >
-                          {eyebrow}
-                        </p>
+                        />
+                        {eyebrow && eyebrow !== "Authority Magazine" && (
+                          <p
+                            style={{
+                              margin: "0 0 10px",
+                              color: accent,
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              letterSpacing: "0.1em",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            {eyebrow}
+                          </p>
+                        )}
                         <h1
                           style={{
                             margin: 0,
@@ -125,18 +140,6 @@ export function EmailShell({
                           )
                         )}
                         {children}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td
-                        style={{
-                          borderTop: "1px solid #e2e8f0",
-                          padding: "18px 40px",
-                          color: "#94a3b8",
-                          fontSize: "12px",
-                        }}
-                      >
-                        Sent with TLI Leverage Dashboard
                       </td>
                     </tr>
                   </tbody>

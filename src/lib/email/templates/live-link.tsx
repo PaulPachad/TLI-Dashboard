@@ -6,7 +6,7 @@ export function LiveLinkEmail({ body }: { body: string }) {
       eyebrow="Authority Magazine"
       heading="Your interview is live"
       body={body}
-      accent="#4f46e5"
+      accent="#800000"
     />
   );
 }

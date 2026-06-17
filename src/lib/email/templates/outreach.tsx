@@ -12,7 +12,7 @@ export function OutreachEmail({
       eyebrow="Authority Magazine"
       heading={heading}
       body={body}
-      accent="#4f46e5"
+      accent="#800000"
     />
   );
 }
