@@ -59,7 +59,7 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
       "NEXT_PUBLIC_GEMINI_API_KEY",
     ]),
     private readonly model =
-      getFirstEnvValue(["GEMINI_SEARCH_MODEL"]) || "gemini-3.5-flash"
+      getFirstEnvValue(["GEMINI_SEARCH_MODEL"]) || "gemini-2.5-flash"
   ) {}
 
   async search(query: string): Promise<SearchResult[]> {
@@ -67,40 +67,57 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
       throw new GoogleSearchConfigError();
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": this.apiKey,
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
+    // Attempt the primary model first, and dynamically fall back to gemini-2.5-flash
+    // (or gemini-3.5-flash if 2.5 was primary) if the request fails due to rate limits/quotas.
+    const primaryModel = this.model;
+    const fallbackModel = primaryModel === "gemini-2.5-flash" ? "gemini-3.5-flash" : "gemini-2.5-flash";
+    const modelsToTry = [primaryModel, fallbackModel];
+
+    let lastError: Error | null = null;
+
+    for (const model of modelsToTry) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": this.apiKey,
+            },
+            body: JSON.stringify({
+              contents: [
                 {
-                  text:
-                    "Research this person or company for VIP/prospect prominence signals. " +
-                    "Return concise facts only. Look for employee count, annual revenue, " +
-                    "social followers/subscribers, press, awards, author/speaker signals, " +
-                    `senior leadership, funding, acquisitions, or public-company status: ${query}`,
+                  parts: [
+                    {
+                      text:
+                        "Research this person or company for VIP/prospect prominence signals. " +
+                        "Return concise facts only. Look for employee count, annual revenue, " +
+                        "social followers/subscribers, press, awards, author/speaker signals, " +
+                        `senior leadership, funding, acquisitions, or public-company status: ${query}`,
+                    },
+                  ],
                 },
               ],
-            },
-          ],
-          tools: [{ google_search: {} }],
-        }),
-      }
-    );
+              tools: [{ google_search: {} }],
+            }),
+          }
+        );
 
-    const data = await response.json();
-    if (!response.ok) {
-      const message = data?.error?.message || "Gemini grounded search failed.";
-      throw new Error(message);
+        const data = await response.json();
+        if (!response.ok) {
+          const message = data?.error?.message || "Gemini grounded search failed.";
+          throw new Error(`Model ${model} failed: ${message}`);
+        }
+
+        return geminiResponseToSearchResults(data);
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Gemini grounded search failed for model ${model}, trying next... Error:`, err.message || err);
+      }
     }
 
-    return geminiResponseToSearchResults(data);
+    throw lastError || new Error("Gemini grounded search failed on all attempted models.");
   }
 }
 
