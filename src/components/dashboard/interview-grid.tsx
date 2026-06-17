@@ -41,6 +41,21 @@ interface DashboardNotice {
   tone: NoticeTone;
 }
 
+interface SearchDiagnostics {
+  hasGeminiSearch?: boolean;
+  hasGoogleCustomSearch?: boolean;
+  vercelEnv?: string | null;
+  gitBranch?: string | null;
+  gitCommit?: string | null;
+}
+
+interface ProminenceResponse {
+  code?: string;
+  error?: string;
+  note?: string;
+  diagnostics?: SearchDiagnostics;
+}
+
 export function InterviewGrid({ clientId }: InterviewGridProps) {
   const [interviews, setInterviews] = useState<InterviewView[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,14 +120,12 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
       const res = await fetch(`/api/interviews/${interviewId}/prominence`, {
         method: "POST",
       });
-      const data = await res.json();
+      const data = (await res.json()) as ProminenceResponse;
       if (!res.ok) {
         if (data.code === "GOOGLE_SEARCH_NOT_CONFIGURED") {
           setNotice({
             tone: "warning",
-            message:
-              data.error ||
-              "VIP research needs a Gemini or Google Search API key before it can run.",
+            message: formatSearchConfigNotice(data),
           });
           return;
         }
@@ -349,6 +362,27 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
       )}
     </div>
   );
+}
+
+function formatSearchConfigNotice(data: ProminenceResponse) {
+  const base =
+    data.error ||
+    "VIP research needs a Gemini or Google Search API key before it can run.";
+
+  if (!data.diagnostics) return base;
+
+  const diagnostics = data.diagnostics;
+  const details = [
+    `Gemini key: ${diagnostics.hasGeminiSearch ? "yes" : "no"}`,
+    `Google Custom Search: ${
+      diagnostics.hasGoogleCustomSearch ? "yes" : "no"
+    }`,
+    `Vercel env: ${diagnostics.vercelEnv || "unknown"}`,
+    diagnostics.gitBranch ? `branch: ${diagnostics.gitBranch}` : null,
+    diagnostics.gitCommit ? `commit: ${diagnostics.gitCommit}` : null,
+  ].filter(Boolean);
+
+  return `${base} Diagnostics: ${details.join("; ")}.`;
 }
 
 function StatCard({

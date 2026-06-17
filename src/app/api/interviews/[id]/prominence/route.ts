@@ -4,7 +4,7 @@ import { requireApiAuth } from "@/lib/auth-helpers";
 import {
   GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
   GoogleSearchConfigError,
-  getSearchConfigStatus,
+  getSearchDiagnostics,
   researchInterviewProminence,
 } from "@/lib/prominence/research";
 
@@ -79,13 +79,13 @@ export async function POST(
     });
   } catch (error: unknown) {
     if (error instanceof GoogleSearchConfigError) {
-      const config = getSearchConfigStatus();
+      const diagnostics = getSearchDiagnostics();
       return NextResponse.json(
         {
           code: GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
           error:
             "VIP research cannot see GEMINI_API_KEY in this project environment yet. Add it under Project Settings > Environment Variables, not AI Gateway > Bring Your Own Key, then redeploy.",
-          config,
+          diagnostics,
         },
         { status: 503 }
       );

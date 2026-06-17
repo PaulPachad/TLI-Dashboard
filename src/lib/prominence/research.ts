@@ -187,6 +187,25 @@ export function getSearchConfigStatus(): {
   };
 }
 
+export function getSearchDiagnostics(): {
+  hasGeminiSearch: boolean;
+  hasGoogleCustomSearch: boolean;
+  vercelEnv: string | null;
+  gitBranch: string | null;
+  gitCommit: string | null;
+  deploymentUrl: string | null;
+} {
+  const status = getSearchConfigStatus();
+  return {
+    ...status,
+    vercelEnv: getFirstEnvValue(["VERCEL_ENV"]) || null,
+    gitBranch: getFirstEnvValue(["VERCEL_GIT_COMMIT_REF"]) || null,
+    gitCommit:
+      getFirstEnvValue(["VERCEL_GIT_COMMIT_SHA"])?.slice(0, 7) || null,
+    deploymentUrl: getFirstEnvValue(["VERCEL_URL"]) || null,
+  };
+}
+
 function getFirstEnvValue(names: string[]): string | undefined {
   for (const name of names) {
     const value = process.env[name]?.trim();
