@@ -19,10 +19,14 @@ export function PanelToggle({ activePanel, onChange }: PanelToggleProps) {
 
   return (
     <div className="flex justify-center mb-8">
-      <div className="relative flex max-w-full space-x-1 overflow-x-auto rounded-full bg-slate-100 p-1 shadow-inner border border-slate-200">
+      <div
+        data-tour="dashboard-tabs"
+        className="relative flex max-w-full space-x-1 overflow-x-auto rounded-full bg-slate-100 p-1 shadow-inner border border-slate-200"
+      >
         {tabs.map((tab) => (
           <button
             key={tab.id}
+            data-tour={`tab-${tab.id}`}
             onClick={() => onChange(tab.id)}
             className={`relative flex items-center justify-center rounded-full px-6 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 z-10 ${
               activePanel === tab.id

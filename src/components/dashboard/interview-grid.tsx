@@ -259,7 +259,10 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
         </div>
       )}
       {/* Stats bar */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+      <div
+        data-tour="interview-stats"
+        className="grid grid-cols-2 lg:grid-cols-6 gap-4"
+      >
         <StatCard label="Total Interviews" value={stats.total} color="indigo" />
         <StatCard label="Upcoming" value={stats.upcoming} color="sky" />
         <StatCard label="Needs Action" value={stats.needsAction} color="amber" />
@@ -292,7 +295,10 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
           />
         </div>
 
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
+        <div
+          data-tour="interview-filters"
+          className="flex gap-1.5 overflow-x-auto pb-1"
+        >
           {STATUS_FILTERS.map((filter) => (
             <button
               key={filter.value}

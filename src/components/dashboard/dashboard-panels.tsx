@@ -8,6 +8,7 @@ import { EventsGrid } from "./events-grid";
 import { Topic, Event } from "@prisma/client";
 import { InterviewGrid } from "./interview-grid";
 import { TutorialPanel } from "./tutorial-panel";
+import { GuidedTour } from "./guided-tour";
 
 interface DashboardPanelsProps {
   topics: Topic[];
@@ -19,6 +20,7 @@ const PANEL_ORDER: PanelType[] = ["interviews", "topics", "events", "tutorial"];
 export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
   const [activePanel, setActivePanel] = useState<PanelType>("interviews");
   const [direction, setDirection] = useState(1);
+  const [tourSignal, setTourSignal] = useState(0);
   const reduceMotion = useReducedMotion();
 
   function handlePanelChange(nextPanel: PanelType) {
@@ -99,9 +101,18 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
             renderPanel("events", <EventsGrid events={events} />)}
 
           {activePanel === "tutorial" &&
-            renderPanel("tutorial", <TutorialPanel />)}
+            renderPanel(
+              "tutorial",
+              <TutorialPanel onStartTour={() => setTourSignal((value) => value + 1)} />
+            )}
         </AnimatePresence>
       </div>
+
+      <GuidedTour
+        activePanel={activePanel}
+        setActivePanel={handlePanelChange}
+        tourSignal={tourSignal}
+      />
     </div>
   );
 }

@@ -47,7 +47,10 @@ export function EventsGrid({ events }: { events: Event[] }) {
 
   if (events.length === 0) {
     return (
-      <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-slate-500">
+      <div
+        data-tour="events-controls"
+        className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-slate-500"
+      >
         <p>No upcoming events.</p>
         <p className="text-sm">Events will appear here once synced.</p>
       </div>
@@ -79,6 +82,7 @@ export function EventsGrid({ events }: { events: Event[] }) {
   const renderEventCard = (event: Event) => (
     <div
       key={event.id}
+      data-tour="event-card"
       className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md"
     >
       <div className="border-b border-slate-100 bg-slate-50 px-5 py-4">
@@ -158,6 +162,7 @@ export function EventsGrid({ events }: { events: Event[] }) {
         )}
         <button
           type="button"
+          data-tour="event-email-contact"
           onClick={() => setSelectedEvent(event)}
           className="mt-2 inline-flex min-h-10 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 transition-colors hover:border-indigo-300 hover:bg-indigo-100"
         >
@@ -187,7 +192,10 @@ export function EventsGrid({ events }: { events: Event[] }) {
       )}
 
       {/* Controls panel */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+      <div
+        data-tour="events-controls"
+        className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm"
+      >
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400">View Mode:</span>
           <div className="inline-flex rounded-lg bg-slate-200 p-0.5">

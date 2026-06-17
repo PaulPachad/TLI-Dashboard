@@ -12,7 +12,10 @@ export function TopicsGrid({ topics }: { topics: Topic[] }) {
 
   if (topics.length === 0) {
     return (
-      <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-slate-500">
+      <div
+        data-tour="topics-controls"
+        className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-slate-500"
+      >
         <p>No topics found.</p>
         <p className="text-sm">They will appear here once synced from your sheet.</p>
       </div>
@@ -114,6 +117,7 @@ export function TopicsGrid({ topics }: { topics: Topic[] }) {
     return (
       <div
         key={topic.id}
+        data-tour="topic-card"
         onClick={() => setSelectedTopic(topic)}
         className="group flex flex-col cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-indigo-300 animate-fadeIn"
       >
@@ -150,7 +154,10 @@ export function TopicsGrid({ topics }: { topics: Topic[] }) {
   return (
     <div className="space-y-6">
       {/* Controls panel */}
-      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+      <div
+        data-tour="topics-controls"
+        className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm md:flex-row md:items-center md:justify-between"
+      >
         {/* Left: Tag Filters */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1">Filter:</span>
