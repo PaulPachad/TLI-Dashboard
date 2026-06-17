@@ -5,8 +5,8 @@ import {
   GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
   GoogleSearchConfigError,
   getSearchDiagnostics,
-  researchInterviewProminence,
 } from "@/lib/prominence/research";
+import { saveProminenceResearch } from "@/lib/prominence/service";
 
 export async function POST(
   _request: Request,
@@ -36,36 +36,10 @@ export async function POST(
       return NextResponse.json({ error: "Access denied." }, { status: 403 });
     }
 
-    const result = await researchInterviewProminence(interview);
-    const updated = await db.interview.update({
-      where: { id },
-      data: {
-        companyEmployeeCount: result.companyEmployeeCount,
-        companyRevenueUsd: result.companyRevenueUsd,
-        largestSocialFollowerCount: result.largestSocialFollowerCount,
-        prominenceNotes: result.prominenceNotes,
-      },
-    });
-
-    await db.action.create({
-      data: {
-        clientId: interview.clientId,
-        interviewId: id,
-        actionType: "PROMINENCE_RESEARCHED",
-        status: "SUCCESS",
-        note:
-          result.assessment.tier === "standard"
-            ? "Researched VIP signals. No strong prominence signals found yet."
-            : `Researched VIP signals and flagged ${result.assessment.tierLabel}.`,
-        metadataJson: JSON.stringify({
-          score: result.assessment.score,
-          tier: result.assessment.tier,
-          confidence: result.assessment.confidence,
-          sourceCount: result.sourceResults.length,
-        }),
-        createdByUserId: user.id,
-      },
-    });
+    const { result, updated } = await saveProminenceResearch(
+      interview,
+      user.id
+    );
 
     return NextResponse.json({
       success: true,

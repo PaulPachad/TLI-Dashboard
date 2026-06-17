@@ -260,12 +260,16 @@ export function buildProminenceQueries(interview: ResearchInterview): string[] {
   const identity = [name, company].filter(Boolean).join(" ");
 
   return [
-    `${identity} CEO founder awards speaker author Forbes`,
-    `${identity} followers subscribers LinkedIn Instagram YouTube`,
-    company
-      ? `${company} employees revenue funding company size`
-      : `${name} company employees revenue`,
-    `${identity} Wikipedia Crunchbase press`,
+    [
+      identity,
+      interview.intervieweeTitle || "",
+      "VIP prominence signals",
+      "CEO founder executive author speaker awards Forbes Fortune Inc",
+      "followers subscribers LinkedIn Instagram YouTube",
+      "employees revenue funding acquisition public company",
+    ]
+      .filter(Boolean)
+      .join(" "),
   ];
 }
 

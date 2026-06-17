@@ -4,7 +4,7 @@
 // Interview Grid — Displays all interview cards with search and filters
 // ==============================================================================
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { InterviewCard } from "./interview-card";
 import { InterviewDetailPanel } from "@/components/panels/interview-detail-panel";
 import { ActionModal } from "./action-modal";
@@ -68,6 +68,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
   const [activeInterviewId, setActiveInterviewId] = useState<string | null>(null);
   const [researchingId, setResearchingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<DashboardNotice | null>(null);
+  const quietScanStarted = useRef(false);
 
   const fetchInterviews = useCallback(async () => {
     try {
@@ -99,6 +100,42 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchInterviews();
   }, [fetchInterviews]);
+
+  useEffect(() => {
+    if (
+      quietScanStarted.current ||
+      loading ||
+      error ||
+      interviews.length === 0 ||
+      !interviews.some(shouldQuietScanProminence)
+    ) {
+      return;
+    }
+
+    quietScanStarted.current = true;
+    let cancelled = false;
+
+    void (async () => {
+      const res = await fetch("/api/interviews/prominence/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId, limit: 3 }),
+      });
+
+      if (!res.ok || cancelled) return;
+
+      const data = (await res.json()) as { updated?: number };
+      if (!cancelled && data.updated && data.updated > 0) {
+        await fetchInterviews();
+      }
+    })().catch((scanError) => {
+      console.warn("Quiet VIP scan skipped:", scanError);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clientId, error, fetchInterviews, interviews, loading]);
 
   // Debounced search
   const [searchInput, setSearchInput] = useState("");
@@ -383,6 +420,30 @@ function formatSearchConfigNotice(data: ProminenceResponse) {
   ].filter(Boolean);
 
   return `${base} Diagnostics: ${details.join("; ")}.`;
+}
+
+function shouldQuietScanProminence(interview: InterviewView) {
+  const hasStoredSignal =
+    interview.companyEmployeeCount !== null &&
+    interview.companyEmployeeCount !== undefined;
+  const hasStoredRevenue =
+    interview.companyRevenueUsd !== null &&
+    interview.companyRevenueUsd !== undefined;
+  const hasStoredAudience =
+    interview.largestSocialFollowerCount !== null &&
+    interview.largestSocialFollowerCount !== undefined;
+  const hasStoredNotes = Boolean(interview.prominenceNotes?.trim());
+  const alreadyResearched = interview.actions.some(
+    (action) => action.actionType === "PROMINENCE_RESEARCHED"
+  );
+
+  return (
+    !alreadyResearched &&
+    !hasStoredSignal &&
+    !hasStoredRevenue &&
+    !hasStoredAudience &&
+    !hasStoredNotes
+  );
 }
 
 function StatCard({

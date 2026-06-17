@@ -179,6 +179,7 @@ test("prominence research queries include person and company identity", () => {
 
   assert.ok(queries.some((query) => query.includes('"Taylor Chen"')));
   assert.ok(queries.some((query) => query.includes('"Acme Robotics"')));
+  assert.equal(queries.length, 1);
 });
 
 test("prominence extraction chooses largest matching metrics", () => {
