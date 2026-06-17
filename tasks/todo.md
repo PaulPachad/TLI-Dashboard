@@ -91,3 +91,20 @@ Production acceptance still requires environment-specific evidence:
 4. Run a hands-on visual review in a real browser on desktop and mobile
 
 See `tasks/plan-audit.md` for the requirement-by-requirement evidence.
+
+## Future Automation Center Phase: Colab Notebook Engines
+
+- [ ] Inventory the 3-4 existing Google Colab notebooks that power Authority Magazine automation workflows.
+  - https://colab.research.google.com/drive/1t6ZzNGeV6CbdNgp1EhKa0f4batygs7PI
+  - https://colab.research.google.com/drive/1D2rOiqLYfuLBHwGNIJv_b_xOcOTOR88b
+  - https://colab.research.google.com/drive/1vZFK2zjT_6r-bqKFPdYmW7RyYFE0c1EM#scrollTo=IWj7ZieLe1IO
+  - https://colab.research.google.com/drive/1YjrOl6b-cw6TCSbNu23reCjL0n5mgols#scrollTo=KojH03yht1SM
+- [ ] For each notebook, document the input files/fields, outputs, required credentials, runtime length, failure modes, and examples of successful results.
+- [ ] Convert each notebook from a layman-unfriendly manual tool into an engine behind the SaaS Automation Center.
+- [ ] Build a pretty SaaS wrapper for each notebook workflow so admins can upload/select inputs, start a run, watch progress, review outputs, and export/apply results without opening Colab.
+- [ ] Keep notebook execution isolated from the main Vercel app; use a background worker/job layer so long-running notebook tasks do not time out the dashboard.
+- [ ] Store notebook run history, parameters, generated files, logs, warnings, and who started the run for buyer-grade auditability.
+- [ ] Add guardrails: dry-run preview, cost/runtime estimate, cancel button, retry button, validation before run, and clear human-readable errors.
+- [ ] Decide per notebook whether to keep Colab as the execution engine, convert it to a Python worker script, or replace it with a hosted job service.
+- [ ] Make the UI non-technical: no cells, no runtime jargon, no copy/paste code; only clear actions, status, preview, and results.
+- [ ] Include this as part of the unified sellable automation story with the autoresponder bridge, not as a separate hidden tool.

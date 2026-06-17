@@ -6,7 +6,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { InterviewCard } from "./interview-card";
-import { InterviewDetailPanel } from "@/components/panels/interview-detail-panel";
 import { ActionModal } from "./action-modal";
 import type {
   InterviewActionType,
@@ -63,7 +62,6 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeAction, setActiveAction] =
     useState<InterviewActionType | null>(null);
   const [activeInterviewId, setActiveInterviewId] = useState<string | null>(null);
@@ -153,10 +151,6 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const selectedInterview = selectedId
-    ? interviews.find((interview) => interview.id === selectedId)
-    : null;
-
   const researchProminence = async (interviewId: string) => {
     try {
       setResearchingId(interviewId);
@@ -184,10 +178,6 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
         message: data.note || "VIP research complete.",
       });
       await fetchInterviews();
-      if (selectedId === interviewId) {
-        setSelectedId(null);
-        setTimeout(() => setSelectedId(interviewId), 50);
-      }
     } catch (err) {
       setNotice({
         tone: "warning",
@@ -379,21 +369,12 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
                 setActiveInterviewId(id);
                 setActiveAction(action);
               }}
-              onViewDetails={(id) => setSelectedId(id)}
               onResearchProminence={researchProminence}
               researchingProminence={researchingId === interview.id}
               autoScanQueued={shouldQuietScanProminence(interview)}
             />
           ))}
         </div>
-      )}
-
-      {/* Detail panel */}
-      {selectedInterview && (
-        <InterviewDetailPanel
-          interview={selectedInterview}
-          onClose={() => setSelectedId(null)}
-        />
       )}
 
       {/* Action modal */}
@@ -408,10 +389,6 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
           onSuccess={(message) => {
             if (message) setNotice({ tone: "success", message });
             fetchInterviews();
-            if (selectedId === activeInterviewId) {
-              setSelectedId(null);
-              setTimeout(() => setSelectedId(activeInterviewId), 50);
-            }
           }}
         />
       )}
