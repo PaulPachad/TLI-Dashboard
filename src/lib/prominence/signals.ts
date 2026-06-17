@@ -62,6 +62,9 @@ const LEADER_TITLE_PATTERN =
   /\b(vp|vice president|svp|evp|partner|principal|head of|director|executive director|publisher|editor-in-chief)\b/i;
 const STRONG_PROMINENCE_PATTERN =
   /\b(forbes|fortune|fast company|nyt|new york times|wsj|wall street journal|bloomberg|cnbc|tedx?|bestseller|best-selling|award|winner|honoree|keynote|wikipedia|verified|shark tank|unicorn|public company|fortune 500|inc\. 500|inc 500)\b/i;
+const C_LEVEL_TITLE_PATTERN =
+  /\b(ceo|cfo|coo|cto|cio|cmo|chro|cro|chief|c-suite)\b/i;
+const FORTUNE_500_PATTERN = /\bfortune\s*500\b/i;
 const WIKIPEDIA_PATTERN = /\bwikipedia\b/i;
 const MAJOR_AWARD_PATTERN =
   /\b(oscar|academy award|academy awards|emmy|emmys|grammy|grammys|tony award|tony awards|tony|golden globe|bafta|pulitzer|macarthur|nobel)\b/i;
@@ -149,6 +152,15 @@ export function assessInterviewProminence(
   const notes = [input.prominenceNotes, input.topic, input.intervieweeCompany]
     .filter(Boolean)
     .join(" ");
+  if (C_LEVEL_TITLE_PATTERN.test(title) && FORTUNE_500_PATTERN.test(notes)) {
+    score += 32;
+    hardEvidenceCount++;
+    forceHighValue = true;
+    badges.push({ label: "Fortune 500 C-Level", tone: "emerald" });
+    reasons.push(
+      `C-level leader at a Fortune 500 company: ${title}.`
+    );
+  }
   if (WIKIPEDIA_PATTERN.test(notes)) {
     score += 20;
     hardEvidenceCount++;
@@ -250,6 +262,7 @@ function getTier(
       "1M+ Audience",
       "500K+ Audience",
       "Enterprise Company",
+      "Fortune 500 C-Level",
     ].includes(badge.label)
   );
   const hasMultipleHardBadges =
@@ -262,6 +275,7 @@ function getTier(
         "1M+ Audience",
         "500K+ Audience",
         "Enterprise Company",
+        "Fortune 500 C-Level",
         "Prominent Person",
       ].includes(badge.label)
     ).length >= 2;

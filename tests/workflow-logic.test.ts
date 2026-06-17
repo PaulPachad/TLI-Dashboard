@@ -164,6 +164,21 @@ test("prominence assessment treats million follower audiences as standout", () =
   assert.ok(assessment.badges.some((badge) => badge.label === "1M+ Audience"));
 });
 
+test("prominence assessment treats Fortune 500 C-level leaders as high value", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Casey Morgan",
+    intervieweeCompany: "Example Corp",
+    intervieweeTitle: "Chief Marketing Officer",
+    prominenceNotes:
+      "Example Corp is a Fortune 500 company and Casey Morgan serves on the executive leadership team.",
+  });
+
+  assert.equal(assessment.tier, "high_value");
+  assert.ok(
+    assessment.badges.some((badge) => badge.label === "Fortune 500 C-Level")
+  );
+});
+
 test("prominence assessment treats major award recognition as notable", () => {
   const assessment = assessInterviewProminence({
     intervieweeName: "Robin Vale",
