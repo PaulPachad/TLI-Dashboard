@@ -115,9 +115,9 @@ test("prominence assessment flags elite leads from company scale and audience", 
     intervieweeName: "Taylor Chen",
     intervieweeCompany: "Acme Robotics",
     intervieweeTitle: "Founder and CEO",
-    companyEmployeeCount: 2500,
-    companyRevenueUsd: 150_000_000,
-    largestSocialFollowerCount: 125_000,
+    companyEmployeeCount: 60_000,
+    companyRevenueUsd: 1_500_000_000,
+    largestSocialFollowerCount: 1_250_000,
     prominenceNotes: "Featured in Forbes and keynote speaker.",
     articleUrl: "https://authoritymagazine.com/example",
   });
@@ -125,7 +125,22 @@ test("prominence assessment flags elite leads from company scale and audience", 
   assert.equal(assessment.tier, "elite");
   assert.ok(assessment.score >= 70);
   assert.ok(assessment.badges.some((badge) => badge.label === "Elite Lead"));
-  assert.ok(assessment.badges.some((badge) => badge.label === "100K+ Audience"));
+  assert.ok(assessment.badges.some((badge) => badge.label === "1M+ Audience"));
+});
+
+test("prominence assessment keeps normal executives out of VIP spotlight", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Morgan Lee",
+    intervieweeCompany: "Regional Services",
+    intervieweeTitle: "Founder and CEO",
+    companyEmployeeCount: 3_000,
+    prominenceNotes:
+      "Founder and CEO of Regional Services with experience in operations.",
+    articleUrl: "https://authoritymagazine.com/unpublished/example",
+  });
+
+  assert.equal(assessment.tier, "standard");
+  assert.equal(assessment.badges.length, 0);
 });
 
 test("prominence reasons clean AI markdown and source prefixes", () => {
@@ -181,7 +196,7 @@ test("prominence research extracts search-backed metrics", async () => {
   assert.equal(result.companyEmployeeCount, 2500);
   assert.equal(result.companyRevenueUsd, 150_000_000);
   assert.equal(result.largestSocialFollowerCount, 125_000);
-  assert.equal(result.assessment.tier, "elite");
+  assert.equal(result.assessment.tier, "standard");
 });
 
 test("prominence research queries include person and company identity", () => {

@@ -49,7 +49,8 @@ export function InterviewCard({
   const imageSources = buildInterviewImageSources(interview);
   const currentImage = imageSources[imageIndex];
   const prominence = interview.prominence;
-  const isSpotlight = prominence && prominence.tier !== "standard";
+  const isSpotlight =
+    prominence && ["elite", "high_value"].includes(prominence.tier);
 
   return (
     <div
@@ -172,7 +173,7 @@ export function InterviewCard({
               ? "Researching..."
               : autoScanQueued
                 ? "VIP auto-scan queued"
-              : isSpotlight
+              : prominence && prominence.tier !== "standard"
                 ? "Refresh VIP research"
                 : "Research VIP signals"}
           </button>

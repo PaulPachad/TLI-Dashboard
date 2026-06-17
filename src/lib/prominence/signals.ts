@@ -60,8 +60,8 @@ const SENIOR_TITLE_PATTERN =
   /\b(ceo|chief|founder|co-founder|owner|president|chair|chairman|chairwoman|managing partner|managing director|general manager|c-suite)\b/i;
 const LEADER_TITLE_PATTERN =
   /\b(vp|vice president|svp|evp|partner|principal|head of|director|executive director|publisher|editor-in-chief)\b/i;
-const PROMINENCE_PATTERN =
-  /\b(forbes|fortune|inc\.?|fast company|nyt|new york times|wsj|wall street journal|bloomberg|cnbc|tedx?|bestseller|best-selling|award|winner|keynote|speaker|author|wikipedia|verified|shark tank|unicorn|public company|fortune 500)\b/i;
+const STRONG_PROMINENCE_PATTERN =
+  /\b(forbes|fortune|fast company|nyt|new york times|wsj|wall street journal|bloomberg|cnbc|tedx?|bestseller|best-selling|award|winner|honoree|keynote|wikipedia|verified|shark tank|unicorn|public company|fortune 500|inc\. 500|inc 500)\b/i;
 
 export function assessInterviewProminence(
   input: ProminenceInput
@@ -74,16 +74,16 @@ export function assessInterviewProminence(
   const employees = input.companyEmployeeCount ?? null;
   if (employees !== null) {
     hardEvidenceCount++;
-    if (employees >= 10_000) {
-      score += 30;
+    if (employees >= 50_000) {
+      score += 32;
+      badges.push({ label: "50K+ Employees", tone: "emerald" });
+      reasons.push(`Company has ${formatCount(employees)} employees.`);
+    } else if (employees >= 10_000) {
+      score += 22;
       badges.push({ label: "10K+ Employees", tone: "emerald" });
       reasons.push(`Company has ${formatCount(employees)} employees.`);
-    } else if (employees >= 1_000) {
-      score += 24;
-      badges.push({ label: "Major Company", tone: "emerald" });
-      reasons.push(`Company has ${formatCount(employees)} employees.`);
-    } else if (employees >= 250) {
-      score += 12;
+    } else if (employees >= 5_000) {
+      score += 8;
       reasons.push(`Company has ${formatCount(employees)} employees.`);
     }
   }
@@ -95,12 +95,12 @@ export function assessInterviewProminence(
       score += 30;
       badges.push({ label: "$1B+ Revenue", tone: "emerald" });
       reasons.push(`Company revenue is about ${formatMoney(revenue)}.`);
-    } else if (revenue >= 100_000_000) {
-      score += 24;
-      badges.push({ label: "$100M+ Revenue", tone: "emerald" });
+    } else if (revenue >= 500_000_000) {
+      score += 22;
+      badges.push({ label: "$500M+ Revenue", tone: "emerald" });
       reasons.push(`Company revenue is about ${formatMoney(revenue)}.`);
-    } else if (revenue >= 25_000_000) {
-      score += 12;
+    } else if (revenue >= 100_000_000) {
+      score += 10;
       reasons.push(`Company revenue is about ${formatMoney(revenue)}.`);
     }
   }
@@ -108,44 +108,41 @@ export function assessInterviewProminence(
   const followers = input.largestSocialFollowerCount ?? null;
   if (followers !== null) {
     hardEvidenceCount++;
-    if (followers >= 500_000) {
-      score += 28;
+    if (followers >= 1_000_000) {
+      score += 32;
+      badges.push({ label: "1M+ Audience", tone: "sky" });
+      reasons.push(`Largest social audience is ${formatCount(followers)} followers.`);
+    } else if (followers >= 500_000) {
+      score += 22;
       badges.push({ label: "500K+ Audience", tone: "sky" });
       reasons.push(`Largest social audience is ${formatCount(followers)} followers.`);
     } else if (followers >= 100_000) {
-      score += 22;
-      badges.push({ label: "100K+ Audience", tone: "sky" });
-      reasons.push(`Largest social audience is ${formatCount(followers)} followers.`);
-    } else if (followers >= 25_000) {
-      score += 14;
-      badges.push({ label: "25K+ Audience", tone: "sky" });
+      score += 10;
       reasons.push(`Largest social audience is ${formatCount(followers)} followers.`);
     }
   }
 
   const company = input.intervieweeCompany?.toLowerCase() ?? "";
   if (ENTERPRISE_COMPANIES.some((known) => company.includes(known))) {
-    score += 22;
+    score += 20;
     badges.push({ label: "Enterprise Company", tone: "emerald" });
     reasons.push("Company name matches a widely recognized enterprise brand.");
   }
 
   const title = input.intervieweeTitle ?? "";
   if (SENIOR_TITLE_PATTERN.test(title)) {
-    score += 20;
-    badges.push({ label: "Senior Leader", tone: "violet" });
+    score += 8;
     reasons.push(`Title indicates senior leadership: ${title}.`);
   } else if (LEADER_TITLE_PATTERN.test(title)) {
-    score += 12;
-    badges.push({ label: "Leader", tone: "violet" });
+    score += 4;
     reasons.push(`Title indicates leadership: ${title}.`);
   }
 
   const notes = [input.prominenceNotes, input.topic, input.intervieweeCompany]
     .filter(Boolean)
     .join(" ");
-  if (PROMINENCE_PATTERN.test(notes)) {
-    score += 22;
+  if (STRONG_PROMINENCE_PATTERN.test(notes)) {
+    score += 14;
     hardEvidenceCount++;
     badges.push({ label: "Prominent Person", tone: "amber" });
     reasons.push(summarizeProminenceNotes(input.prominenceNotes));
@@ -210,12 +207,33 @@ export function parseMoneyMetric(value: string | null): number | null {
 
 function getTier(score: number, badges: ProminenceBadge[]): ProminenceTier {
   const hasHardBadge = badges.some((badge) =>
-    ["10K+ Employees", "Major Company", "$1B+ Revenue", "$100M+ Revenue", "500K+ Audience", "100K+ Audience"].includes(badge.label)
+    [
+      "50K+ Employees",
+      "10K+ Employees",
+      "$1B+ Revenue",
+      "$500M+ Revenue",
+      "1M+ Audience",
+      "500K+ Audience",
+      "Enterprise Company",
+    ].includes(badge.label)
   );
+  const hasMultipleHardBadges =
+    badges.filter((badge) =>
+      [
+        "50K+ Employees",
+        "10K+ Employees",
+        "$1B+ Revenue",
+        "$500M+ Revenue",
+        "1M+ Audience",
+        "500K+ Audience",
+        "Enterprise Company",
+        "Prominent Person",
+      ].includes(badge.label)
+    ).length >= 2;
 
-  if (score >= 70 || (score >= 58 && hasHardBadge)) return "elite";
-  if (score >= 45) return "high_value";
-  if (score >= 25) return "notable";
+  if (score >= 75 && hasMultipleHardBadges) return "elite";
+  if (score >= 55 && hasHardBadge) return "high_value";
+  if (score >= 40 && hasHardBadge) return "notable";
   return "standard";
 }
 

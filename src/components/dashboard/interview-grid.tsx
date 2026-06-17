@@ -211,7 +211,9 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
     needsAction: interviews.filter((interview) => !isUnpublished(interview) && interview.currentStatus !== "leveraged").length,
     leveraged: interviews.filter((interview) => interview.currentStatus === "leveraged").length,
     needsContact: interviews.filter((interview) => interview.currentStatus === "needs_contact").length,
-    spotlight: interviews.filter((interview) => interview.prominence?.tier !== "standard").length,
+    spotlight: interviews.filter((interview) =>
+      ["elite", "high_value"].includes(interview.prominence?.tier ?? "standard")
+    ).length,
   };
 
   // Sort interviews so that actionable ones are at the top, then upcoming, then leveraged.
