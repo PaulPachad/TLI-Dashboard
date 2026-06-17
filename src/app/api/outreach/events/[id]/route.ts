@@ -66,7 +66,7 @@ export async function POST(
     }
     console.error("Event outreach error:", error);
     return NextResponse.json(
-      { error: "Could not send event outreach." },
+      { error: `Could not send event outreach: ${err.message || "Unknown internal error"}` },
       { status: 500 }
     );
   }

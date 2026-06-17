@@ -66,7 +66,7 @@ export async function POST(
     }
     console.error("Topic outreach error:", error);
     return NextResponse.json(
-      { error: "Could not send topic invitation." },
+      { error: `Could not send topic invitation: ${err.message || "Unknown internal error"}` },
       { status: 500 }
     );
   }
