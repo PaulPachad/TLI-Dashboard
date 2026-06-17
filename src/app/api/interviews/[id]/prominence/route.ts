@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
-import { researchInterviewProminence } from "@/lib/prominence/research";
+import {
+  GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
+  GoogleSearchConfigError,
+  researchInterviewProminence,
+} from "@/lib/prominence/research";
 
 export async function POST(
   _request: Request,
@@ -73,6 +77,17 @@ export async function POST(
           : `Research complete: ${result.assessment.tierLabel} (${result.assessment.score}/100).`,
     });
   } catch (error: unknown) {
+    if (error instanceof GoogleSearchConfigError) {
+      return NextResponse.json(
+        {
+          code: GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
+          error:
+            "VIP research needs Google Search setup. Add GOOGLE_CUSTOM_SEARCH_API_KEY and GOOGLE_CUSTOM_SEARCH_ENGINE_ID.",
+        },
+        { status: 503 }
+      );
+    }
+
     const err = error as { status?: number; message?: string };
     if (err.status) {
       return NextResponse.json({ error: err.message }, { status: err.status });

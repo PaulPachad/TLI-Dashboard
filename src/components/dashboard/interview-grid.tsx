@@ -34,6 +34,13 @@ const PROMINENCE_PRIORITY: Record<string, number> = {
   standard: 0,
 };
 
+type NoticeTone = "success" | "warning";
+
+interface DashboardNotice {
+  message: string;
+  tone: NoticeTone;
+}
+
 export function InterviewGrid({ clientId }: InterviewGridProps) {
   const [interviews, setInterviews] = useState<InterviewView[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +52,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
     useState<InterviewActionType | null>(null);
   const [activeInterviewId, setActiveInterviewId] = useState<string | null>(null);
   const [researchingId, setResearchingId] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<DashboardNotice | null>(null);
 
   const fetchInterviews = useCallback(async () => {
     try {
@@ -100,17 +107,33 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
       });
       const data = await res.json();
       if (!res.ok) {
+        if (data.code === "GOOGLE_SEARCH_NOT_CONFIGURED") {
+          setNotice({
+            tone: "warning",
+            message:
+              data.error ||
+              "VIP research needs Google Search setup before it can run.",
+          });
+          return;
+        }
+
         throw new Error(data.error || "VIP research failed.");
       }
 
-      setNotice(data.note || "VIP research complete.");
+      setNotice({
+        tone: "success",
+        message: data.note || "VIP research complete.",
+      });
       await fetchInterviews();
       if (selectedId === interviewId) {
         setSelectedId(null);
         setTimeout(() => setSelectedId(interviewId), 50);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "VIP research failed.");
+      setNotice({
+        tone: "warning",
+        message: err instanceof Error ? err.message : "VIP research failed.",
+      });
     } finally {
       setResearchingId(null);
     }
@@ -153,13 +176,21 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
       {notice && (
         <div
           role="status"
-          className="flex items-start justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+          className={`flex items-start justify-between gap-4 rounded-xl border px-4 py-3 text-sm ${
+            notice.tone === "warning"
+              ? "border-amber-200 bg-amber-50 text-amber-900"
+              : "border-emerald-200 bg-emerald-50 text-emerald-800"
+          }`}
         >
-          <span>{notice}</span>
+          <span>{notice.message}</span>
           <button
             type="button"
             onClick={() => setNotice(null)}
-            className="font-semibold text-emerald-700 hover:text-emerald-900"
+            className={`font-semibold ${
+              notice.tone === "warning"
+                ? "text-amber-800 hover:text-amber-950"
+                : "text-emerald-700 hover:text-emerald-900"
+            }`}
             aria-label="Dismiss notification"
           >
             Close
@@ -307,7 +338,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
             setActiveInterviewId(null);
           }}
           onSuccess={(message) => {
-            if (message) setNotice(message);
+            if (message) setNotice({ tone: "success", message });
             fetchInterviews();
             if (selectedId === activeInterviewId) {
               setSelectedId(null);

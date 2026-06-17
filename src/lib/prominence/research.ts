@@ -35,6 +35,18 @@ export interface ProminenceResearchResult {
   assessment: ReturnType<typeof assessInterviewProminence>;
 }
 
+export const GOOGLE_SEARCH_NOT_CONFIGURED_CODE = "GOOGLE_SEARCH_NOT_CONFIGURED";
+
+export class GoogleSearchConfigError extends Error {
+  code = GOOGLE_SEARCH_NOT_CONFIGURED_CODE;
+
+  constructor() {
+    super(
+      "Google search is not configured. Add GOOGLE_CUSTOM_SEARCH_API_KEY and GOOGLE_CUSTOM_SEARCH_ENGINE_ID."
+    );
+  }
+}
+
 const PROMINENCE_SIGNAL_PATTERN =
   /\b(forbes|fortune|inc\.?|entrepreneur|fast company|nyt|new york times|wsj|wall street journal|bloomberg|cnbc|tedx?|keynote|speaker|author|bestseller|best-selling|award|winner|honoree|founder|ceo|president|wikipedia|verified|followers|subscribers|employees|revenue|funding|raised|acquired|public company|fortune 500)\b/i;
 
@@ -47,9 +59,7 @@ export class GoogleCustomSearchProvider implements SearchProvider {
 
   async search(query: string): Promise<SearchResult[]> {
     if (!this.apiKey || !this.searchEngineId) {
-      throw new Error(
-        "Google search is not configured. Add GOOGLE_CUSTOM_SEARCH_API_KEY and GOOGLE_CUSTOM_SEARCH_ENGINE_ID."
-      );
+      throw new GoogleSearchConfigError();
     }
 
     const url = new URL("https://www.googleapis.com/customsearch/v1");
