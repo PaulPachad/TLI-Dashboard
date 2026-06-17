@@ -5,7 +5,6 @@ import { requireApiAuth } from "@/lib/auth-helpers";
 import { isDemoMode } from "@/lib/google-sheets";
 import { buildEventOutreachEmailBody } from "@/lib/email/copy";
 import { OutreachEmail } from "@/lib/email/templates/outreach";
-import { renderToStaticMarkup } from "react-dom/server";
 
 interface OutreachBody {
   recipients?: string;
@@ -111,13 +110,16 @@ async function sendOutreach({
     return { simulated: true, providerMessageId: null };
   }
 
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const htmlBody = renderToStaticMarkup(OutreachEmail({ body, heading }));
+
   const sendResult = await resend.emails.send({
     from: process.env.EMAIL_FROM || "Authority Magazine <onboarding@resend.dev>",
     to: recipients,
     replyTo: replyTo || undefined,
     subject,
     text: body,
-    html: renderToStaticMarkup(OutreachEmail({ body, heading })),
+    html: htmlBody,
   });
 
   if (sendResult.error) {
