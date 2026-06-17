@@ -116,11 +116,16 @@ export function InterviewDetailPanel({ interview, onClose }: InterviewDetailPane
                 </div>
               </div>
               {interview.prominence.reasons.length > 0 && (
-                <div className="flex items-start gap-3">
-                  <span className="text-xs text-slate-400 w-20 shrink-0 pt-0.5">Why</span>
-                  <ul className="space-y-1 text-sm text-slate-700">
+                <div className="rounded-lg border border-amber-100 bg-amber-50/50 p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-800">
+                    Why this person is notable
+                  </p>
+                  <ul className="space-y-2 text-sm leading-relaxed text-slate-700">
                     {interview.prominence.reasons.map((reason) => (
-                      <li key={reason}>{reason}</li>
+                      <li key={reason} className="flex gap-2">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                        <span>{reason}</span>
+                      </li>
                     ))}
                   </ul>
                 </div>

@@ -277,13 +277,26 @@ function summarizeProminenceNotes(value?: string | null): string {
     return "Search found press, awards, authorship, speaking, or public-figure signals.";
   }
 
-  const firstLine = value
-    .split("\n")
-    .map((line) => line.trim())
-    .find(Boolean);
-  if (!firstLine) {
+  const cleanText = cleanProminenceText(value);
+  if (!cleanText) {
     return "Search found press, awards, authorship, speaking, or public-figure signals.";
   }
 
-  return firstLine.length > 180 ? `${firstLine.slice(0, 177)}...` : firstLine;
+  return cleanText.length > 180 ? `${cleanText.slice(0, 177)}...` : cleanText;
+}
+
+function cleanProminenceText(value: string): string {
+  return value
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/\((?:https?:\/\/|www\.)[^)]+\)/gi, "")
+    .replace(/https?:\/\/\S+/gi, "")
+    .replace(/\*\*/g, "")
+    .replace(/#+\s*/g, "")
+    .replace(/\b[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:\/\S*)?:\s*/g, "")
+    .replace(/Here are the key prominence signals and facts for .*?:/i, "")
+    .replace(/\bLeadership\s*&\s*Company\s*Prominence\b/gi, "")
+    .replace(/\bRole:\s*/gi, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^[-:;,\s]+/, "");
 }

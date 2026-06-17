@@ -128,6 +128,19 @@ test("prominence assessment flags elite leads from company scale and audience", 
   assert.ok(assessment.badges.some((badge) => badge.label === "100K+ Audience"));
 });
 
+test("prominence reasons clean AI markdown and source prefixes", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Dion Clarke",
+    intervieweeCompany: "Harlem Fine Arts Show",
+    intervieweeTitle: "founder and CEO",
+    prominenceNotes:
+      "oldwestbury.edu: Here are the key prominence signals and facts for **Dion E. Clarke**: ### **Leadership & Company Prominence** **Role:** Founder and CEO of the **Harlem Fine Arts Show**.",
+  });
+
+  assert.match(assessment.reasons[0], /Founder and CEO/i);
+  assert.doesNotMatch(assessment.reasons[0], /\*\*|###|oldwestbury\.edu/i);
+});
+
 test("prominence metric parsers handle shorthand values", () => {
   assert.equal(parseCountMetric("25k followers"), 25_000);
   assert.equal(parseCountMetric("1.2 million employees"), 1_200_000);
