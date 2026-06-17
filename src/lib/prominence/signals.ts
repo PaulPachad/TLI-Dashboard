@@ -65,6 +65,10 @@ const STRONG_PROMINENCE_PATTERN =
 const C_LEVEL_TITLE_PATTERN =
   /\b(ceo|cfo|coo|cto|cio|cmo|chro|cro|chief|c-suite)\b/i;
 const FORTUNE_500_PATTERN = /\bfortune\s*500\b/i;
+const MAJOR_CONFERENCE_SPEAKER_PATTERN =
+  /\b(speaker|spoke|speaking|keynote|panelist|presented|featured)\b.*\b(sxsw|south by southwest|davos|world economic forum|cannes lions|aspen ideas|milken|collision|web summit)\b|\b(sxsw|south by southwest|davos|world economic forum|cannes lions|aspen ideas|milken|collision|web summit)\b.*\b(speaker|spoke|speaking|keynote|panelist|presented|featured)\b/i;
+const UNICORN_FOUNDER_PATTERN =
+  /\b(founder|co-founder|cofounder|founded)\b.*\b(unicorn|billion-dollar company|billion dollar company|valued at \$?1\b.*billion|valuation of \$?1\b.*billion)\b|\b(unicorn|billion-dollar company|billion dollar company|valued at \$?1\b.*billion|valuation of \$?1\b.*billion)\b.*\b(founder|co-founder|cofounder|founded)\b/i;
 const WIKIPEDIA_PATTERN = /\bwikipedia\b/i;
 const MAJOR_AWARD_PATTERN =
   /\b(oscar|academy award|academy awards|emmy|emmys|grammy|grammys|tony award|tony awards|tony|golden globe|bafta|pulitzer|macarthur|nobel)\b/i;
@@ -160,6 +164,20 @@ export function assessInterviewProminence(
     reasons.push(
       `C-level leader at a Fortune 500 company: ${title}.`
     );
+  }
+  if (MAJOR_CONFERENCE_SPEAKER_PATTERN.test(notes)) {
+    score += 20;
+    hardEvidenceCount++;
+    forceNotable = true;
+    badges.push({ label: "Major Conference Speaker", tone: "amber" });
+    reasons.push(summarizeProminenceNotes(input.prominenceNotes));
+  }
+  if (UNICORN_FOUNDER_PATTERN.test([title, notes].filter(Boolean).join(" "))) {
+    score += 32;
+    hardEvidenceCount++;
+    forceHighValue = true;
+    badges.push({ label: "Unicorn Founder", tone: "emerald" });
+    reasons.push(summarizeProminenceNotes(input.prominenceNotes));
   }
   if (WIKIPEDIA_PATTERN.test(notes)) {
     score += 20;
@@ -263,6 +281,7 @@ function getTier(
       "500K+ Audience",
       "Enterprise Company",
       "Fortune 500 C-Level",
+      "Unicorn Founder",
     ].includes(badge.label)
   );
   const hasMultipleHardBadges =
@@ -276,6 +295,7 @@ function getTier(
         "500K+ Audience",
         "Enterprise Company",
         "Fortune 500 C-Level",
+        "Unicorn Founder",
         "Prominent Person",
       ].includes(badge.label)
     ).length >= 2;

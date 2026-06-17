@@ -179,6 +179,31 @@ test("prominence assessment treats Fortune 500 C-level leaders as high value", (
   );
 });
 
+test("prominence assessment treats major conference speakers as notable", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Sam Rivera",
+    prominenceNotes:
+      "Sam Rivera was a featured speaker at SXSW and later presented at Web Summit.",
+  });
+
+  assert.equal(assessment.tier, "notable");
+  assert.ok(
+    assessment.badges.some((badge) => badge.label === "Major Conference Speaker")
+  );
+});
+
+test("prominence assessment treats unicorn founders as high value", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Priya Shah",
+    intervieweeTitle: "Co-founder",
+    prominenceNotes:
+      "Priya Shah co-founded a unicorn startup valued at more than $1 billion.",
+  });
+
+  assert.equal(assessment.tier, "high_value");
+  assert.ok(assessment.badges.some((badge) => badge.label === "Unicorn Founder"));
+});
+
 test("prominence assessment treats major award recognition as notable", () => {
   const assessment = assessInterviewProminence({
     intervieweeName: "Robin Vale",
