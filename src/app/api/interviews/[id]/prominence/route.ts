@@ -4,6 +4,7 @@ import { requireApiAuth } from "@/lib/auth-helpers";
 import {
   GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
   GoogleSearchConfigError,
+  getSearchConfigStatus,
   researchInterviewProminence,
 } from "@/lib/prominence/research";
 
@@ -78,11 +79,13 @@ export async function POST(
     });
   } catch (error: unknown) {
     if (error instanceof GoogleSearchConfigError) {
+      const config = getSearchConfigStatus();
       return NextResponse.json(
         {
           code: GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
           error:
-            "VIP research needs search setup. Add GEMINI_API_KEY, or add GOOGLE_CUSTOM_SEARCH_API_KEY and GOOGLE_CUSTOM_SEARCH_ENGINE_ID.",
+            "VIP research cannot see a search key in this deployment yet. Add GEMINI_API_KEY in Vercel for the same environment, then redeploy.",
+          config,
         },
         { status: 503 }
       );

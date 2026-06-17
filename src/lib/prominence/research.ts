@@ -37,7 +37,7 @@ export interface ProminenceResearchResult {
 
 export const GOOGLE_SEARCH_NOT_CONFIGURED_CODE = "GOOGLE_SEARCH_NOT_CONFIGURED";
 const SEARCH_NOT_CONFIGURED_MESSAGE =
-  "VIP research search is not configured. Add GEMINI_API_KEY, or add GOOGLE_CUSTOM_SEARCH_API_KEY and GOOGLE_CUSTOM_SEARCH_ENGINE_ID.";
+  "VIP research search is not configured. Add GEMINI_API_KEY to this deployment, or add GOOGLE_CUSTOM_SEARCH_API_KEY and GOOGLE_CUSTOM_SEARCH_ENGINE_ID.";
 
 export class GoogleSearchConfigError extends Error {
   code = GOOGLE_SEARCH_NOT_CONFIGURED_CODE;
@@ -52,8 +52,14 @@ const PROMINENCE_SIGNAL_PATTERN =
 
 export class GeminiGroundedSearchProvider implements SearchProvider {
   constructor(
-    private readonly apiKey = process.env.GEMINI_API_KEY,
-    private readonly model = process.env.GEMINI_SEARCH_MODEL || "gemini-3.5-flash"
+    private readonly apiKey = getFirstEnvValue([
+      "GEMINI_API_KEY",
+      "GOOGLE_GEMINI_API_KEY",
+      "GOOGLE_API_KEY",
+      "NEXT_PUBLIC_GEMINI_API_KEY",
+    ]),
+    private readonly model =
+      getFirstEnvValue(["GEMINI_SEARCH_MODEL"]) || "gemini-3.5-flash"
   ) {}
 
   async search(query: string): Promise<SearchResult[]> {
@@ -100,9 +106,11 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
 
 export class GoogleCustomSearchProvider implements SearchProvider {
   constructor(
-    private readonly apiKey = process.env.GOOGLE_CUSTOM_SEARCH_API_KEY,
+    private readonly apiKey = getFirstEnvValue([
+      "GOOGLE_CUSTOM_SEARCH_API_KEY",
+    ]),
     private readonly searchEngineId =
-      process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID || process.env.GOOGLE_CSE_ID
+      getFirstEnvValue(["GOOGLE_CUSTOM_SEARCH_ENGINE_ID", "GOOGLE_CSE_ID"])
   ) {}
 
   async search(query: string): Promise<SearchResult[]> {
@@ -134,13 +142,20 @@ export class GoogleCustomSearchProvider implements SearchProvider {
 }
 
 export function createDefaultSearchProvider(): SearchProvider {
-  if (process.env.GEMINI_API_KEY) {
+  if (
+    getFirstEnvValue([
+      "GEMINI_API_KEY",
+      "GOOGLE_GEMINI_API_KEY",
+      "GOOGLE_API_KEY",
+      "NEXT_PUBLIC_GEMINI_API_KEY",
+    ])
+  ) {
     return new GeminiGroundedSearchProvider();
   }
 
   if (
-    process.env.GOOGLE_CUSTOM_SEARCH_API_KEY &&
-    (process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID || process.env.GOOGLE_CSE_ID)
+    getFirstEnvValue(["GOOGLE_CUSTOM_SEARCH_API_KEY"]) &&
+    getFirstEnvValue(["GOOGLE_CUSTOM_SEARCH_ENGINE_ID", "GOOGLE_CSE_ID"])
   ) {
     return new GoogleCustomSearchProvider();
   }
@@ -150,6 +165,34 @@ export function createDefaultSearchProvider(): SearchProvider {
       throw new GoogleSearchConfigError();
     },
   };
+}
+
+export function getSearchConfigStatus(): {
+  hasGeminiSearch: boolean;
+  hasGoogleCustomSearch: boolean;
+} {
+  return {
+    hasGeminiSearch: Boolean(
+      getFirstEnvValue([
+        "GEMINI_API_KEY",
+        "GOOGLE_GEMINI_API_KEY",
+        "GOOGLE_API_KEY",
+        "NEXT_PUBLIC_GEMINI_API_KEY",
+      ])
+    ),
+    hasGoogleCustomSearch: Boolean(
+      getFirstEnvValue(["GOOGLE_CUSTOM_SEARCH_API_KEY"]) &&
+        getFirstEnvValue(["GOOGLE_CUSTOM_SEARCH_ENGINE_ID", "GOOGLE_CSE_ID"])
+    ),
+  };
+}
+
+function getFirstEnvValue(names: string[]): string | undefined {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
+  }
+  return undefined;
 }
 
 export async function researchInterviewProminence(
