@@ -220,7 +220,9 @@ export function AutomationCenter({ initialData }: AutomationCenterProps) {
       });
       const next = await res.json();
       if (!res.ok) throw new Error(next.error || "Failed to save automation settings.");
-      setData(next);
+      // Destructure only the known AutomationOverview keys so that extra response
+      // fields (e.g. `success`) never leak into component state.
+      setData({ profile: next.profile, recentRuns: next.recentRuns, draftLogs: next.draftLogs, learnedRules: next.learnedRules });
       setBanner({ type: "success", text: "Automation settings saved." });
     } catch (error) {
       setBanner({ type: "error", text: error instanceof Error ? error.message : "Failed to save." });
@@ -271,8 +273,10 @@ export function AutomationCenter({ initialData }: AutomationCenterProps) {
       });
       const next = await res.json();
       if (!res.ok) throw new Error(next.error || "Failed to rotate bridge token.");
-      setData(next);
-      setRevealedToken(next.bridgeToken);
+      // Pull bridgeToken out first, then set only the AutomationOverview keys into state.
+      const { bridgeToken } = next;
+      setData({ profile: next.profile, recentRuns: next.recentRuns, draftLogs: next.draftLogs, learnedRules: next.learnedRules });
+      setRevealedToken(bridgeToken);
       setBanner({ type: "success", text: "Bridge token created. It is shown once." });
     } catch (error) {
       setBanner({ type: "error", text: error instanceof Error ? error.message : "Failed to rotate token." });
@@ -401,29 +405,41 @@ export function AutomationCenter({ initialData }: AutomationCenterProps) {
         </section>
       )}
 
-      {activeTab === "pitch" && pitchMailbox && (
-        <ResponderPanel
-          title="Pitch Responder"
-          mailbox={pitchMailbox}
-          profile={profile}
-          updateMailbox={updateMailbox}
-          updateProfile={updateProfile}
-          saveSettings={saveSettings}
-          saving={saving}
-        />
+      {activeTab === "pitch" && (
+        pitchMailbox ? (
+          <ResponderPanel
+            title="Pitch Responder"
+            mailbox={pitchMailbox}
+            profile={profile}
+            updateMailbox={updateMailbox}
+            updateProfile={updateProfile}
+            saveSettings={saveSettings}
+            saving={saving}
+          />
+        ) : (
+          <section className="rounded-lg border border-dashed border-slate-300 bg-slate-50">
+            <EmptyState text="No pitch mailbox configured. Add one in the Mailboxes tab." />
+          </section>
+        )
       )}
 
-      {activeTab === "collab" && collabMailbox && (
-        <ResponderPanel
-          title="Collaboration Responder"
-          mailbox={collabMailbox}
-          profile={profile}
-          updateMailbox={updateMailbox}
-          updateProfile={updateProfile}
-          saveSettings={saveSettings}
-          saving={saving}
-          showFormSheet
-        />
+      {activeTab === "collab" && (
+        collabMailbox ? (
+          <ResponderPanel
+            title="Collaboration Responder"
+            mailbox={collabMailbox}
+            profile={profile}
+            updateMailbox={updateMailbox}
+            updateProfile={updateProfile}
+            saveSettings={saveSettings}
+            saving={saving}
+            showFormSheet
+          />
+        ) : (
+          <section className="rounded-lg border border-dashed border-slate-300 bg-slate-50">
+            <EmptyState text="No collaboration mailbox configured. Add one in the Mailboxes tab." />
+          </section>
+        )
       )}
 
       {activeTab === "templates" && (
