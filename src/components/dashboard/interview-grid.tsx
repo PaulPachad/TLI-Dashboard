@@ -112,7 +112,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
             tone: "warning",
             message:
               data.error ||
-              "VIP research needs Google Search setup before it can run.",
+              "VIP research needs a Gemini or Google Search API key before it can run.",
           });
           return;
         }

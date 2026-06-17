@@ -36,19 +36,67 @@ export interface ProminenceResearchResult {
 }
 
 export const GOOGLE_SEARCH_NOT_CONFIGURED_CODE = "GOOGLE_SEARCH_NOT_CONFIGURED";
+const SEARCH_NOT_CONFIGURED_MESSAGE =
+  "VIP research search is not configured. Add GEMINI_API_KEY, or add GOOGLE_CUSTOM_SEARCH_API_KEY and GOOGLE_CUSTOM_SEARCH_ENGINE_ID.";
 
 export class GoogleSearchConfigError extends Error {
   code = GOOGLE_SEARCH_NOT_CONFIGURED_CODE;
 
   constructor() {
-    super(
-      "Google search is not configured. Add GOOGLE_CUSTOM_SEARCH_API_KEY and GOOGLE_CUSTOM_SEARCH_ENGINE_ID."
-    );
+    super(SEARCH_NOT_CONFIGURED_MESSAGE);
   }
 }
 
 const PROMINENCE_SIGNAL_PATTERN =
   /\b(forbes|fortune|inc\.?|entrepreneur|fast company|nyt|new york times|wsj|wall street journal|bloomberg|cnbc|tedx?|keynote|speaker|author|bestseller|best-selling|award|winner|honoree|founder|ceo|president|wikipedia|verified|followers|subscribers|employees|revenue|funding|raised|acquired|public company|fortune 500)\b/i;
+
+export class GeminiGroundedSearchProvider implements SearchProvider {
+  constructor(
+    private readonly apiKey = process.env.GEMINI_API_KEY,
+    private readonly model = process.env.GEMINI_SEARCH_MODEL || "gemini-3.5-flash"
+  ) {}
+
+  async search(query: string): Promise<SearchResult[]> {
+    if (!this.apiKey) {
+      throw new GoogleSearchConfigError();
+    }
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": this.apiKey,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text:
+                    "Research this person or company for VIP/prospect prominence signals. " +
+                    "Return concise facts only. Look for employee count, annual revenue, " +
+                    "social followers/subscribers, press, awards, author/speaker signals, " +
+                    `senior leadership, funding, acquisitions, or public-company status: ${query}`,
+                },
+              ],
+            },
+          ],
+          tools: [{ google_search: {} }],
+        }),
+      }
+    );
+
+    const data = await response.json();
+    if (!response.ok) {
+      const message = data?.error?.message || "Gemini grounded search failed.";
+      throw new Error(message);
+    }
+
+    return geminiResponseToSearchResults(data);
+  }
+}
 
 export class GoogleCustomSearchProvider implements SearchProvider {
   constructor(
@@ -85,9 +133,28 @@ export class GoogleCustomSearchProvider implements SearchProvider {
   }
 }
 
+export function createDefaultSearchProvider(): SearchProvider {
+  if (process.env.GEMINI_API_KEY) {
+    return new GeminiGroundedSearchProvider();
+  }
+
+  if (
+    process.env.GOOGLE_CUSTOM_SEARCH_API_KEY &&
+    (process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID || process.env.GOOGLE_CSE_ID)
+  ) {
+    return new GoogleCustomSearchProvider();
+  }
+
+  return {
+    async search() {
+      throw new GoogleSearchConfigError();
+    },
+  };
+}
+
 export async function researchInterviewProminence(
   interview: ResearchInterview,
-  provider: SearchProvider = new GoogleCustomSearchProvider()
+  provider: SearchProvider = createDefaultSearchProvider()
 ): Promise<ProminenceResearchResult> {
   const queries = buildProminenceQueries(interview);
   const settled = await Promise.allSettled(
@@ -213,6 +280,46 @@ function dedupeResults(results: SearchResult[]): SearchResult[] {
     deduped.push(result);
   }
   return deduped;
+}
+
+export function geminiResponseToSearchResults(data: {
+  candidates?: Array<{
+    content?: { parts?: Array<{ text?: string }> };
+    groundingMetadata?: {
+      groundingChunks?: Array<{ web?: { uri?: string; title?: string } }>;
+    };
+  }>;
+}): SearchResult[] {
+  const candidate = data.candidates?.[0];
+  const text =
+    candidate?.content?.parts
+      ?.map((part) => part.text)
+      .filter(Boolean)
+      .join("\n") || "";
+  const chunks = candidate?.groundingMetadata?.groundingChunks || [];
+
+  const results = chunks
+    .map((chunk): SearchResult | null => {
+      const uri = chunk.web?.uri;
+      if (!uri) return null;
+      return {
+        title: chunk.web?.title || "Gemini grounded source",
+        url: uri,
+        snippet: text,
+      };
+    })
+    .filter((result): result is SearchResult => Boolean(result));
+
+  if (results.length > 0) return results;
+  if (!text.trim()) return [];
+
+  return [
+    {
+      title: "Gemini grounded research",
+      url: "https://ai.google.dev/gemini-api/docs/google-search",
+      snippet: text,
+    },
+  ];
 }
 
 function maxMetric(current: number | null, next: number | null): number | null {

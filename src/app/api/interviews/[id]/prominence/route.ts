@@ -82,7 +82,7 @@ export async function POST(
         {
           code: GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
           error:
-            "VIP research needs Google Search setup. Add GOOGLE_CUSTOM_SEARCH_API_KEY and GOOGLE_CUSTOM_SEARCH_ENGINE_ID.",
+            "VIP research needs search setup. Add GEMINI_API_KEY, or add GOOGLE_CUSTOM_SEARCH_API_KEY and GOOGLE_CUSTOM_SEARCH_ENGINE_ID.",
         },
         { status: 503 }
       );

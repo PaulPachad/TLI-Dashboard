@@ -12,6 +12,7 @@ import {
 } from "../src/lib/prominence/signals";
 import {
   buildProminenceQueries,
+  geminiResponseToSearchResults,
   extractProminenceSignals,
   researchInterviewProminence,
   type SearchProvider,
@@ -197,4 +198,35 @@ test("prominence extraction chooses largest matching metrics", () => {
   assert.equal(extracted.companyEmployeeCount, 5500);
   assert.equal(extracted.companyRevenueUsd, 250_000_000);
   assert.equal(extracted.largestSocialFollowerCount, 100_000);
+});
+
+test("Gemini grounded response maps to prominence search results", () => {
+  const results = geminiResponseToSearchResults({
+    candidates: [
+      {
+        content: {
+          parts: [
+            {
+              text: "Taylor Chen has 125K followers and Acme has $150M revenue.",
+            },
+          ],
+        },
+        groundingMetadata: {
+          groundingChunks: [
+            {
+              web: {
+                title: "Acme profile",
+                uri: "https://example.com/acme",
+              },
+            },
+          ],
+        },
+      },
+    ],
+  });
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].title, "Acme profile");
+  assert.equal(results[0].url, "https://example.com/acme");
+  assert.match(results[0].snippet, /125K followers/);
 });

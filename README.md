@@ -50,8 +50,9 @@ Copy `.env.example` to `.env.local` and configure:
 - `NEXTAUTH_URL`: the public application URL.
 - `ADMIN_EMAIL` and `ADMIN_PASSWORD`: initial admin login.
 - `GOOGLE_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`.
-- `GOOGLE_CUSTOM_SEARCH_API_KEY` and `GOOGLE_CUSTOM_SEARCH_ENGINE_ID`: enable
-  the card-level VIP Signals research button.
+- `GEMINI_API_KEY`: enables the card-level VIP Signals research button through
+  Gemini grounded search. Optional fallback: `GOOGLE_CUSTOM_SEARCH_API_KEY` and
+  `GOOGLE_CUSTOM_SEARCH_ENGINE_ID`.
 - `RESEND_API_KEY` and `EMAIL_FROM`.
 - `DEMO_MODE`: keep `false` in production.
 - `NEXT_PUBLIC_DEMO_MODE`: keep `false` in production.
@@ -93,6 +94,15 @@ The dashboard can research interviewees and companies from each interview card
 to find prominence signals such as large audiences, major company scale, senior
 leadership, press mentions, awards, author/speaker credentials, and public
 authority.
+
+Simplest setup:
+
+1. Create a Gemini API key in Google AI Studio.
+2. Set `GEMINI_API_KEY`.
+3. Optionally set `GEMINI_SEARCH_MODEL` to override the default
+   `gemini-3.5-flash`.
+
+Fallback setup:
 
 1. Enable the Google Custom Search JSON API in Google Cloud.
 2. Create a Google Programmable Search Engine.
