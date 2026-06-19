@@ -269,6 +269,33 @@ function similarity(a: string, b: string): number {
 
 const FUZZY_THRESHOLD = 0.65;
 
+function isTwitterOrXUrl(val: string): boolean {
+  const cleanVal = val.trim().toLowerCase();
+  const match = cleanVal.match(/https?:\/\/[^\s,;)\]]+/g);
+  const urlsToTest = match ? match : [cleanVal];
+  
+  for (let urlStr of urlsToTest) {
+    if (!/^https?:\/\//i.test(urlStr)) {
+      urlStr = "https://" + urlStr;
+    }
+    try {
+      const url = new URL(urlStr);
+      const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+      if (
+        hostname === "twitter.com" ||
+        hostname.endsWith(".twitter.com") ||
+        hostname === "x.com" ||
+        hostname.endsWith(".x.com")
+      ) {
+        return true;
+      }
+    } catch {
+      // ignore parse failure
+    }
+  }
+  return false;
+}
+
 /**
  * Map actual sheet headers to canonical field names.
  */
@@ -368,7 +395,7 @@ export function mapHeaders(
     const dataRows = rawRows.slice(1);
     const maxRowsToScan = Math.min(dataRows.length, 10);
 
-    for (const [field, aliases] of Object.entries(FIELD_ALIASES)) {
+    for (const field of Object.keys(FIELD_ALIASES)) {
       if (usedFields.has(field)) continue;
 
       // Content-based detection is supported for links, profiles, and emails
@@ -409,9 +436,7 @@ export function mapHeaders(
             } else if (field === "linkedinUrl") {
               isMatch = cleanVal.includes("linkedin.com/");
             } else if (field === "twitterUrl") {
-              isMatch =
-                (cleanVal.includes("twitter.com/") || cleanVal.includes("x.com/")) &&
-                !cleanVal.includes("dropbox.com/");
+              isMatch = isTwitterOrXUrl(cleanVal);
             } else if (field === "interviewDocUrl") {
               isMatch = cleanVal.includes("docs.google.com/document/");
             } else if (field === "videoUrl") {

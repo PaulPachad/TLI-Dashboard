@@ -3,6 +3,7 @@
 // ==============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
 import { UserRole } from "@/types/db";
@@ -25,15 +26,6 @@ interface ImportRequest {
   confirm?: boolean; // If true, actually save to DB. If false/missing, preview only.
   importAll?: boolean; // If true, sync all. Otherwise limit to last 100 if > 200 entries.
   customMappings?: Record<string, number>;
-}
-
-function appendImportAllParam(url: string, importAll: boolean): string {
-  const cleanUrl = url.trim();
-  if (cleanUrl.includes("importAll=")) {
-    return cleanUrl.replace(/importAll=(true|false)/, `importAll=${importAll}`);
-  }
-  const separator = cleanUrl.includes("#") ? "&" : "#";
-  return `${cleanUrl}${separator}importAll=${importAll}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -346,22 +338,6 @@ export async function POST(request: NextRequest) {
       );
       const usedInterviewIds = new Set<string>();
 
-      // Only clear sourceRowNumber for rows in the range being imported/processed
-      const rowNumbers = importRecords.map((r) => r.sourceRowNumber);
-      const minRow = Math.min(...rowNumbers);
-      const maxRow = Math.max(...rowNumbers);
-
-      await tx.interview.updateMany({
-        where: {
-          sheetSourceId: sheetSource.id,
-          sourceRowNumber: {
-            gte: minRow,
-            lte: maxRow,
-          },
-        },
-        data: { sourceRowNumber: null },
-      });
-
       let created = 0;
       let updated = 0;
       let unchanged = 0;
@@ -383,6 +359,17 @@ export async function POST(request: NextRequest) {
               : null;
 
         if (existing) {
+          await clearRowNumberConflict(
+            tx,
+            sheetSource.id,
+            record.sourceRowNumber,
+            existing.id
+          );
+          if (existing.sourceRowNumber !== null) {
+            byRowNumber.delete(existing.sourceRowNumber);
+          }
+          byRowNumber.delete(record.sourceRowNumber);
+
           usedInterviewIds.add(existing.id);
           await tx.interview.update({
             where: { id: existing.id },
@@ -423,6 +410,13 @@ export async function POST(request: NextRequest) {
           else updated++;
           continue;
         }
+
+        await clearRowNumberConflict(
+          tx,
+          sheetSource.id,
+          record.sourceRowNumber
+        );
+        byRowNumber.delete(record.sourceRowNumber);
 
         const createdInterview = await tx.interview.create({
           data: {
@@ -541,4 +535,20 @@ function parseOptionalDate(value: string | null): Date | null {
 
 function normalizeIdentityName(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+async function clearRowNumberConflict(
+  tx: Prisma.TransactionClient,
+  sheetSourceId: string,
+  sourceRowNumber: number,
+  keepInterviewId?: string
+) {
+  await tx.interview.updateMany({
+    where: {
+      sheetSourceId,
+      sourceRowNumber,
+      ...(keepInterviewId ? { NOT: { id: keepInterviewId } } : {}),
+    },
+    data: { sourceRowNumber: null },
+  });
 }

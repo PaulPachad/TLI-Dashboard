@@ -371,16 +371,21 @@ test("applies customMapping overrides correctly", () => {
   assert.equal(nameMapping.matchType, "manual");
 });
 
-test("smart detection ignores dropbox.com/ URLs when matching twitterUrl", () => {
-  const headers = ["Random Header 1", "Dropbox Link"];
-  const rows = [
-    headers,
-    ["", "https://www.dropbox.com/sh/abc/xyz"],
-    ["", "https://dropbox.com/sh/123/456"],
-  ];
+test("smart detection ignores dropbox.com/ URLs and URLs whose path merely contains x.com/ when matching twitterUrl", () => {
+  // Column 1 (Dropbox Link): should not map
+  const res1 = mapHeaders(["Header"], [["Header"], ["https://www.dropbox.com/sh/abc/xyz"]]);
+  assert.ok(!res1.mappings.find((m) => m.field === "twitterUrl"));
 
-  const result = mapHeaders(headers, rows);
+  // Column 2 (Path With X Link): should not map
+  const res2 = mapHeaders(["Header"], [["Header"], ["https://example.com/some/path/x.com/abc"]]);
+  assert.ok(!res2.mappings.find((m) => m.field === "twitterUrl"));
 
-  const twitterMapping = result.mappings.find((m) => m.field === "twitterUrl");
-  assert.ok(!twitterMapping);
+  // Column 3 (Subdomain Twitter Link): should map
+  const res3 = mapHeaders(["Header"], [["Header"], ["https://sub.twitter.com/user"]]);
+  assert.ok(res3.mappings.find((m) => m.field === "twitterUrl"));
+
+  // Column 4 (Valid X Link): should map
+  const res4 = mapHeaders(["Header"], [["Header"], ["x.com/user"]]);
+  assert.ok(res4.mappings.find((m) => m.field === "twitterUrl"));
 });
+
