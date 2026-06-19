@@ -108,3 +108,16 @@ See `tasks/plan-audit.md` for the requirement-by-requirement evidence.
 - [ ] Decide per notebook whether to keep Colab as the execution engine, convert it to a Python worker script, or replace it with a hosted job service.
 - [ ] Make the UI non-technical: no cells, no runtime jargon, no copy/paste code; only clear actions, status, preview, and results.
 - [ ] Include this as part of the unified sellable automation story with the autoresponder bridge, not as a separate hidden tool.
+
+## Future Social Signal Upgrade: Notable Even When Not VIP
+
+- [ ] Rename the mental model from only "VIP" to "Client-relevant signals" so the app can highlight people who are useful to a client even if they are not celebrities.
+- [ ] Search social audience size across LinkedIn, Instagram, YouTube, TikTok, X/Twitter, podcasts, newsletters, and other obvious public profiles when the interviewee or company has enough identifying information.
+- [ ] Keep the largest verified follower/subscriber number, the platform it came from, and the source link instead of only storing a single unsourced number.
+- [ ] Search company scale signals separately: employee count, annual revenue, funding, acquisition status, public-company status, and major parent-company relationships.
+- [ ] Treat leadership roles at large companies as important even when the person is not personally famous, especially founder, CEO, C-level, president, partner, head of, director, and manager roles.
+- [ ] Add card placement rules: very strong signals go on the front of the card; moderate but useful signals stay visible in the card details; weak or unverified signals stay out of the spotlight.
+- [ ] Add plain-language labels such as "large audience", "large company leader", "major revenue company", and "notable company scale" so clients understand why the person matters.
+- [ ] Store confidence and evidence for every signal so the app does not overclaim when search results are noisy.
+- [ ] Add thresholds that can be tuned after real client use, for example 100K+ followers, 500K+ followers, 1M+ followers, 1K+ employees, 10K+ employees, $100M+ revenue, $1B+ revenue.
+- [ ] Build tests with ordinary non-celebrity examples that still deserve attention because of audience size, employee count, leadership title, or revenue.

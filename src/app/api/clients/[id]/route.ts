@@ -80,16 +80,136 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { topicsSheetUrl } = body;
-
-    const client = await db.client.update({
+    const existingClient = await db.client.findUnique({
       where: { id },
-      data: {
-        topicsSheetUrl: String(topicsSheetUrl || "").trim() || null,
+      include: {
+        users: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: "asc" },
+        },
       },
     });
 
-    return NextResponse.json({ success: true, client });
+    if (!existingClient) {
+      return NextResponse.json({ error: "Client not found." }, { status: 404 });
+    }
+
+    const data: {
+      name?: string;
+      company?: string | null;
+      email?: string;
+      replyToEmail?: string | null;
+      topicsSheetUrl?: string | null;
+    } = {};
+
+    if ("name" in body) {
+      const normalizedName = String(body.name || "").trim();
+      if (!normalizedName) {
+        return NextResponse.json(
+          { error: "Client name is required." },
+          { status: 400 }
+        );
+      }
+      data.name = normalizedName;
+    }
+
+    if ("company" in body) {
+      data.company = String(body.company || "").trim() || null;
+    }
+
+    if ("topicsSheetUrl" in body) {
+      data.topicsSheetUrl = String(body.topicsSheetUrl || "").trim() || null;
+    }
+
+    let normalizedEmail: string | null = null;
+    if ("email" in body) {
+      normalizedEmail = String(body.email || "").trim().toLowerCase();
+      if (!normalizedEmail) {
+        return NextResponse.json(
+          { error: "Client email is required." },
+          { status: 400 }
+        );
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+        return NextResponse.json(
+          { error: "Enter a valid client email address." },
+          { status: 400 }
+        );
+      }
+
+      const existingUser = await db.user.findUnique({
+        where: { email: normalizedEmail },
+      });
+      if (existingUser && existingUser.clientId !== id) {
+        return NextResponse.json(
+          { error: "Another user already uses that email address." },
+          { status: 400 }
+        );
+      }
+
+      data.email = normalizedEmail;
+      if (
+        !existingClient.replyToEmail ||
+        existingClient.replyToEmail.toLowerCase() ===
+          existingClient.email.toLowerCase()
+      ) {
+        data.replyToEmail = normalizedEmail;
+      }
+    }
+
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json(
+        { error: "No client changes were provided." },
+        { status: 400 }
+      );
+    }
+
+    const result = await db.$transaction(async (tx) => {
+      const client = await tx.client.update({
+        where: { id },
+        data,
+      });
+
+      let loginEmail: string | null = null;
+      if (normalizedEmail) {
+        const loginUser =
+          existingClient.users.find(
+            (user) =>
+              user.role === "CLIENT" &&
+              user.email.toLowerCase() === existingClient.email.toLowerCase()
+          ) ||
+          existingClient.users.find((user) => user.role === "CLIENT") ||
+          null;
+
+        if (loginUser) {
+          const userWithTargetEmail = await tx.user.findUnique({
+            where: { email: normalizedEmail },
+          });
+
+          if (!userWithTargetEmail || userWithTargetEmail.id === loginUser.id) {
+            const updatedUser = await tx.user.update({
+              where: { id: loginUser.id },
+              data: {
+                email: normalizedEmail,
+                ...(data.name ? { name: data.name } : {}),
+              },
+            });
+            loginEmail = updatedUser.email;
+          } else {
+            loginEmail = userWithTargetEmail.email;
+          }
+        }
+      }
+
+      return { client, loginEmail };
+    });
+
+    return NextResponse.json({ success: true, ...result });
   } catch (error: unknown) {
     const err = error as { status?: number; message?: string };
     if (err.status) {

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { SheetImportForm } from "@/components/admin/sheet-import-form";
 import { InterviewGrid } from "@/components/dashboard/interview-grid";
 import { DeleteClientButton } from "@/components/admin/delete-client-button";
+import { ClientProfileEditor } from "@/components/admin/client-profile-editor";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -81,6 +82,13 @@ export default async function ClientDetailPage({ params }: Props) {
           <p className="text-xs text-slate-500 mt-0.5">Last Synced</p>
         </div>
       </div>
+
+      <ClientProfileEditor
+        clientId={client.id}
+        initialName={client.name}
+        initialCompany={client.company}
+        initialEmail={client.email}
+      />
 
       {/* Sheet import */}
       <section>

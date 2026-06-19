@@ -2,6 +2,10 @@ import { NextRequest } from "next/server";
 import { ImageResponse } from "next/og";
 import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
+import { readFile } from "fs/promises";
+import path from "path";
+
+export const runtime = "nodejs";
 
 export async function GET(
   request: NextRequest,
@@ -24,8 +28,10 @@ export async function GET(
       return new Response("Access denied", { status: 403 });
     }
 
-    const url = new URL(request.url);
-    const logoUrl = `${url.origin}/logo-white.png`;
+    const [logoUrl, profileImageUrl] = await Promise.all([
+      getLocalPublicImageDataUrl("logo-white.png", "image/png"),
+      imageUrlToDataUrl(interview.image1Url),
+    ]);
     
     return new ImageResponse(
       (
@@ -46,19 +52,27 @@ export async function GET(
         >
           {/* Logo */}
           <div style={{ display: 'flex', marginBottom: '80px' }}>
-            <img 
-              src={logoUrl} 
-              alt="Authority Magazine" 
-              style={{ width: '400px', objectFit: 'contain' }} 
-            />
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img 
+                src={logoUrl} 
+                alt="Authority Magazine" 
+                style={{ width: '400px', objectFit: 'contain' }} 
+              />
+            ) : (
+              <div style={{ fontSize: '44px', fontWeight: 800, letterSpacing: '0.04em' }}>
+                Authority Magazine
+              </div>
+            )}
           </div>
           
           {/* Profile Picture */}
-          {interview.image1Url ? (
+          {profileImageUrl ? (
             <div style={{ display: 'flex', borderRadius: '50%', overflow: 'hidden', width: '380px', height: '380px', border: '8px solid rgba(255,255,255,0.15)', marginBottom: '50px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
-                src={interview.image1Url}
+                src={profileImageUrl}
+                alt=""
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             </div>
@@ -98,5 +112,56 @@ export async function GET(
   } catch (error) {
     console.error(error);
     return new Response("Failed to generate image", { status: 500 });
+  }
+}
+
+async function getLocalPublicImageDataUrl(
+  filename: string,
+  contentType: string
+): Promise<string | null> {
+  try {
+    const file = await readFile(path.join(process.cwd(), "public", filename));
+    return `data:${contentType};base64,${file.toString("base64")}`;
+  } catch (error) {
+    console.warn(`Could not load ${filename} for social image.`, error);
+    return null;
+  }
+}
+
+async function imageUrlToDataUrl(value?: string | null): Promise<string | null> {
+  if (!value) return null;
+
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+
+  if (!["http:", "https:"].includes(url.protocol)) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Authority-Magazine-Social-Image/1.0",
+      },
+    });
+
+    if (!response.ok) return null;
+
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.startsWith("image/")) return null;
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return `data:${contentType};base64,${buffer.toString("base64")}`;
+  } catch (error) {
+    console.warn("Could not load profile photo for social image.", error);
+    return null;
+  } finally {
+    clearTimeout(timeout);
   }
 }

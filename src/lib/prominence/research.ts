@@ -111,9 +111,10 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
         }
 
         return geminiResponseToSearchResults(data);
-      } catch (err: any) {
-        lastError = err;
-        console.warn(`Gemini grounded search failed for model ${model}, trying next... Error:`, err.message || err);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        lastError = err instanceof Error ? err : new Error(message);
+        console.warn(`Gemini grounded search failed for model ${model}, trying next... Error:`, message);
       }
     }
 
