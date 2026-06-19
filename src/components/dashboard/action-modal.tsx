@@ -5,6 +5,10 @@
 // ==============================================================================
 
 import { useState, useEffect, useRef } from "react";
+import {
+  buildInterviewImageSources,
+  extractArticleTitleFromUrl,
+} from "@/lib/images/interview-image";
 
 interface ActionModalProps {
   interviewId: string;
@@ -13,14 +17,27 @@ interface ActionModalProps {
   onSuccess: (message?: string) => void;
 }
 
+interface SocialImageInterview {
+  id: string;
+  intervieweeName: string;
+  intervieweeCompany?: string | null;
+  intervieweeTitle?: string | null;
+  topic?: string | null;
+  articleUrl: string;
+  image1Url?: string | null;
+  image2Url?: string | null;
+}
+
 export function ActionModal({ interviewId, actionType, onClose, onSuccess }: ActionModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const [socialImageVersion] = useState(() => Date.now());
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [socialImagePreviewUrl, setSocialImagePreviewUrl] = useState<string | null>(null);
+  const [socialImageRendering, setSocialImageRendering] = useState(false);
+  const [socialInterview, setSocialInterview] = useState<SocialImageInterview | null>(null);
   
   // State for forms/previews
   const [intervieweeName, setIntervieweeName] = useState("");
@@ -64,6 +81,16 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
         
         setIntervieweeName(data.interview.intervieweeName);
         setArticleUrl(data.interview.articleUrl || "");
+        setSocialInterview({
+          id: data.interview.id,
+          intervieweeName: data.interview.intervieweeName,
+          intervieweeCompany: data.interview.intervieweeCompany || null,
+          intervieweeTitle: data.interview.intervieweeTitle || null,
+          topic: data.interview.topic || null,
+          articleUrl: data.interview.articleUrl || "",
+          image1Url: data.interview.image1Url || null,
+          image2Url: data.interview.image2Url || null,
+        });
         
         // Populate contact form defaults
         setContactForm({
@@ -102,6 +129,51 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
 
     loadDefaults();
   }, [interviewId, actionType]);
+
+  useEffect(() => {
+    if (actionType !== "generate_social_image" || !socialInterview) return;
+
+    let cancelled = false;
+
+    Promise.resolve()
+      .then(() => {
+        if (cancelled) return null;
+        setSocialImageRendering(true);
+        setError(null);
+        return generateBrowserSocialImage(socialInterview);
+      })
+      .then((blob) => {
+        if (!blob) return;
+        if (cancelled) return;
+        const nextUrl = URL.createObjectURL(blob);
+        setSocialImagePreviewUrl((previousUrl) => {
+          if (previousUrl) URL.revokeObjectURL(previousUrl);
+          return nextUrl;
+        });
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Could not render the social image preview."
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setSocialImageRendering(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [actionType, socialInterview]);
+
+  useEffect(() => {
+    return () => {
+      if (socialImagePreviewUrl) URL.revokeObjectURL(socialImagePreviewUrl);
+    };
+  }, [socialImagePreviewUrl]);
 
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
@@ -279,14 +351,12 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch(
-        `/api/interviews/${interviewId}/social-image?v=${Date.now()}`,
-        { cache: "no-store" }
-      );
-      if (!response.ok) throw new Error("Failed to generate image.");
-      
-      const blob = await response.blob();
+
+      if (!socialInterview) {
+        throw new Error("The image details are still loading.");
+      }
+
+      const blob = await generateBrowserSocialImage(socialInterview);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -615,13 +685,19 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
             <ActionError message={error} />
             
             <div className="relative w-full aspect-square bg-slate-100 rounded-lg overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center">
-              {/* Using standard img tag for external API image to avoid Next/Image complexities with dynamic blobs in preview */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img 
-                src={`/api/interviews/${interviewId}/social-image?v=${socialImageVersion}`} 
-                alt="Social Media Preview"
-                className="object-contain w-full h-full"
-              />
+              {socialImagePreviewUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={socialImagePreviewUrl}
+                  alt="Social Media Preview"
+                  className="object-contain w-full h-full"
+                />
+              ) : (
+                <div className="flex flex-col items-center gap-3 text-sm text-slate-500">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-pink-600 border-t-transparent" />
+                  Rendering preview...
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 font-sans">
@@ -635,7 +711,7 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
               <button
                 type="button"
                 onClick={handleDownloadImage}
-                disabled={loading}
+                disabled={loading || socialImageRendering || !socialImagePreviewUrl}
                 className="px-5 py-2 bg-pink-600 text-white rounded-lg text-sm font-semibold hover:bg-pink-700 transition-colors disabled:opacity-50"
               >
                 {loading ? "Downloading..." : "Download Image"}
@@ -745,4 +821,247 @@ function ActionError({ message }: { message: string | null }) {
       {message}
     </div>
   );
+}
+
+async function generateBrowserSocialImage(
+  interview: SocialImageInterview
+): Promise<Blob> {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1080;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("This browser cannot render the social image.");
+
+  drawBaseBackground(ctx, canvas.width, canvas.height);
+
+  const imageSources = buildInterviewImageSources(interview).filter((source) =>
+    source.startsWith("http")
+  );
+  const featureImage = await firstLoadedImage(imageSources);
+  if (featureImage) {
+    drawCoverImage(ctx, featureImage, 0, 0, canvas.width, canvas.height);
+  } else {
+    drawInitialFallback(ctx, interview.intervieweeName, canvas.width, canvas.height);
+  }
+
+  drawImageOverlays(ctx, canvas.width, canvas.height);
+
+  const logo = await loadCanvasImage("/authority-logo-mark-white.png").catch(
+    () => null
+  );
+  if (logo) {
+    ctx.drawImage(logo, 64, 64, 86, 86);
+  }
+
+  ctx.fillStyle = "rgba(255,255,255,0.94)";
+  ctx.font = "800 27px Arial, sans-serif";
+  ctx.letterSpacing = "3px";
+  ctx.fillText("AUTHORITY MAGAZINE", logo ? 174 : 64, 102);
+  ctx.letterSpacing = "0px";
+  ctx.fillStyle = "rgba(255,255,255,0.76)";
+  ctx.font = "22px Arial, sans-serif";
+  ctx.fillText("Featured Interview", logo ? 174 : 64, 132);
+
+  const contentTop = 650;
+  drawRoundRect(ctx, 64, contentTop, 145, 48, 24);
+  ctx.fillStyle = "rgba(255,255,255,0.16)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.22)";
+  ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,0.86)";
+  ctx.font = "700 22px Arial, sans-serif";
+  ctx.letterSpacing = "1.8px";
+  ctx.fillText("FEATURED", 86, contentTop + 31);
+  ctx.letterSpacing = "0px";
+
+  const headline =
+    extractArticleTitleFromUrl(interview.articleUrl) ||
+    cleanTopicTitle(interview.topic) ||
+    `An Authority Magazine interview with ${interview.intervieweeName}`;
+  ctx.fillStyle = "white";
+  ctx.font = "850 70px Arial, sans-serif";
+  const headlineLines = wrapCanvasText(ctx, headline, 920, 5);
+  let y = contentTop + 103;
+  for (const line of headlineLines) {
+    ctx.fillText(line, 64, y);
+    y += 73;
+  }
+
+  ctx.fillStyle = "#e40062";
+  drawRoundRect(ctx, 64, y + 8, 150, 6, 3);
+  ctx.fill();
+
+  ctx.fillStyle = "white";
+  ctx.font = "800 38px Arial, sans-serif";
+  ctx.fillText(interview.intervieweeName, 64, y + 70);
+
+  const roleLine = [interview.intervieweeTitle, interview.intervieweeCompany]
+    .filter(Boolean)
+    .join(", ");
+  if (roleLine) {
+    ctx.fillStyle = "rgba(255,255,255,0.82)";
+    ctx.font = "26px Arial, sans-serif";
+    ctx.fillText(roleLine, 64, y + 110);
+  }
+
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.font = "700 24px Arial, sans-serif";
+  ctx.fillText("Read the full interview on Authority Magazine", 64, 1018);
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("Could not render the social image."));
+    }, "image/png");
+  });
+}
+
+async function firstLoadedImage(sources: string[]): Promise<HTMLImageElement | null> {
+  for (const source of sources) {
+    try {
+      return await loadCanvasImage(source);
+    } catch {
+      // Try the next sheet image source.
+    }
+  }
+  return null;
+}
+
+function loadCanvasImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`Could not load ${src}`));
+    image.src = src;
+  });
+}
+
+function drawBaseBackground(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+) {
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, "#171126");
+  gradient.addColorStop(0.45, "#202657");
+  gradient.addColorStop(1, "#5b1634");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+}
+
+function drawCoverImage(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) {
+  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+  const sourceWidth = width / scale;
+  const sourceHeight = height / scale;
+  const sourceX = (image.naturalWidth - sourceWidth) / 2;
+  const sourceY = (image.naturalHeight - sourceHeight) * 0.28;
+  ctx.drawImage(
+    image,
+    sourceX,
+    Math.max(0, sourceY),
+    sourceWidth,
+    sourceHeight,
+    x,
+    y,
+    width,
+    height
+  );
+}
+
+function drawInitialFallback(
+  ctx: CanvasRenderingContext2D,
+  name: string,
+  width: number,
+  height: number
+) {
+  ctx.fillStyle = "rgba(255,255,255,0.14)";
+  ctx.font = "800 360px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(name.charAt(0).toUpperCase(), width / 2, height / 2);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+}
+
+function drawImageOverlays(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+) {
+  let gradient = ctx.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, "rgba(8,10,24,0.28)");
+  gradient.addColorStop(0.38, "rgba(8,10,24,0.44)");
+  gradient.addColorStop(1, "rgba(8,10,24,0.88)");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  gradient = ctx.createLinearGradient(0, 0, width, 0);
+  gradient.addColorStop(0, "rgba(91,22,52,0.32)");
+  gradient.addColorStop(0.44, "rgba(20,17,38,0)");
+  gradient.addColorStop(1, "rgba(15,23,42,0.32)");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+}
+
+function wrapCanvasText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  maxLines: number
+): string[] {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    const nextLine = currentLine ? `${currentLine} ${word}` : word;
+    if (ctx.measureText(nextLine).width <= maxWidth || !currentLine) {
+      currentLine = nextLine;
+      continue;
+    }
+
+    lines.push(currentLine);
+    currentLine = word;
+    if (lines.length === maxLines - 1) break;
+  }
+
+  if (currentLine && lines.length < maxLines) lines.push(currentLine);
+  return lines;
+}
+
+function cleanTopicTitle(value?: string | null): string | null {
+  const topic = value?.trim();
+  if (!topic || /\([^)]*name[^)]*\)|\bname\b|rising star/i.test(topic)) {
+    return null;
+  }
+  return topic;
+}
+
+function drawRoundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
 }
