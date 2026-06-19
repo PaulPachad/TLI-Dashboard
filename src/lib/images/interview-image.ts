@@ -43,24 +43,53 @@ export function normalizeSheetImageUrl(value?: string | null): string | null {
 }
 
 export function extractArticleImage(html: string): string | null {
+  return extractArticleMetadata(html).imageUrl;
+}
+
+export function extractArticleTitle(html: string): string | null {
+  return extractArticleMetadata(html).title;
+}
+
+export function extractArticleMetadata(html: string): {
+  imageUrl: string | null;
+  title: string | null;
+} {
   const metaTags = html.match(/<meta\b[^>]*>/gi) || [];
+  let imageUrl: string | null = null;
+  let title: string | null = null;
 
   for (const tag of metaTags) {
     const property = getHtmlAttribute(tag, "property");
     const name = getHtmlAttribute(tag, "name");
+    const key = (property || name || "").toLowerCase();
+    const content = getHtmlAttribute(tag, "content");
+
     if (
-      property?.toLowerCase() !== "og:image" &&
-      name?.toLowerCase() !== "twitter:image" &&
-      name?.toLowerCase() !== "twitter:image:src"
+      !imageUrl &&
+      content &&
+      ["og:image", "twitter:image", "twitter:image:src"].includes(key) &&
+      isPublicHttpUrl(content)
     ) {
-      continue;
+      imageUrl = decodeHtml(content);
     }
 
-    const content = getHtmlAttribute(tag, "content");
-    if (content && isPublicHttpUrl(content)) return decodeHtml(content);
+    if (
+      !title &&
+      content &&
+      ["og:title", "twitter:title"].includes(key)
+    ) {
+      title = cleanArticleTitle(content);
+    }
   }
 
-  return null;
+  if (!title) {
+    const titleMatch = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+    if (titleMatch?.[1]) {
+      title = cleanArticleTitle(titleMatch[1]);
+    }
+  }
+
+  return { imageUrl, title };
 }
 
 function getHtmlAttribute(tag: string, attribute: string): string | null {
@@ -83,5 +112,16 @@ function decodeHtml(value: string): string {
   return value
     .replaceAll("&amp;", "&")
     .replaceAll("&quot;", '"')
-    .replaceAll("&#39;", "'");
+    .replaceAll("&#39;", "'")
+    .replaceAll("&apos;", "'")
+    .replaceAll("&nbsp;", " ");
+}
+
+function cleanArticleTitle(value: string): string | null {
+  const decoded = decodeHtml(value)
+    .replace(/\s+/g, " ")
+    .replace(/\s*[|–-]\s*(Authority Magazine|Medium)\s*$/i, "")
+    .trim();
+
+  return decoded || null;
 }

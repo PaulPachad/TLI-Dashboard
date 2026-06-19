@@ -121,3 +121,17 @@ See `tasks/plan-audit.md` for the requirement-by-requirement evidence.
 - [ ] Store confidence and evidence for every signal so the app does not overclaim when search results are noisy.
 - [ ] Add thresholds that can be tuned after real client use, for example 100K+ followers, 500K+ followers, 1M+ followers, 1K+ employees, 10K+ employees, $100M+ revenue, $1B+ revenue.
 - [ ] Build tests with ordinary non-celebrity examples that still deserve attention because of audience size, employee count, leadership title, or revenue.
+
+## Production-Readiness Security Backlog
+
+- [x] Harden admin client email updates so the client profile, login account, and email-change audit record update in one transaction.
+- [x] Add focused regression tests for admin email normalization, reply-to preservation, login-account selection, and remote social-image safety checks.
+- [x] Harden social-image remote photo fetching with timeout, redirect limit, content-type validation, maximum byte limit, internal/private network blocking, and short-lived in-memory caching.
+- [ ] Run a full tenant-separation audit across every client ID, interview ID, topic ID, event ID, automation, bridge, and outreach route.
+- [ ] Add automated negative authorization tests proving ordinary client users cannot access or mutate another tenant's data.
+- [ ] Add idempotency keys or equivalent duplicate-prevention for send/retry-prone actions, including live email, Zoom email, outreach, sync, and background research.
+- [ ] Add PostgreSQL CI coverage using the same major version as production so SQLite demo behavior cannot hide production differences.
+- [ ] Label each major workflow as Code complete, Locally verified, Staging verified, or Production verified in docs and release notes.
+- [ ] Expand Automation Center safety tests for draft-only default behavior, duplicate-send prevention, mailbox rate limits, suppressions, loop detection, replay without sending, and emergency stop behavior.
+- [ ] Add VIP research budget, concurrency, evidence-source, provider, confidence, manual override, and rescan-date controls.
+- [ ] Run a focused accessibility pass on the 3D card flip, including keyboard flow, focus return, screen-reader labels, touch behavior, and reduced-motion behavior.

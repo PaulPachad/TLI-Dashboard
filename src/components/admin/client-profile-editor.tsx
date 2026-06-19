@@ -20,6 +20,7 @@ export function ClientProfileEditor({
   const [name, setName] = useState(initialName);
   const [company, setCompany] = useState(initialCompany || "");
   const [email, setEmail] = useState(initialEmail);
+  const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +39,7 @@ export function ClientProfileEditor({
           name: name.trim(),
           company: company.trim(),
           email: email.trim(),
+          password,
         }),
       });
       const data = await res.json();
@@ -47,10 +49,18 @@ export function ClientProfileEditor({
       }
 
       setMessage(
-        data.loginEmail
-          ? `Client email and login updated to ${data.loginEmail}.`
+        data.emailChanged || data.passwordUpdated
+          ? [
+              data.emailChanged && data.loginEmail
+                ? `Login email updated to ${data.loginEmail}`
+                : null,
+              data.passwordUpdated ? "password updated" : null,
+            ]
+              .filter(Boolean)
+              .join("; ") + "."
           : "Client profile updated."
       );
+      setPassword("");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update this client.");
@@ -68,7 +78,7 @@ export function ClientProfileEditor({
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Client Profile</h2>
           <p className="text-sm text-slate-500">
-            Update the client-facing profile and login email.
+            Update the client-facing profile, login email, and password.
           </p>
         </div>
         <button
@@ -115,6 +125,26 @@ export function ClientProfileEditor({
             onChange={(event) => setEmail(event.target.value)}
             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
           />
+        </label>
+      </div>
+
+      <div className="mt-5 border-t border-slate-100 pt-5">
+        <label className="block max-w-md">
+          <span className="mb-1 block text-xs font-semibold text-slate-500">
+            New Client Password
+          </span>
+          <input
+            type="password"
+            value={password}
+            minLength={8}
+            autoComplete="new-password"
+            placeholder="Leave blank to keep current password"
+            onChange={(event) => setPassword(event.target.value)}
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
+          />
+          <p className="mt-1 text-xs text-slate-400">
+            Use at least 8 characters. The current password is never shown.
+          </p>
         </label>
       </div>
 

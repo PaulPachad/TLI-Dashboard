@@ -2,10 +2,19 @@ import { NextRequest } from "next/server";
 import { ImageResponse } from "next/og";
 import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
+import { remoteImageUrlToDataUrl } from "@/lib/images/remote-image";
+import {
+  extractArticleMetadata,
+  normalizeSheetImageUrl,
+} from "@/lib/images/interview-image";
 import { readFile } from "fs/promises";
 import path from "path";
 
 export const runtime = "nodejs";
+const articleMetadataCache = new Map<
+  string,
+  { expiresAt: number; imageUrl: string | null; title: string | null }
+>();
 
 export async function GET(
   request: NextRequest,
@@ -28,10 +37,17 @@ export async function GET(
       return new Response("Access denied", { status: 403 });
     }
 
-    const [logoUrl, profileImageUrl] = await Promise.all([
-      getLocalPublicImageDataUrl("logo-white.png", "image/png"),
-      imageUrlToDataUrl(interview.image1Url),
+    const [logoUrl, articleMetadata] = await Promise.all([
+      getLocalPublicImageDataUrl("logo-black.gif", "image/gif"),
+      fetchArticleMetadata(interview.articleUrl),
     ]);
+    const imageCandidates = [
+      articleMetadata.imageUrl,
+      normalizeSheetImageUrl(interview.image1Url),
+      normalizeSheetImageUrl(interview.image2Url),
+    ];
+    const featureImageUrl = await firstAvailableImageDataUrl(imageCandidates);
+    const headline = articleMetadata.title || buildFallbackHeadline(interview);
     
     return new ImageResponse(
       (
@@ -41,67 +57,86 @@ export async function GET(
             width: '100%',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#0f172a',
-            backgroundImage: 'linear-gradient(to bottom right, #0f172a, #312e81, #1e1b4b)',
+            justifyContent: 'space-between',
+            backgroundColor: '#151126',
+            backgroundImage: 'linear-gradient(135deg, #171126, #202657 45%, #5b1634)',
             color: 'white',
-            padding: '80px',
-            textAlign: 'center',
+            padding: '64px',
+            position: 'relative',
+            overflow: 'hidden',
           }}
         >
-          {/* Logo */}
-          <div style={{ display: 'flex', marginBottom: '80px' }}>
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img 
-                src={logoUrl} 
-                alt="Authority Magazine" 
-                style={{ width: '400px', objectFit: 'contain' }} 
-              />
-            ) : (
-              <div style={{ fontSize: '44px', fontWeight: 800, letterSpacing: '0.04em' }}>
-                Authority Magazine
-              </div>
-            )}
-          </div>
-          
-          {/* Profile Picture */}
-          {profileImageUrl ? (
-            <div style={{ display: 'flex', borderRadius: '50%', overflow: 'hidden', width: '380px', height: '380px', border: '8px solid rgba(255,255,255,0.15)', marginBottom: '50px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
+          {featureImageUrl ? (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
-                src={profileImageUrl}
+                src={featureImageUrl}
                 alt=""
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
               />
             </div>
           ) : (
-            <div style={{ display: 'flex', borderRadius: '50%', backgroundColor: '#4f46e5', alignItems: 'center', justifyContent: 'center', width: '380px', height: '380px', border: '8px solid rgba(255,255,255,0.15)', marginBottom: '50px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
-              <span style={{ fontSize: '150px', fontWeight: 'bold' }}>{interview.intervieweeName.charAt(0).toUpperCase()}</span>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '360px', fontWeight: 800, color: 'rgba(255,255,255,0.14)' }}>
+                {interview.intervieweeName.charAt(0).toUpperCase()}
+              </span>
             </div>
           )}
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(180deg, rgba(8,10,24,0.28), rgba(8,10,24,0.44) 38%, rgba(8,10,24,0.88) 100%)' }} />
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(90deg, rgba(91,22,52,0.32), rgba(20,17,38,0) 44%, rgba(15,23,42,0.32))' }} />
 
-          {/* Name & Title */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <h1 style={{ fontSize: '72px', fontWeight: 800, margin: '0 0 16px 0', letterSpacing: '-0.03em' }}>
-              {interview.intervieweeName}
-            </h1>
-            {interview.intervieweeCompany && (
-              <h2 style={{ fontSize: '36px', fontWeight: 500, color: '#94a3b8', margin: '0 0 50px 0' }}>
-                {interview.intervieweeTitle ? `${interview.intervieweeTitle}, ` : ""}{interview.intervieweeCompany}
-              </h2>
-            )}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              {logoUrl ? (
+                <div style={{ display: 'flex', width: '104px', height: '104px', alignItems: 'center', justifyContent: 'center', borderRadius: '999px', backgroundColor: 'rgba(255,255,255,0.82)', boxShadow: '0 22px 50px rgba(0,0,0,0.24)' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img 
+                    src={logoUrl} 
+                    alt="Authority Magazine" 
+                    style={{ width: '84px', height: '84px', objectFit: 'contain' }} 
+                  />
+                </div>
+              ) : null}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '27px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                  Authority Magazine
+                </span>
+                <span style={{ marginTop: '5px', fontSize: '22px', color: 'rgba(255,255,255,0.76)' }}>
+                  Featured Interview
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Topic */}
-          {interview.topic && (
-            <div style={{ display: 'flex', backgroundColor: 'rgba(255,255,255,0.08)', padding: '32px 56px', borderRadius: '32px', maxWidth: '90%', border: '1px solid rgba(255,255,255,0.15)' }}>
-              <p style={{ fontSize: '42px', fontWeight: 600, margin: 0, color: '#e0e7ff', lineHeight: 1.4 }}>
-                &quot;{interview.topic}&quot;
-              </p>
+          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%' }}>
+            <div style={{ display: 'flex', marginBottom: '24px', alignSelf: 'flex-start', borderRadius: '999px', backgroundColor: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.22)', padding: '12px 22px', fontSize: '22px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Featured
             </div>
-          )}
+            <h1 style={{ fontSize: '70px', fontWeight: 850, margin: '0 0 22px 0', lineHeight: 1.04, letterSpacing: '0' }}>
+              {headline}
+            </h1>
+            <div style={{ width: '150px', height: '6px', borderRadius: '999px', backgroundColor: '#e40062', marginBottom: '28px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <p style={{ fontSize: '38px', fontWeight: 800, margin: 0 }}>
+                {interview.intervieweeName}
+              </p>
+              {(interview.intervieweeTitle || interview.intervieweeCompany) && (
+                <p style={{ margin: '8px 0 0 0', fontSize: '26px', color: 'rgba(255,255,255,0.82)' }}>
+                  {[interview.intervieweeTitle, interview.intervieweeCompany].filter(Boolean).join(", ")}
+                </p>
+              )}
+            </div>
+            <p style={{ margin: '42px 0 0 0', fontSize: '24px', fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>
+              Read the full interview on Authority Magazine
+            </p>
+          </div>
+
+          {/* Hidden accessibility text for the generated image tree. */}
+          <div style={{ display: 'none' }}>
+            <span>
+              {interview.intervieweeName}
+            </span>
+          </div>
         </div>
       ),
       {
@@ -115,6 +150,79 @@ export async function GET(
   }
 }
 
+async function fetchArticleMetadata(articleUrl?: string | null): Promise<{
+  imageUrl: string | null;
+  title: string | null;
+}> {
+  if (!articleUrl || articleUrl.includes("/unpublished/")) {
+    return { imageUrl: null, title: null };
+  }
+
+  if (articleMetadataCache.has(articleUrl)) {
+    const cached = articleMetadataCache.get(articleUrl)!;
+    if (cached.expiresAt > Date.now()) {
+      return { imageUrl: cached.imageUrl, title: cached.title };
+    }
+  }
+
+  try {
+    const url = new URL(articleUrl);
+    const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+    if (
+      hostname !== "medium.com" &&
+      hostname !== "authoritymagazine.com" &&
+      !hostname.endsWith(".authoritymagazine.com")
+    ) {
+      return { imageUrl: null, title: null };
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        Accept: "text/html",
+        "User-Agent":
+          "Mozilla/5.0 (compatible; TLI-Leverage-Dashboard/1.0; social-image)",
+      },
+      redirect: "follow",
+      signal: AbortSignal.timeout(8_000),
+    });
+
+    if (!response.ok) return { imageUrl: null, title: null };
+
+    const metadata = extractArticleMetadata(await response.text());
+    articleMetadataCache.set(articleUrl, {
+      ...metadata,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+    });
+    return metadata;
+  } catch {
+    return { imageUrl: null, title: null };
+  }
+}
+
+async function firstAvailableImageDataUrl(
+  urls: Array<string | null | undefined>
+): Promise<string | null> {
+  for (const url of urls) {
+    const image = await remoteImageUrlToDataUrl(url);
+    if (image) return image;
+  }
+  return null;
+}
+
+function buildFallbackHeadline(interview: {
+  intervieweeName: string;
+  topic?: string | null;
+}) {
+  const topic = interview.topic?.trim();
+  if (
+    topic &&
+    !/\([^)]*name[^)]*\)|\bname\b|rising star/i.test(topic)
+  ) {
+    return topic;
+  }
+  return `An Authority Magazine interview with ${interview.intervieweeName}`;
+}
+
 async function getLocalPublicImageDataUrl(
   filename: string,
   contentType: string
@@ -125,43 +233,5 @@ async function getLocalPublicImageDataUrl(
   } catch (error) {
     console.warn(`Could not load ${filename} for social image.`, error);
     return null;
-  }
-}
-
-async function imageUrlToDataUrl(value?: string | null): Promise<string | null> {
-  if (!value) return null;
-
-  let url: URL;
-  try {
-    url = new URL(value);
-  } catch {
-    return null;
-  }
-
-  if (!["http:", "https:"].includes(url.protocol)) return null;
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
-
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent": "Authority-Magazine-Social-Image/1.0",
-      },
-    });
-
-    if (!response.ok) return null;
-
-    const contentType = response.headers.get("content-type") || "";
-    if (!contentType.startsWith("image/")) return null;
-
-    const buffer = Buffer.from(await response.arrayBuffer());
-    return `data:${contentType};base64,${buffer.toString("base64")}`;
-  } catch (error) {
-    console.warn("Could not load profile photo for social image.", error);
-    return null;
-  } finally {
-    clearTimeout(timeout);
   }
 }

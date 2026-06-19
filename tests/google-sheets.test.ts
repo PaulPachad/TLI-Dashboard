@@ -10,6 +10,8 @@ import {
 } from "../src/lib/google-sheets/row-normalizer";
 import {
   extractArticleImage,
+  extractArticleMetadata,
+  extractArticleTitle,
   normalizeSheetImageUrl,
 } from "../src/lib/images/interview-image";
 
@@ -227,5 +229,27 @@ test("extracts article social images from metadata", () => {
       '<meta content="https://cdn.example.com/twitter.jpg" name="twitter:image">'
     ),
     "https://cdn.example.com/twitter.jpg"
+  );
+});
+
+test("extracts and cleans article titles from metadata", () => {
+  assert.equal(
+    extractArticleTitle(
+      '<meta property="og:title" content="Grace Muggeridge Of Alice Camera On The Five Things You Need To Shine In Film - Authority Magazine">'
+    ),
+    "Grace Muggeridge Of Alice Camera On The Five Things You Need To Shine In Film"
+  );
+  assert.equal(
+    extractArticleTitle("<title>Jane Doe &amp; Her Story | Medium</title>"),
+    "Jane Doe & Her Story"
+  );
+  assert.deepEqual(
+    extractArticleMetadata(
+      '<meta property="og:title" content="A Real Article"><meta property="og:image" content="https://cdn.example.com/a.jpg">'
+    ),
+    {
+      title: "A Real Article",
+      imageUrl: "https://cdn.example.com/a.jpg",
+    }
   );
 });

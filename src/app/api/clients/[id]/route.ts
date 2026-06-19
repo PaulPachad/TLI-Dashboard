@@ -5,6 +5,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiAdmin } from "@/lib/auth-helpers";
+import {
+  AdminClientUpdateError,
+  normalizeAdminClientUpdate,
+  selectClientLoginUser,
+} from "@/lib/clients/admin-update";
+import { hash } from "bcryptjs";
 
 export async function DELETE(
   request: NextRequest,
@@ -72,141 +78,122 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireApiAdmin();
+    const adminUser = await requireApiAdmin();
     const { id } = await params;
     
     if (!id) {
       return NextResponse.json({ error: "Client ID is required." }, { status: 400 });
     }
 
-    const body = await request.json();
-    const existingClient = await db.client.findUnique({
-      where: { id },
-      include: {
-        users: {
-          select: {
-            id: true,
-            email: true,
-            role: true,
-            createdAt: true,
-          },
-          orderBy: { createdAt: "asc" },
-        },
-      },
-    });
-
-    if (!existingClient) {
-      return NextResponse.json({ error: "Client not found." }, { status: 404 });
-    }
-
-    const data: {
-      name?: string;
-      company?: string | null;
-      email?: string;
-      replyToEmail?: string | null;
-      topicsSheetUrl?: string | null;
-    } = {};
-
-    if ("name" in body) {
-      const normalizedName = String(body.name || "").trim();
-      if (!normalizedName) {
-        return NextResponse.json(
-          { error: "Client name is required." },
-          { status: 400 }
-        );
-      }
-      data.name = normalizedName;
-    }
-
-    if ("company" in body) {
-      data.company = String(body.company || "").trim() || null;
-    }
-
-    if ("topicsSheetUrl" in body) {
-      data.topicsSheetUrl = String(body.topicsSheetUrl || "").trim() || null;
-    }
-
-    let normalizedEmail: string | null = null;
-    if ("email" in body) {
-      normalizedEmail = String(body.email || "").trim().toLowerCase();
-      if (!normalizedEmail) {
-        return NextResponse.json(
-          { error: "Client email is required." },
-          { status: 400 }
-        );
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-        return NextResponse.json(
-          { error: "Enter a valid client email address." },
-          { status: 400 }
-        );
-      }
-
-      const existingUser = await db.user.findUnique({
-        where: { email: normalizedEmail },
-      });
-      if (existingUser && existingUser.clientId !== id) {
-        return NextResponse.json(
-          { error: "Another user already uses that email address." },
-          { status: 400 }
-        );
-      }
-
-      data.email = normalizedEmail;
-      if (
-        !existingClient.replyToEmail ||
-        existingClient.replyToEmail.toLowerCase() ===
-          existingClient.email.toLowerCase()
-      ) {
-        data.replyToEmail = normalizedEmail;
-      }
-    }
-
-    if (Object.keys(data).length === 0) {
-      return NextResponse.json(
-        { error: "No client changes were provided." },
-        { status: 400 }
-      );
-    }
+    const body = (await request.json()) as Record<string, unknown>;
 
     const result = await db.$transaction(async (tx) => {
+      const existingClient = await tx.client.findUnique({
+        where: { id },
+        include: {
+          users: {
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: "asc" },
+          },
+        },
+      });
+
+      if (!existingClient) {
+        throw new AdminClientUpdateError("Client not found.", 404);
+      }
+
+      const { data, normalizedEmail, newPassword } = normalizeAdminClientUpdate(
+        body,
+        existingClient
+      );
+      let loginEmail: string | null = null;
+      const emailChanged =
+        Boolean(normalizedEmail) &&
+        existingClient.email.toLowerCase() !== normalizedEmail;
+      let passwordUpdated = false;
+      let loginUserId: string | null = null;
+
+      if (normalizedEmail || newPassword) {
+        const loginUser = selectClientLoginUser(existingClient);
+        if (!loginUser) {
+          throw new AdminClientUpdateError(
+            "This client does not have a client login account to update."
+          );
+        }
+
+        if (normalizedEmail) {
+          const userWithTargetEmail = await tx.user.findUnique({
+            where: { email: normalizedEmail },
+          });
+          if (userWithTargetEmail && userWithTargetEmail.id !== loginUser.id) {
+            throw new AdminClientUpdateError(
+              "Another user already uses that email address."
+            );
+          }
+        }
+
+        loginUserId = loginUser.id;
+      }
+
       const client = await tx.client.update({
         where: { id },
         data,
       });
 
-      let loginEmail: string | null = null;
-      if (normalizedEmail) {
-        const loginUser =
-          existingClient.users.find(
-            (user) =>
-              user.role === "CLIENT" &&
-              user.email.toLowerCase() === existingClient.email.toLowerCase()
-          ) ||
-          existingClient.users.find((user) => user.role === "CLIENT") ||
-          null;
+      if ((normalizedEmail || newPassword) && loginUserId) {
+        const nextUserData: {
+          email?: string;
+          name?: string;
+          passwordHash?: string;
+        } = {
+          ...(normalizedEmail ? { email: normalizedEmail } : {}),
+          ...(data.name ? { name: data.name } : {}),
+        };
+        if (newPassword) {
+          nextUserData.passwordHash = await hash(newPassword, 12);
+        }
 
-        if (loginUser) {
-          const userWithTargetEmail = await tx.user.findUnique({
-            where: { email: normalizedEmail },
+        const updatedUser = await tx.user.update({
+          where: { id: loginUserId },
+          data: nextUserData,
+        });
+        loginEmail = updatedUser.email;
+        passwordUpdated = Boolean(newPassword);
+
+        if (emailChanged) {
+          await tx.adminAuditLog.create({
+            data: {
+              actorUserId: adminUser.id,
+              targetClientId: id,
+              action: "CLIENT_EMAIL_UPDATED",
+              previousEmail: existingClient.email,
+              newEmail: normalizedEmail,
+              metadataJson: JSON.stringify({
+                loginUserId,
+                replyToEmailUpdated:
+                  data.replyToEmail === normalizedEmail,
+              }),
+            },
           });
-
-          if (!userWithTargetEmail || userWithTargetEmail.id === loginUser.id) {
-            const updatedUser = await tx.user.update({
-              where: { id: loginUser.id },
-              data: {
-                email: normalizedEmail,
-                ...(data.name ? { name: data.name } : {}),
-              },
-            });
-            loginEmail = updatedUser.email;
-          } else {
-            loginEmail = userWithTargetEmail.email;
-          }
+        }
+        if (newPassword) {
+          await tx.adminAuditLog.create({
+            data: {
+              actorUserId: adminUser.id,
+              targetClientId: id,
+              action: "CLIENT_PASSWORD_UPDATED",
+              metadataJson: JSON.stringify({ loginUserId }),
+            },
+          });
         }
       }
 
-      return { client, loginEmail };
+      return { client, loginEmail, emailChanged, passwordUpdated };
     });
 
     return NextResponse.json({ success: true, ...result });
