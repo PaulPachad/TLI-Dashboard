@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       const totalDataRows = rawData.length - 1;
       let finalRawData = rawData;
       let rowOffset = 0;
-      const importAll = source.sheetUrl.includes("importAll=true");
+      const importAll = !!parsedUrl.importAll;
       const wasLimited = !importAll && totalDataRows > 200;
 
       if (wasLimited) {

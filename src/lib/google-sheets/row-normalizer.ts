@@ -48,6 +48,7 @@ export interface NormalizationResult {
   skippedNoArticle: number;
   skippedInvalidArticle: number;
   skippedEmptyRow: number;
+  skippedNeedsAttention: number;
   totalRows: number;
   warnings: string[];
 }
@@ -110,6 +111,7 @@ export function normalizeRows(
   let skippedNoArticle = 0;
   let skippedInvalidArticle = 0;
   let skippedEmptyRow = 0;
+  let skippedNeedsAttention = 0;
 
   // Build a quick lookup: field → column index
   const fieldToCol = new Map<string, number>();
@@ -141,6 +143,7 @@ export function normalizeRows(
     if (estDateVal) {
       const lowerEstDate = estDateVal.toLowerCase();
       if (lowerEstDate.includes("attention needed") || lowerEstDate.includes("please resubmit")) {
+        skippedNeedsAttention++;
         continue;
       }
     }
@@ -247,12 +250,25 @@ export function normalizeRows(
     );
   }
 
+  if (skippedNeedsAttention > 0) {
+    warnings.push(
+      `${skippedNeedsAttention} row(s) were ignored because their Estimated Publishing Date contains "attention needed" or "please resubmit".`
+    );
+  }
+
+  if (skippedEmptyRow > 0) {
+    warnings.push(
+      `${skippedEmptyRow} empty row(s) were skipped.`
+    );
+  }
+
   return {
     published,
     unpublished,
     skippedNoArticle,
     skippedInvalidArticle,
     skippedEmptyRow,
+    skippedNeedsAttention,
     totalRows: dataRows.length,
     warnings,
   };

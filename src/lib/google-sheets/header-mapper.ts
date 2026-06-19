@@ -409,7 +409,9 @@ export function mapHeaders(
             } else if (field === "linkedinUrl") {
               isMatch = cleanVal.includes("linkedin.com/");
             } else if (field === "twitterUrl") {
-              isMatch = cleanVal.includes("twitter.com/") || cleanVal.includes("x.com/");
+              isMatch =
+                (cleanVal.includes("twitter.com/") || cleanVal.includes("x.com/")) &&
+                !cleanVal.includes("dropbox.com/");
             } else if (field === "interviewDocUrl") {
               isMatch = cleanVal.includes("docs.google.com/document/");
             } else if (field === "videoUrl") {

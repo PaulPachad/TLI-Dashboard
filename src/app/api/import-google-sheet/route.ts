@@ -346,8 +346,19 @@ export async function POST(request: NextRequest) {
       );
       const usedInterviewIds = new Set<string>();
 
+      // Only clear sourceRowNumber for rows in the range being imported/processed
+      const rowNumbers = importRecords.map((r) => r.sourceRowNumber);
+      const minRow = Math.min(...rowNumbers);
+      const maxRow = Math.max(...rowNumbers);
+
       await tx.interview.updateMany({
-        where: { sheetSourceId: sheetSource.id },
+        where: {
+          sheetSourceId: sheetSource.id,
+          sourceRowNumber: {
+            gte: minRow,
+            lte: maxRow,
+          },
+        },
         data: { sourceRowNumber: null },
       });
 

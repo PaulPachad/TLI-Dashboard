@@ -311,6 +311,8 @@ test("ignores rows with 'attention needed' in the estimated publishing date", ()
   assert.equal(result.published.length, 1);
   assert.equal(result.published[0].intervieweeName, "Jane Doe");
   assert.equal(result.unpublished.length, 0);
+  assert.equal(result.skippedNeedsAttention, 2);
+  assert.ok(result.warnings.some(w => w.includes("2 row(s) were ignored because their Estimated Publishing Date contains")));
 });
 
 test("serializes and parses customMappings and importAll parameters in Google Sheets URLs", () => {
@@ -367,4 +369,18 @@ test("applies customMapping overrides correctly", () => {
   assert.equal(nameMapping.columnIndex, 1);
   assert.equal(nameMapping.matchedHeader, "Correct Guest Name");
   assert.equal(nameMapping.matchType, "manual");
+});
+
+test("smart detection ignores dropbox.com/ URLs when matching twitterUrl", () => {
+  const headers = ["Random Header 1", "Dropbox Link"];
+  const rows = [
+    headers,
+    ["", "https://www.dropbox.com/sh/abc/xyz"],
+    ["", "https://dropbox.com/sh/123/456"],
+  ];
+
+  const result = mapHeaders(headers, rows);
+
+  const twitterMapping = result.mappings.find((m) => m.field === "twitterUrl");
+  assert.ok(!twitterMapping);
 });
