@@ -16,6 +16,7 @@ import {
   deduplicateInterviewRecords,
   isDemoMode,
   SheetsConfigError,
+  appendSheetUrlParams,
 } from "@/lib/google-sheets";
 
 interface ImportRequest {
@@ -23,6 +24,7 @@ interface ImportRequest {
   sheetUrl: string;
   confirm?: boolean; // If true, actually save to DB. If false/missing, preview only.
   importAll?: boolean; // If true, sync all. Otherwise limit to last 100 if > 200 entries.
+  customMappings?: Record<string, number>;
 }
 
 function appendImportAllParam(url: string, importAll: boolean): string {
@@ -114,27 +116,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // --- Map headers ---
+        // --- Map headers ---
     const headers = rawData[0].map((h) => String(h));
-    const headerResult = mapHeaders(headers);
+    const headerResult = mapHeaders(headers, rawData, body.customMappings);
 
     if (headerResult.missingRequired.length > 0) {
       return NextResponse.json(
         {
           error:
             'We found the sheet, but could not find an "Authority Magazine Link" column. ' +
-            `Headers found: ${headers.join(", ")}`,
+            'Please select the column mapping manually below.',
           warnings: headerResult.warnings,
           headers: headers,
         },
-        { status: 400 }
+        { status: 200 }
       );
     }
 
     // --- Limit large sheets to the last 100 rows by default ---
     const totalDataRows = rawData.length - 1;
     let finalRawData = rawData;
-    let headerRowIndex = 0;
+    let rowOffset = 0;
     const importAll = !!body.importAll;
     const wasLimited = !importAll && totalDataRows > 200;
 
@@ -143,11 +145,11 @@ export async function POST(request: NextRequest) {
       const skippedCount = totalDataRows - targetLimit;
       const dataRows = rawData.slice(1);
       finalRawData = [rawData[0], ...dataRows.slice(-targetLimit)];
-      headerRowIndex = skippedCount;
+      rowOffset = skippedCount;
     }
 
     // --- Normalize rows ---
-    const normResult = normalizeRows(finalRawData, headerResult.mappings, headerRowIndex, parsedUrl.spreadsheetId);
+    const normResult = normalizeRows(finalRawData, headerResult.mappings, 0, parsedUrl.spreadsheetId, rowOffset);
     const deduplicated = deduplicateInterviewRecords(normResult.published);
     const importRecords = deduplicated.records;
 
@@ -202,6 +204,7 @@ export async function POST(request: NextRequest) {
         field: m.field,
         matchedHeader: m.matchedHeader,
         matchType: m.matchType,
+        columnIndex: m.columnIndex,
       })),
       unmappedHeaders: headerResult.unmappedHeaders,
     };
@@ -215,6 +218,7 @@ export async function POST(request: NextRequest) {
             ...headerResult.warnings,
             ...normResult.warnings,
           ],
+          headers,
         },
         { status: 200 }
       );
@@ -294,6 +298,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         preview,
         warnings,
+        headers,
         message: `Found ${importRecords.length} interview(s) ready to import. Send confirm: true to save.`,
       });
     }
@@ -301,7 +306,10 @@ export async function POST(request: NextRequest) {
     // --- Confirm mode: save to database ---
 
     const result = await db.$transaction(async (tx) => {
-      const finalUrl = appendImportAllParam(body.sheetUrl, importAll);
+      const finalUrl = appendSheetUrlParams(body.sheetUrl, {
+        importAll,
+        customMappings: body.customMappings,
+      });
       const sheetSource = existingSheetSource
         ? await tx.sheetSource.update({
             where: { id: existingSheetSource.id },

@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
       // Map headers
       const headers = rawData[0].map((h) => String(h));
-      const headerResult = mapHeaders(headers);
+      const headerResult = mapHeaders(headers, rawData, parsedUrl.customMappings);
 
       if (headerResult.missingRequired.length > 0) {
         warnings.push(
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
       const totalDataRows = rawData.length - 1;
       let finalRawData = rawData;
-      let headerRowIndex = 0;
+      let rowOffset = 0;
       const importAll = source.sheetUrl.includes("importAll=true");
       const wasLimited = !importAll && totalDataRows > 200;
 
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
         const skippedCount = totalDataRows - targetLimit;
         const dataRows = rawData.slice(1);
         finalRawData = [rawData[0], ...dataRows.slice(-targetLimit)];
-        headerRowIndex = skippedCount;
+        rowOffset = skippedCount;
         warnings.push(
           `[${tabTitle}] Large sheet (${totalDataRows} rows) is limited to syncing the last 100 rows. ` +
             `To sync all rows, re-import the sheet with the "Import all entries" toggle enabled.`
@@ -121,8 +121,9 @@ export async function POST(request: NextRequest) {
       const normResult = normalizeRows(
         finalRawData,
         headerResult.mappings,
-        headerRowIndex,
-        parsedUrl.spreadsheetId
+        0,
+        parsedUrl.spreadsheetId,
+        rowOffset
       );
 
       const deduplicated = deduplicateInterviewRecords(normResult.published);

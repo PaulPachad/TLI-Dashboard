@@ -13,8 +13,8 @@ export interface HeaderMapping {
   matchedHeader: string;
   /** Column index (0-based) */
   columnIndex: number;
-  /** Match quality: "exact" | "alias" | "fuzzy" */
-  matchType: "exact" | "alias" | "fuzzy";
+  /** Match quality: "exact" | "alias" | "fuzzy" | "manual" */
+  matchType: "exact" | "alias" | "fuzzy" | "manual";
 }
 
 export interface HeaderMappingResult {
@@ -272,13 +272,33 @@ const FUZZY_THRESHOLD = 0.65;
 /**
  * Map actual sheet headers to canonical field names.
  */
-export function mapHeaders(headers: string[]): HeaderMappingResult {
+export function mapHeaders(
+  headers: string[],
+  rawRows?: string[][],
+  customMappings?: Record<string, number>
+): HeaderMappingResult {
   const mappings: HeaderMapping[] = [];
   const usedColumns = new Set<number>();
   const usedFields = new Set<string>();
   const warnings: string[] = [];
 
   const normalizedHeaders = headers.map(normalizeHeader);
+
+  // Pass 0: Apply custom manual mappings first
+  if (customMappings) {
+    for (const [field, colIdx] of Object.entries(customMappings)) {
+      if (colIdx >= 0 && colIdx < headers.length) {
+        mappings.push({
+          field,
+          matchedHeader: headers[colIdx],
+          columnIndex: colIdx,
+          matchType: "manual",
+        });
+        usedColumns.add(colIdx);
+        usedFields.add(field);
+      }
+    }
+  }
 
   // Pass 1: Exact and alias matches (highest confidence)
   for (const [field, aliases] of Object.entries(FIELD_ALIASES)) {
@@ -340,6 +360,95 @@ export function mapHeaders(headers: string[]): HeaderMappingResult {
           `(matched alias: "${bestAlias}", confidence: ${(bestScore * 100).toFixed(0)}%). ` +
           `Please verify this mapping is correct.`
       );
+    }
+  }
+
+  // Pass 3: Smart content-based detection for remaining unmapped fields
+  if (rawRows && rawRows.length > 1) {
+    const dataRows = rawRows.slice(1);
+    const maxRowsToScan = Math.min(dataRows.length, 10);
+
+    for (const [field, aliases] of Object.entries(FIELD_ALIASES)) {
+      if (usedFields.has(field)) continue;
+
+      // Content-based detection is supported for links, profiles, and emails
+      if (
+        field !== "articleUrl" &&
+        field !== "linkedinUrl" &&
+        field !== "twitterUrl" &&
+        field !== "interviewDocUrl" &&
+        field !== "videoUrl" &&
+        field !== "intervieweeEmail"
+      ) {
+        continue;
+      }
+
+      let bestColIdx = -1;
+      let highestMatchCount = 0;
+
+      for (let colIdx = 0; colIdx < headers.length; colIdx++) {
+        if (usedColumns.has(colIdx)) continue;
+
+        let matchCount = 0;
+        let nonEmptyCount = 0;
+
+        for (let r = 0; r < maxRowsToScan; r++) {
+          const val = dataRows[r][colIdx];
+          if (val !== undefined && val !== null && String(val).trim()) {
+            nonEmptyCount++;
+            const cleanVal = String(val).trim().toLowerCase();
+            let isMatch = false;
+
+            if (field === "articleUrl") {
+              isMatch =
+                (cleanVal.startsWith("http://") || cleanVal.startsWith("https://")) &&
+                (cleanVal.includes("authoritymagazine") ||
+                  cleanVal.includes("authority-mag") ||
+                  cleanVal.includes("medium.com/authority-magazine") ||
+                  cleanVal.includes("medium.com/p/"));
+            } else if (field === "linkedinUrl") {
+              isMatch = cleanVal.includes("linkedin.com/");
+            } else if (field === "twitterUrl") {
+              isMatch = cleanVal.includes("twitter.com/") || cleanVal.includes("x.com/");
+            } else if (field === "interviewDocUrl") {
+              isMatch = cleanVal.includes("docs.google.com/document/");
+            } else if (field === "videoUrl") {
+              isMatch =
+                cleanVal.includes("youtube.com/") ||
+                cleanVal.includes("youtu.be/") ||
+                cleanVal.includes("vimeo.com/");
+            } else if (field === "intervieweeEmail") {
+              isMatch = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanVal);
+            }
+
+            if (isMatch) {
+              matchCount++;
+            }
+          }
+        }
+
+        if (nonEmptyCount > 0 && matchCount >= Math.max(1, nonEmptyCount * 0.3)) {
+          if (matchCount > highestMatchCount) {
+            highestMatchCount = matchCount;
+            bestColIdx = colIdx;
+          }
+        }
+      }
+
+      if (bestColIdx !== -1) {
+        mappings.push({
+          field,
+          matchedHeader: headers[bestColIdx],
+          columnIndex: bestColIdx,
+          matchType: "fuzzy",
+        });
+        usedColumns.add(bestColIdx);
+        usedFields.add(field);
+        warnings.push(
+          `Column "${headers[bestColIdx]}" was auto-detected as "${field}" based on cell content. ` +
+            `Please verify this mapping is correct.`
+        );
+      }
     }
   }
 

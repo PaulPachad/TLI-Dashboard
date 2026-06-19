@@ -3,7 +3,7 @@ import test from "node:test";
 import { resolveTabTitle } from "../src/lib/google-sheets/client";
 import { deduplicateInterviewRecords } from "../src/lib/google-sheets/deduplicate";
 import { mapHeaders } from "../src/lib/google-sheets/header-mapper";
-import { parseGoogleSheetUrl } from "../src/lib/google-sheets/parse-url";
+import { parseGoogleSheetUrl, appendSheetUrlParams } from "../src/lib/google-sheets/parse-url";
 import {
   extractSocialProfiles,
   normalizeRows,
@@ -311,4 +311,60 @@ test("ignores rows with 'attention needed' in the estimated publishing date", ()
   assert.equal(result.published.length, 1);
   assert.equal(result.published[0].intervieweeName, "Jane Doe");
   assert.equal(result.unpublished.length, 0);
+});
+
+test("serializes and parses customMappings and importAll parameters in Google Sheets URLs", () => {
+  const originalUrl = "https://docs.google.com/spreadsheets/d/abc-123/edit#gid=456";
+  const updatedUrl = appendSheetUrlParams(originalUrl, {
+    importAll: true,
+    customMappings: {
+      articleUrl: 5,
+      intervieweeName: 1,
+    },
+  });
+
+  assert.ok(updatedUrl.includes("importAll=true"));
+  assert.ok(updatedUrl.includes("colmap=articleUrl:5,intervieweeName:1"));
+
+  const parsed = parseGoogleSheetUrl(updatedUrl);
+  assert.equal(parsed.spreadsheetId, "abc-123");
+  assert.equal(parsed.gid, "456");
+  assert.equal(parsed.importAll, true);
+  assert.deepEqual(parsed.customMappings, {
+    articleUrl: 5,
+    intervieweeName: 1,
+  });
+});
+
+test("supports smart content-based detection of columns", () => {
+  const headers = ["Random Header 1", "Guest", "Unrelated Col", "Published Link"];
+  const rows = [
+    headers,
+    ["", "Sheri Bronstein", "Random Text", "https://medium.com/authority-magazine/sheri-bronstein-live"],
+    ["", "Kim Dixon", "Other Stuff", "https://medium.com/authority-magazine/kim-dixon"],
+  ];
+
+  // Run header mapping with row data. Published Link is not in FIELD_ALIASES, but contains Authority Mag URLs.
+  // Guest is mapped to intervieweeName fuzzy/alias.
+  const result = mapHeaders(headers, rows);
+
+  const articleUrlMapping = result.mappings.find((m) => m.field === "articleUrl");
+  assert.ok(articleUrlMapping);
+  assert.equal(articleUrlMapping.columnIndex, 3);
+  assert.equal(articleUrlMapping.matchedHeader, "Published Link");
+});
+
+test("applies customMapping overrides correctly", () => {
+  const headers = ["Wrong Guest Name", "Correct Guest Name", "Authority Magazine Link"];
+  const customMappings = {
+    intervieweeName: 1, // manually map to Correct Guest Name instead of auto-matching Wrong Guest Name
+  };
+
+  const result = mapHeaders(headers, undefined, customMappings);
+  
+  const nameMapping = result.mappings.find((m) => m.field === "intervieweeName");
+  assert.ok(nameMapping);
+  assert.equal(nameMapping.columnIndex, 1);
+  assert.equal(nameMapping.matchedHeader, "Correct Guest Name");
+  assert.equal(nameMapping.matchType, "manual");
 });

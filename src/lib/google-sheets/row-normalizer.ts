@@ -100,7 +100,8 @@ export function normalizeRows(
   rows: string[][],
   mappings: HeaderMapping[],
   headerRowIndex: number = 0,
-  spreadsheetId?: string
+  spreadsheetId?: string,
+  rowOffset: number = 0
 ): NormalizationResult {
   const dataRows = rows.slice(headerRowIndex + 1);
   const published: InterviewRecord[] = [];
@@ -127,7 +128,7 @@ export function normalizeRows(
 
   for (let i = 0; i < dataRows.length; i++) {
     const row = dataRows[i];
-    const rowNumber = headerRowIndex + 1 + i + 1; // 1-based, accounting for header
+    const rowNumber = headerRowIndex + 1 + i + 1 + rowOffset; // 1-based, accounting for header and offset
 
     // Skip completely empty rows
     if (!row || row.every((cell) => !cell || String(cell).trim() === "")) {

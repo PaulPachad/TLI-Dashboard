@@ -59,6 +59,11 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
     unchanged: number;
     duplicatesSkipped: number;
   } | null>(null);
+  
+  const [customMappings, setCustomMappings] = useState<Record<string, number>>({});
+  const [sheetHeaders, setSheetHeaders] = useState<string[]>([]);
+  const [showMappingConfig, setShowMappingConfig] = useState(false);
+
   const previewInterviews = preview?.interviews ?? [];
   const unpublishedInterviews = preview?.unpublished ?? [];
   const headerMappings = preview?.headerMappings ?? [];
@@ -79,7 +84,7 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
       const res = await fetch("/api/import-google-sheet", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId, sheetUrl: sheetUrl.trim(), importAll }),
+        body: JSON.stringify({ clientId, sheetUrl: sheetUrl.trim(), importAll, customMappings }),
       });
 
       const data = await res.json();
@@ -87,12 +92,32 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
       if (!res.ok) {
         setError(data.error || "Failed to read the sheet.");
         setWarnings(data.warnings || []);
+        if (data.headers) {
+          setSheetHeaders(data.headers);
+          setShowMappingConfig(true);
+        }
         return;
       }
 
       setPreview(data.preview || null);
       setError(data.error || null);
       setWarnings(data.warnings || []);
+      
+      if (data.headers) {
+        setSheetHeaders(data.headers);
+      }
+      if (data.error && data.headers) {
+        setShowMappingConfig(true);
+      }
+      if (data.preview?.headerMappings) {
+        const initialMappings: Record<string, number> = {};
+        for (const m of data.preview.headerMappings) {
+          if (m.columnIndex !== undefined) {
+            initialMappings[m.field] = m.columnIndex;
+          }
+        }
+        setCustomMappings(initialMappings);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred.");
     } finally {
@@ -108,7 +133,7 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
       const res = await fetch("/api/import-google-sheet", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId, sheetUrl: sheetUrl.trim(), confirm: true, importAll }),
+        body: JSON.stringify({ clientId, sheetUrl: sheetUrl.trim(), confirm: true, importAll, customMappings }),
       });
 
       const data = await res.json();
@@ -236,6 +261,93 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
               Import all entries (by default, sheets with more than 200 rows are limited to the last 100)
             </label>
           </div>
+
+          {sheetHeaders.length > 0 && (
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => setShowMappingConfig(!showMappingConfig)}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-850 transition-colors inline-flex items-center gap-1 select-none"
+              >
+                {showMappingConfig ? (
+                  <>
+                    <span>Hide Column Configuration</span>
+                    <span>▴</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Customize Column Mappings</span>
+                    <span>▾</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {showMappingConfig && sheetHeaders.length > 0 && (
+            <div className="mt-4 bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4 animate-slide-up">
+              <div>
+                <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider">Configure Column Mappings</h4>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  If the system did not automatically detect the correct columns, or if you want to override them, select the columns manually:
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {[
+                  { field: "articleUrl", label: "Authority Magazine Link (Required)" },
+                  { field: "intervieweeName", label: "Guest Name" },
+                  { field: "intervieweeEmail", label: "Guest Email" },
+                  { field: "topic", label: "Topic" },
+                  { field: "estimatedPublishDate", label: "Estimated Publishing Date" },
+                  { field: "liveEmailStatusImported", label: "Emailed Status (LIVE)" },
+                  { field: "linkedinUrl", label: "LinkedIn URL" },
+                  { field: "twitterUrl", label: "Twitter/X URL" },
+                  { field: "videoUrl", label: "Video URL" },
+                  { field: "interviewDocUrl", label: "Google Doc URL" },
+                  { field: "publicistName", label: "Publicist Name" },
+                  { field: "publicistEmail", label: "Publicist Email" },
+                ].map(({ field, label }) => (
+                  <div key={field} className="space-y-1">
+                    <label className="block text-[11px] font-semibold text-slate-600 truncate">{label}</label>
+                    <select
+                      value={customMappings[field] !== undefined ? customMappings[field] : ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCustomMappings((prev) => {
+                          const next = { ...prev };
+                          if (val === "") {
+                            delete next[field];
+                          } else {
+                            next[field] = parseInt(val, 10);
+                          }
+                          return next;
+                        });
+                      }}
+                      className="block w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white 
+                                 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                      <option value="">Auto-detect</option>
+                      {sheetHeaders.map((header, idx) => (
+                        <option key={idx} value={idx}>
+                          Col {idx + 1}: {header || `Column ${idx + 1}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={handlePreview}
+                  disabled={loading}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold
+                             hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Update Preview
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Divider */}
@@ -340,38 +452,54 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
             </div>
 
             {/* Column mappings */}
-            <details className="mb-4">
-              <summary className="text-sm text-slate-500 cursor-pointer hover:text-slate-700">
-                Column Mappings ({headerMappings.length} matched)
-              </summary>
-              <div className="mt-2 bg-slate-50 rounded-lg p-3 space-y-1">
-                {headerMappings.map((m, i) => (
-                  <div key={i} className="text-xs flex items-center gap-2">
-                    <span className="text-slate-400 w-36 truncate">{m.matchedHeader}</span>
-                    <span className="text-slate-300">→</span>
-                    <span className="text-slate-700 font-medium">{m.field}</span>
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-[10px] ${
-                        m.matchType === "exact"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : m.matchType === "alias"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-amber-100 text-amber-700"
-                      }`}
-                    >
-                      {m.matchType}
-                    </span>
-                  </div>
-                ))}
-                {unmappedHeaders.length > 0 && (
-                  <div className="mt-2 pt-2 border-t border-slate-200">
-                    <p className="text-xs text-slate-400">
-                      Unmapped: {unmappedHeaders.join(", ")}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </details>
+            <div className="flex items-center justify-between mb-4">
+              <details className="flex-1">
+                <summary className="text-sm text-slate-500 cursor-pointer hover:text-slate-700 select-none">
+                  Column Mappings ({headerMappings.length} matched)
+                </summary>
+                <div className="mt-2 bg-slate-50 rounded-lg p-3 space-y-1">
+                  {headerMappings.map((m, i) => (
+                    <div key={i} className="text-xs flex items-center gap-2">
+                      <span className="text-slate-400 w-36 truncate">{m.matchedHeader}</span>
+                      <span className="text-slate-300">→</span>
+                      <span className="text-slate-700 font-medium">{m.field}</span>
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] ${
+                          m.matchType === "exact"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : m.matchType === "alias"
+                            ? "bg-blue-100 text-blue-700"
+                            : m.matchType === "manual"
+                            ? "bg-purple-100 text-purple-700 font-semibold"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {m.matchType}
+                      </span>
+                    </div>
+                  ))}
+                  {unmappedHeaders.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-slate-200">
+                      <p className="text-xs text-slate-400">
+                        Unmapped: {unmappedHeaders.join(", ")}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </details>
+              {sheetHeaders.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMappingConfig(!showMappingConfig);
+                    document.getElementById("sheet-url-input")?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors select-none"
+                >
+                  {showMappingConfig ? "Hide Config" : "Edit Mappings"}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Interview list */}

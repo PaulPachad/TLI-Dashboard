@@ -1,4 +1,4 @@
-export { parseGoogleSheetUrl, SheetUrlError } from "./parse-url";
+export { parseGoogleSheetUrl, SheetUrlError, appendSheetUrlParams } from "./parse-url";
 export type { ParsedSheetUrl } from "./parse-url";
 
 export { mapHeaders } from "./header-mapper";

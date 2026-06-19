@@ -13,6 +13,8 @@
 export interface ParsedSheetUrl {
   spreadsheetId: string;
   gid: string | null;
+  customMappings?: Record<string, number>;
+  importAll?: boolean;
 }
 
 export function parseGoogleSheetUrl(url: string): ParsedSheetUrl {
@@ -58,7 +60,92 @@ export function parseGoogleSheetUrl(url: string): ParsedSheetUrl {
     }
   }
 
-  return { spreadsheetId, gid };
+  // Extract customMappings and importAll from query parameters or hash fragment
+  const customMappings: Record<string, number> = {};
+  let importAll = false;
+
+  const parseParams = (str: string) => {
+    // extract colmap
+    const colmapMatch = str.match(/[?&#]colmap=([^&]+)/);
+    if (colmapMatch) {
+      const parts = decodeURIComponent(colmapMatch[1]).split(",");
+      for (const part of parts) {
+        const [field, indexStr] = part.split(":");
+        if (field && indexStr) {
+          const idx = parseInt(indexStr, 10);
+          if (!isNaN(idx)) {
+            customMappings[field] = idx;
+          }
+        }
+      }
+    }
+
+    // extract importAll
+    const importAllMatch = str.match(/[?&#]importAll=(true|false)/);
+    if (importAllMatch) {
+      importAll = importAllMatch[1] === "true";
+    }
+  };
+
+  parseParams(trimmed);
+
+  const result: ParsedSheetUrl = {
+    spreadsheetId,
+    gid,
+  };
+
+  if (Object.keys(customMappings).length > 0) {
+    result.customMappings = customMappings;
+  }
+  if (importAll) {
+    result.importAll = importAll;
+  }
+
+  return result;
+}
+
+export function appendSheetUrlParams(
+  url: string,
+  params: { customMappings?: Record<string, number>; importAll?: boolean }
+): string {
+  const cleanUrl = url.trim();
+  let base = cleanUrl;
+  let hash = "";
+
+  const hashIdx = cleanUrl.indexOf("#");
+  if (hashIdx !== -1) {
+    base = cleanUrl.substring(0, hashIdx);
+    hash = cleanUrl.substring(hashIdx + 1);
+  }
+
+  // Parse existing hash params
+  const hashParts = hash ? hash.split("&") : [];
+  const hashParams: Record<string, string> = {};
+  for (const part of hashParts) {
+    const [k, v] = part.split("=");
+    if (k) hashParams[k] = v || "";
+  }
+
+  if (params.importAll !== undefined) {
+    hashParams["importAll"] = String(params.importAll);
+  }
+
+  if (params.customMappings !== undefined) {
+    if (Object.keys(params.customMappings).length > 0) {
+      const colmapStr = Object.entries(params.customMappings)
+        .map(([field, idx]) => `${field}:${idx}`)
+        .join(",");
+      hashParams["colmap"] = colmapStr;
+    } else {
+      delete hashParams["colmap"];
+    }
+  }
+
+  const newHash = Object.entries(hashParams)
+    .map(([k, v]) => (v ? `${k}=${v}` : k))
+    .join("&");
+
+  return newHash ? `${base}#${newHash}` : base;
 }
 
 export class SheetUrlError extends Error {
