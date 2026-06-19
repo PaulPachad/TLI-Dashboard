@@ -285,3 +285,30 @@ test("extracts readable article titles from Medium URL slugs", () => {
     null
   );
 });
+
+test("ignores rows with 'attention needed' in the estimated publishing date", () => {
+  const rows = [
+    ["Authority Magazine Link", "Interviewee Name", "Estimated Publishing Date"],
+    [
+      "https://medium.com/authority-magazine/jane-doe",
+      "Jane Doe",
+      "2026-07-01",
+    ],
+    [
+      "https://medium.com/authority-magazine/john-doe",
+      "John Doe",
+      "Attention Needed",
+    ],
+    [
+      "https://medium.com/authority-magazine/bob-doe",
+      "Bob Doe",
+      "Attention Needed, please resubmit",
+    ],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const result = normalizeRows(rows, mappings);
+
+  assert.equal(result.published.length, 1);
+  assert.equal(result.published[0].intervieweeName, "Jane Doe");
+  assert.equal(result.unpublished.length, 0);
+});

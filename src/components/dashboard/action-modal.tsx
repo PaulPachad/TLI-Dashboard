@@ -26,6 +26,7 @@ interface SocialImageInterview {
   articleUrl: string;
   image1Url?: string | null;
   image2Url?: string | null;
+  articleTitle?: string | null;
 }
 
 export function ActionModal({ interviewId, actionType, onClose, onSuccess }: ActionModalProps) {
@@ -90,6 +91,7 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
           articleUrl: data.interview.articleUrl || "",
           image1Url: data.interview.image1Url || null,
           image2Url: data.interview.image2Url || null,
+          articleTitle: data.articleTitle || null,
         });
         
         // Populate contact form defaults
@@ -862,8 +864,72 @@ async function generateBrowserSocialImage(
   ctx.font = "22px Arial, sans-serif";
   ctx.fillText("Featured Interview", logo ? 174 : 64, 132);
 
-  const contentTop = 650;
-  drawRoundRect(ctx, 64, contentTop, 145, 48, 24);
+  const headline =
+    interview.articleTitle ||
+    extractArticleTitleFromUrl(interview.articleUrl) ||
+    cleanTopicTitle(interview.topic) ||
+    `An Authority Magazine interview with ${interview.intervieweeName}`;
+
+  // Determine font size based on lines wrapped
+  let fontSize = 70;
+  let lineSpacing = 76;
+  let fontWeight = "850";
+
+  ctx.fillStyle = "white";
+  ctx.font = `${fontWeight} ${fontSize}px Arial, sans-serif`;
+  let headlineLines = wrapCanvasText(ctx, headline, 920, 5);
+
+  if (headlineLines.length > 3) {
+    fontSize = 48;
+    lineSpacing = 54;
+    fontWeight = "800";
+    ctx.font = `${fontWeight} ${fontSize}px Arial, sans-serif`;
+    headlineLines = wrapCanvasText(ctx, headline, 920, 5);
+  } else if (headlineLines.length > 2) {
+    fontSize = 56;
+    lineSpacing = 62;
+    fontWeight = "800";
+    ctx.font = `${fontWeight} ${fontSize}px Arial, sans-serif`;
+    headlineLines = wrapCanvasText(ctx, headline, 920, 5);
+  }
+
+  // Draw bottom elements bottom-up to prevent overlapping
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.font = "700 24px Arial, sans-serif";
+  ctx.fillText("Read the full interview on Authority Magazine", 64, 1018);
+
+  const roleLine = [interview.intervieweeTitle, interview.intervieweeCompany]
+    .filter(Boolean)
+    .join(", ");
+
+  let nextY = 952;
+
+  if (roleLine) {
+    ctx.fillStyle = "rgba(255,255,255,0.82)";
+    ctx.font = "26px Arial, sans-serif";
+    ctx.fillText(roleLine, 64, nextY);
+    nextY -= 40;
+  }
+
+  ctx.fillStyle = "white";
+  ctx.font = "800 38px Arial, sans-serif";
+  ctx.fillText(interview.intervieweeName, 64, nextY);
+  nextY -= 50;
+
+  ctx.fillStyle = "#e40062";
+  drawRoundRect(ctx, 64, nextY - 6, 150, 6, 3);
+  ctx.fill();
+  nextY -= 35;
+
+  ctx.fillStyle = "white";
+  ctx.font = `${fontWeight} ${fontSize}px Arial, sans-serif`;
+  for (let i = headlineLines.length - 1; i >= 0; i--) {
+    ctx.fillText(headlineLines[i], 64, nextY);
+    nextY -= lineSpacing;
+  }
+
+  const badgeTop = (nextY + lineSpacing) - 103;
+  drawRoundRect(ctx, 64, badgeTop, 145, 48, 24);
   ctx.fillStyle = "rgba(255,255,255,0.16)";
   ctx.fill();
   ctx.strokeStyle = "rgba(255,255,255,0.22)";
@@ -871,42 +937,8 @@ async function generateBrowserSocialImage(
   ctx.fillStyle = "rgba(255,255,255,0.86)";
   ctx.font = "700 22px Arial, sans-serif";
   ctx.letterSpacing = "1.8px";
-  ctx.fillText("FEATURED", 86, contentTop + 31);
+  ctx.fillText("FEATURED", 86, badgeTop + 31);
   ctx.letterSpacing = "0px";
-
-  const headline =
-    extractArticleTitleFromUrl(interview.articleUrl) ||
-    cleanTopicTitle(interview.topic) ||
-    `An Authority Magazine interview with ${interview.intervieweeName}`;
-  ctx.fillStyle = "white";
-  ctx.font = "850 70px Arial, sans-serif";
-  const headlineLines = wrapCanvasText(ctx, headline, 920, 5);
-  let y = contentTop + 103;
-  for (const line of headlineLines) {
-    ctx.fillText(line, 64, y);
-    y += 73;
-  }
-
-  ctx.fillStyle = "#e40062";
-  drawRoundRect(ctx, 64, y + 8, 150, 6, 3);
-  ctx.fill();
-
-  ctx.fillStyle = "white";
-  ctx.font = "800 38px Arial, sans-serif";
-  ctx.fillText(interview.intervieweeName, 64, y + 70);
-
-  const roleLine = [interview.intervieweeTitle, interview.intervieweeCompany]
-    .filter(Boolean)
-    .join(", ");
-  if (roleLine) {
-    ctx.fillStyle = "rgba(255,255,255,0.82)";
-    ctx.font = "26px Arial, sans-serif";
-    ctx.fillText(roleLine, 64, y + 110);
-  }
-
-  ctx.fillStyle = "rgba(255,255,255,0.9)";
-  ctx.font = "700 24px Arial, sans-serif";
-  ctx.fillText("Read the full interview on Authority Magazine", 64, 1018);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {

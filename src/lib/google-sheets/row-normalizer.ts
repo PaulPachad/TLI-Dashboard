@@ -135,6 +135,15 @@ export function normalizeRows(
       continue;
     }
 
+    // Ignore rows with "attention needed" or "please resubmit" in estimated publishing date
+    const estDateVal = getVal(row, "estimatedPublishDate");
+    if (estDateVal) {
+      const lowerEstDate = estDateVal.toLowerCase();
+      if (lowerEstDate.includes("attention needed") || lowerEstDate.includes("please resubmit")) {
+        continue;
+      }
+    }
+
     // Check if published or unpublished
     let articleUrl = getVal(row, "articleUrl");
     let isUnpublished = false;

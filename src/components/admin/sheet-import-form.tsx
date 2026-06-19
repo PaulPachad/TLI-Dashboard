@@ -45,6 +45,7 @@ interface SheetImportFormProps {
 
 export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportComplete }: SheetImportFormProps) {
   const [sheetUrl, setSheetUrl] = useState("");
+  const [importAll, setImportAll] = useState(false);
   const [topicsSheetUrl, setTopicsSheetUrl] = useState(initialTopicsSheetUrl || "");
   const [isSavingTopics, setIsSavingTopics] = useState(false);
   const [topicsSuccess, setTopicsSuccess] = useState(false);
@@ -78,7 +79,7 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
       const res = await fetch("/api/import-google-sheet", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId, sheetUrl: sheetUrl.trim() }),
+        body: JSON.stringify({ clientId, sheetUrl: sheetUrl.trim(), importAll }),
       });
 
       const data = await res.json();
@@ -107,7 +108,7 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
       const res = await fetch("/api/import-google-sheet", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId, sheetUrl: sheetUrl.trim(), confirm: true }),
+        body: JSON.stringify({ clientId, sheetUrl: sheetUrl.trim(), confirm: true, importAll }),
       });
 
       const data = await res.json();
@@ -220,6 +221,20 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
                 "Preview Import"
               )}
             </button>
+          </div>
+
+          <div className="flex items-center gap-2 mt-3">
+            <input
+              id="import-all-checkbox"
+              type="checkbox"
+              checked={importAll}
+              onChange={(e) => setImportAll(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              disabled={loading}
+            />
+            <label htmlFor="import-all-checkbox" className="text-xs font-medium text-slate-700 select-none">
+              Import all entries (by default, sheets with more than 200 rows are limited to the last 100)
+            </label>
           </div>
         </div>
 

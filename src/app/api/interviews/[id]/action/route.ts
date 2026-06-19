@@ -17,6 +17,7 @@ import {
   buildZoomInviteEmailBody,
 } from "@/lib/email/copy";
 import { Resend } from "resend";
+import { fetchArticleMetadata } from "@/lib/images/interview-image";
 
 interface ActionData {
   intervieweeEmail?: string;
@@ -64,6 +65,8 @@ export async function GET(
         { status: 403 }
       );
     }
+
+    const articleMetadata = await fetchArticleMetadata(interview.articleUrl);
 
     const recipient = interview.intervieweeEmail || interview.publicistEmail || "";
     const cc =
@@ -113,6 +116,7 @@ export async function GET(
         postText: linkedinVariations[0],
         variations: linkedinVariations,
       },
+      articleTitle: articleMetadata.title,
       demoMode: isDemoMode(),
       emailConfigured: Boolean(process.env.RESEND_API_KEY),
       schedulingConfigured: Boolean(interview.client.schedulingLink),

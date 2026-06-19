@@ -22,6 +22,16 @@ interface ImportRequest {
   clientId: string;
   sheetUrl: string;
   confirm?: boolean; // If true, actually save to DB. If false/missing, preview only.
+  importAll?: boolean; // If true, sync all. Otherwise limit to last 100 if > 200 entries.
+}
+
+function appendImportAllParam(url: string, importAll: boolean): string {
+  const cleanUrl = url.trim();
+  if (cleanUrl.includes("importAll=")) {
+    return cleanUrl.replace(/importAll=(true|false)/, `importAll=${importAll}`);
+  }
+  const separator = cleanUrl.includes("#") ? "&" : "#";
+  return `${cleanUrl}${separator}importAll=${importAll}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -121,8 +131,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // --- Limit large sheets to the last 100 rows by default ---
+    const totalDataRows = rawData.length - 1;
+    let finalRawData = rawData;
+    let headerRowIndex = 0;
+    const importAll = !!body.importAll;
+    const wasLimited = !importAll && totalDataRows > 200;
+
+    if (wasLimited) {
+      const targetLimit = 100;
+      const skippedCount = totalDataRows - targetLimit;
+      const dataRows = rawData.slice(1);
+      finalRawData = [rawData[0], ...dataRows.slice(-targetLimit)];
+      headerRowIndex = skippedCount;
+    }
+
     // --- Normalize rows ---
-    const normResult = normalizeRows(rawData, headerResult.mappings, 0, parsedUrl.spreadsheetId);
+    const normResult = normalizeRows(finalRawData, headerResult.mappings, headerRowIndex, parsedUrl.spreadsheetId);
     const deduplicated = deduplicateInterviewRecords(normResult.published);
     const importRecords = deduplicated.records;
 
@@ -235,6 +260,12 @@ export async function POST(request: NextRequest) {
     const preview = basePreview;
 
     const warnings = [...headerResult.warnings, ...normResult.warnings];
+    if (wasLimited) {
+      warnings.push(
+        `This sheet has ${totalDataRows} entries. By default, only the last 100 entries ` +
+          `are loaded. Check "Import all entries" to load the entire sheet.`
+      );
+    }
     if (deduplicated.duplicates.length > 0) {
       warnings.push(
         `${deduplicated.duplicates.length} repeated article link(s) in this sheet ` +
@@ -270,11 +301,12 @@ export async function POST(request: NextRequest) {
     // --- Confirm mode: save to database ---
 
     const result = await db.$transaction(async (tx) => {
+      const finalUrl = appendImportAllParam(body.sheetUrl, importAll);
       const sheetSource = existingSheetSource
         ? await tx.sheetSource.update({
             where: { id: existingSheetSource.id },
             data: {
-              sheetUrl: body.sheetUrl,
+              sheetUrl: finalUrl,
               sheetTitle: tabTitle,
               lastSyncedAt: new Date(),
             },
@@ -282,7 +314,7 @@ export async function POST(request: NextRequest) {
         : await tx.sheetSource.create({
             data: {
               clientId: body.clientId,
-              sheetUrl: body.sheetUrl,
+              sheetUrl: finalUrl,
               spreadsheetId: parsedUrl.spreadsheetId,
               gid: parsedUrl.gid,
               sheetTitle: tabTitle,

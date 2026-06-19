@@ -99,11 +99,29 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
+      const totalDataRows = rawData.length - 1;
+      let finalRawData = rawData;
+      let headerRowIndex = 0;
+      const importAll = source.sheetUrl.includes("importAll=true");
+      const wasLimited = !importAll && totalDataRows > 200;
+
+      if (wasLimited) {
+        const targetLimit = 100;
+        const skippedCount = totalDataRows - targetLimit;
+        const dataRows = rawData.slice(1);
+        finalRawData = [rawData[0], ...dataRows.slice(-targetLimit)];
+        headerRowIndex = skippedCount;
+        warnings.push(
+          `[${tabTitle}] Large sheet (${totalDataRows} rows) is limited to syncing the last 100 rows. ` +
+            `To sync all rows, re-import the sheet with the "Import all entries" toggle enabled.`
+        );
+      }
+
       // Normalize rows (passing spreadsheetId to support unpublished rows)
       const normResult = normalizeRows(
-        rawData,
+        finalRawData,
         headerResult.mappings,
-        0,
+        headerRowIndex,
         parsedUrl.spreadsheetId
       );
 

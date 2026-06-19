@@ -8,16 +8,13 @@ import {
   buildInterviewImageSources,
   extractArticleTitleFromUrl,
   extractArticleMetadata,
+  fetchArticleMetadata,
 } from "@/lib/images/interview-image";
 import { readFile } from "fs/promises";
 import path from "path";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-const articleMetadataCache = new Map<
-  string,
-  { expiresAt: number; imageUrl: string | null; title: string | null }
->();
 
 export async function GET(
   request: NextRequest,
@@ -56,6 +53,9 @@ export async function GET(
       articleMetadata.title ||
       extractArticleTitleFromUrl(interview.articleUrl) ||
       buildFallbackHeadline(interview);
+
+    const headlineFontSize = headline.length > 80 ? '48px' : headline.length > 50 ? '56px' : '70px';
+    const headlineLineHeight = headline.length > 80 ? 1.1 : headline.length > 50 ? 1.08 : 1.04;
     
     return new ImageResponse(
       (
@@ -118,7 +118,7 @@ export async function GET(
             <div style={{ display: 'flex', marginBottom: '24px', alignSelf: 'flex-start', borderRadius: '999px', backgroundColor: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.22)', padding: '12px 22px', fontSize: '22px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Featured
             </div>
-            <h1 style={{ fontSize: '70px', fontWeight: 850, margin: '0 0 22px 0', lineHeight: 1.04, letterSpacing: '0' }}>
+            <h1 style={{ fontSize: headlineFontSize, fontWeight: 850, margin: '0 0 22px 0', lineHeight: headlineLineHeight, letterSpacing: '0' }}>
               {headline}
             </h1>
             <div style={{ width: '150px', height: '6px', borderRadius: '999px', backgroundColor: '#e40062', marginBottom: '28px' }} />
@@ -157,49 +157,6 @@ export async function GET(
     console.error(error);
     return new Response("Failed to generate image", { status: 500 });
   }
-}
-
-async function fetchArticleMetadata(articleUrl?: string | null): Promise<{
-  imageUrl: string | null;
-  title: string | null;
-}> {
-  if (!articleUrl || articleUrl.includes("/unpublished/")) {
-    return { imageUrl: null, title: null };
-  }
-
-  if (articleMetadataCache.has(articleUrl)) {
-    const cached = articleMetadataCache.get(articleUrl)!;
-    if (cached.expiresAt > Date.now()) {
-      return { imageUrl: cached.imageUrl, title: cached.title };
-    }
-  }
-
-  try {
-    const html = await remoteHtmlToText(articleUrl, {
-      isAllowedUrl: isAllowedArticleUrl,
-    });
-
-    if (!html) return { imageUrl: null, title: null };
-
-    const metadata = extractArticleMetadata(html);
-    articleMetadataCache.set(articleUrl, {
-      ...metadata,
-      expiresAt: Date.now() + 10 * 60 * 1000,
-    });
-    return metadata;
-  } catch {
-    return { imageUrl: null, title: null };
-  }
-}
-
-function isAllowedArticleUrl(url: URL): boolean {
-  const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
-  return (
-    hostname === "medium.com" ||
-    hostname.endsWith(".medium.com") ||
-    hostname === "authoritymagazine.com" ||
-    hostname.endsWith(".authoritymagazine.com")
-  );
 }
 
 async function firstAvailableImageDataUrl(
