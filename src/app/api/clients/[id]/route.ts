@@ -3,6 +3,7 @@
 // ==============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireApiAdmin } from "@/lib/auth-helpers";
 import {
@@ -207,7 +208,28 @@ export async function PUT(
     if (err.status) {
       return NextResponse.json({ error: err.message }, { status: err.status });
     }
+    if (isMissingMigrationError(error)) {
+      return NextResponse.json(
+        {
+          error:
+            "The database needs the latest migration before client passwords can be updated. Ask an admin to run the production database migrations, then try again.",
+        },
+        { status: 503 }
+      );
+    }
     console.error("Error updating client:", error);
     return NextResponse.json({ error: "Failed to update client." }, { status: 500 });
   }
+}
+
+function isMissingMigrationError(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return error.code === "P2021" || error.code === "P2022";
+  }
+
+  const message =
+    error instanceof Error ? error.message : String(error || "");
+  return /AdminAuditLog|sessionVersion|column .* does not exist|table .* does not exist/i.test(
+    message
+  );
 }
