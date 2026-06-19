@@ -16,6 +16,7 @@ interface ActionModalProps {
 export function ActionModal({ interviewId, actionType, onClose, onSuccess }: ActionModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [socialImageVersion] = useState(() => Date.now());
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -279,7 +280,10 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/interviews/${interviewId}/social-image`);
+      const response = await fetch(
+        `/api/interviews/${interviewId}/social-image?v=${Date.now()}`,
+        { cache: "no-store" }
+      );
       if (!response.ok) throw new Error("Failed to generate image.");
       
       const blob = await response.blob();
@@ -614,7 +618,7 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
               {/* Using standard img tag for external API image to avoid Next/Image complexities with dynamic blobs in preview */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
-                src={`/api/interviews/${interviewId}/social-image`} 
+                src={`/api/interviews/${interviewId}/social-image?v=${socialImageVersion}`} 
                 alt="Social Media Preview"
                 className="object-contain w-full h-full"
               />

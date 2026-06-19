@@ -167,6 +167,31 @@ test("remote social image fetching enforces content type and size", async () => 
   assert.equal(imageResult, "data:image/png;base64,AQID");
 });
 
+test("remote social image fetching does not cache failed attempts", async () => {
+  let calls = 0;
+  const result1 = await remoteImageUrlToDataUrl("https://203.0.113.13/a.png", {
+    fetchImpl: async () => {
+      calls += 1;
+      return new Response("not an image", {
+        headers: { "content-type": "text/plain" },
+      });
+    },
+  });
+  assert.equal(result1, null);
+  assert.equal(calls, 1);
+
+  const result2 = await remoteImageUrlToDataUrl("https://203.0.113.13/a.png", {
+    fetchImpl: async () => {
+      calls += 1;
+      return new Response(Buffer.from([4, 5, 6]), {
+        headers: { "content-type": "image/png" },
+      });
+    },
+  });
+  assert.equal(result2, "data:image/png;base64,BAUG");
+  assert.equal(calls, 2);
+});
+
 test("remote article metadata fetching rejects unsafe URLs and redirects", async () => {
   assert.equal(parseRemoteHtmlUrl("file:///etc/passwd"), null);
   assert.equal(parseRemoteHtmlUrl("https://user:pass@example.com/a"), null);

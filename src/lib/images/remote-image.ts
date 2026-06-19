@@ -31,10 +31,14 @@ export async function remoteImageUrlToDataUrl(
   }
 
   const dataUrl = await fetchRemoteImage(url, options);
-  imageCache.set(cacheKey, {
-    dataUrl,
-    expiresAt: Date.now() + CACHE_TTL_MS,
-  });
+  if (dataUrl) {
+    imageCache.set(cacheKey, {
+      dataUrl,
+      expiresAt: Date.now() + CACHE_TTL_MS,
+    });
+  } else {
+    imageCache.delete(cacheKey);
+  }
   return dataUrl;
 }
 
@@ -127,6 +131,7 @@ async function fetchRemoteImage(
       const response = await fetchImpl(url, {
         signal: controller.signal,
         redirect: "manual",
+        cache: "no-store",
         headers: {
           "User-Agent": "Authority-Magazine-Social-Image/1.0",
           Accept: "image/avif,image/webp,image/png,image/jpeg,image/gif,image/*;q=0.8",

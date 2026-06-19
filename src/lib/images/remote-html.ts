@@ -56,6 +56,7 @@ async function fetchRemoteHtml(
       const response = await fetchImpl(url, {
         signal: controller.signal,
         redirect: "manual",
+        cache: "no-store",
         headers: {
           "User-Agent":
             "Mozilla/5.0 (compatible; TLI-Leverage-Dashboard/1.0; social-image)",

@@ -8,10 +8,9 @@ import {
   extractArticleMetadata,
   normalizeSheetImageUrl,
 } from "@/lib/images/interview-image";
-import { readFile } from "fs/promises";
-import path from "path";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 const articleMetadataCache = new Map<
   string,
   { expiresAt: number; imageUrl: string | null; title: string | null }
@@ -38,10 +37,7 @@ export async function GET(
       return new Response("Access denied", { status: 403 });
     }
 
-    const [logoUrl, articleMetadata] = await Promise.all([
-      getLocalPublicImageDataUrl("logo-black.gif", "image/gif"),
-      fetchArticleMetadata(interview.articleUrl),
-    ]);
+    const articleMetadata = await fetchArticleMetadata(interview.articleUrl);
     const imageCandidates = [
       articleMetadata.imageUrl,
       normalizeSheetImageUrl(interview.image1Url),
@@ -88,16 +84,9 @@ export async function GET(
 
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              {logoUrl ? (
-                <div style={{ display: 'flex', width: '104px', height: '104px', alignItems: 'center', justifyContent: 'center', borderRadius: '999px', backgroundColor: 'rgba(255,255,255,0.82)', boxShadow: '0 22px 50px rgba(0,0,0,0.24)' }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img 
-                    src={logoUrl} 
-                    alt="Authority Magazine" 
-                    style={{ width: '84px', height: '84px', objectFit: 'contain' }} 
-                  />
-                </div>
-              ) : null}
+              <div style={{ display: 'flex', width: '86px', height: '86px', alignItems: 'center', justifyContent: 'center', borderRadius: '999px', border: '2px solid rgba(255,255,255,0.82)', color: 'white', fontSize: '48px', fontWeight: 850, fontFamily: 'Georgia, serif' }}>
+                A
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '27px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                   Authority Magazine
@@ -143,6 +132,9 @@ export async function GET(
       {
         width: 1080,
         height: 1080,
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
       }
     );
   } catch (error) {
@@ -216,17 +208,4 @@ function buildFallbackHeadline(interview: {
     return topic;
   }
   return `An Authority Magazine interview with ${interview.intervieweeName}`;
-}
-
-async function getLocalPublicImageDataUrl(
-  filename: string,
-  contentType: string
-): Promise<string | null> {
-  try {
-    const file = await readFile(path.join(process.cwd(), "public", filename));
-    return `data:${contentType};base64,${file.toString("base64")}`;
-  } catch (error) {
-    console.warn(`Could not load ${filename} for social image.`, error);
-    return null;
-  }
 }
