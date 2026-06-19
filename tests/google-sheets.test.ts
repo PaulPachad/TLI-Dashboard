@@ -9,6 +9,7 @@ import {
   normalizeRows,
 } from "../src/lib/google-sheets/row-normalizer";
 import {
+  buildInterviewImageSources,
   extractArticleImage,
   extractArticleMetadata,
   extractArticleTitle,
@@ -215,6 +216,21 @@ test("converts Google Drive image links to direct thumbnails", () => {
       "https://drive.google.com/file/d/example-file-image/view"
     ),
     "https://lh3.googleusercontent.com/d/example-file-image=w1200"
+  );
+});
+
+test("interview cards use normalized image fields before article fallback", () => {
+  assert.deepEqual(
+    buildInterviewImageSources({
+      id: "interview_1",
+      image1Url: "https://drive.google.com/open?id=image-one",
+      image2Url: "https://example.com/image-two.jpg",
+    }),
+    [
+      "https://lh3.googleusercontent.com/d/image-one=w1200",
+      "https://example.com/image-two.jpg",
+      "/api/interviews/interview_1/article-image",
+    ]
   );
 });
 

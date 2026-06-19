@@ -5,9 +5,9 @@ import { requireApiAuth } from "@/lib/auth-helpers";
 import { remoteHtmlToText } from "@/lib/images/remote-html";
 import { remoteImageUrlToDataUrl } from "@/lib/images/remote-image";
 import {
+  buildInterviewImageSources,
   extractArticleTitleFromUrl,
   extractArticleMetadata,
-  normalizeSheetImageUrl,
 } from "@/lib/images/interview-image";
 import { readFile } from "fs/promises";
 import path from "path";
@@ -48,10 +48,9 @@ export async function GET(
       fetchArticleMetadata(interview.articleUrl),
     ]);
     const imageCandidates = [
+      ...buildInterviewImageSources(interview),
       articleMetadata.imageUrl,
-      normalizeSheetImageUrl(interview.image1Url),
-      normalizeSheetImageUrl(interview.image2Url),
-    ];
+    ].filter(isRemoteImageUrl);
     const featureImageUrl = await firstAvailableImageDataUrl(imageCandidates);
     const headline =
       articleMetadata.title ||
@@ -206,11 +205,24 @@ function isAllowedArticleUrl(url: URL): boolean {
 async function firstAvailableImageDataUrl(
   urls: Array<string | null | undefined>
 ): Promise<string | null> {
+  let firstRemoteUrl: string | null = null;
   for (const url of urls) {
+    if (!url) continue;
+    firstRemoteUrl ||= url;
     const image = await remoteImageUrlToDataUrl(url);
     if (image) return image;
   }
-  return null;
+  return firstRemoteUrl;
+}
+
+function isRemoteImageUrl(value: string | null | undefined): value is string {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
 }
 
 function buildFallbackHeadline(interview: {
