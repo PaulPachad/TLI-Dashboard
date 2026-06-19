@@ -150,12 +150,14 @@ export async function PUT(
           email?: string;
           name?: string;
           passwordHash?: string;
+          sessionVersion?: { increment: number };
         } = {
           ...(normalizedEmail ? { email: normalizedEmail } : {}),
           ...(data.name ? { name: data.name } : {}),
         };
         if (newPassword) {
           nextUserData.passwordHash = await hash(newPassword, 12);
+          nextUserData.sessionVersion = { increment: 1 };
         }
 
         const updatedUser = await tx.user.update({
@@ -187,7 +189,10 @@ export async function PUT(
               actorUserId: adminUser.id,
               targetClientId: id,
               action: "CLIENT_PASSWORD_UPDATED",
-              metadataJson: JSON.stringify({ loginUserId }),
+              metadataJson: JSON.stringify({
+                loginUserId,
+                existingSessionsInvalidated: true,
+              }),
             },
           });
         }

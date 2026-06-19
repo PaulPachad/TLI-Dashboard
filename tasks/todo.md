@@ -127,8 +127,13 @@ See `tasks/plan-audit.md` for the requirement-by-requirement evidence.
 - [x] Harden admin client email updates so the client profile, login account, and email-change audit record update in one transaction.
 - [x] Add focused regression tests for admin email normalization, reply-to preservation, login-account selection, and remote social-image safety checks.
 - [x] Harden social-image remote photo fetching with timeout, redirect limit, content-type validation, maximum byte limit, internal/private network blocking, and short-lived in-memory caching.
+- [x] Harden social-image article metadata fetching with safe protocols only, manual redirects, allowed article hosts, private-network blocking, content-type validation, maximum byte limits, and regression tests.
+- [x] Invalidate existing client login sessions when an admin resets a client password by bumping the user's session version.
 - [ ] Run a full tenant-separation audit across every client ID, interview ID, topic ID, event ID, automation, bridge, and outreach route.
 - [ ] Add automated negative authorization tests proving ordinary client users cannot access or mutate another tenant's data.
+- [ ] Add a "must change password on next login" handoff flow for admin-created temporary passwords, including clear client-facing screens and safe completion tracking.
+- [ ] Add an additional confirmation or typed acknowledgement before admin password resets so accidental resets are harder.
+- [ ] Add a focused admin-action rate limit for password resets and other high-impact client account changes.
 - [ ] Add idempotency keys or equivalent duplicate-prevention for send/retry-prone actions, including live email, Zoom email, outreach, sync, and background research.
 - [ ] Add PostgreSQL CI coverage using the same major version as production so SQLite demo behavior cannot hide production differences.
 - [ ] Label each major workflow as Code complete, Locally verified, Staging verified, or Production verified in docs and release notes.

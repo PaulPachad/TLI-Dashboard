@@ -3,6 +3,7 @@
 // ==============================================================================
 
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { UserRole } from "@/types/db";
 import { redirect } from "next/navigation";
 
@@ -12,6 +13,7 @@ export interface SessionUser {
   name?: string | null;
   role: UserRole;
   clientId: string | null;
+  sessionVersion: number;
 }
 
 /**
@@ -23,12 +25,34 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   if (!session?.user) return null;
 
   const user = session.user as Record<string, unknown>;
+  const userId = typeof user.id === "string" ? user.id : null;
+  if (!userId) return null;
+
+  const dbUser = await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      clientId: true,
+      sessionVersion: true,
+    },
+  });
+
+  if (!dbUser) return null;
+
+  const tokenSessionVersion =
+    typeof user.sessionVersion === "number" ? user.sessionVersion : 0;
+  if (dbUser.sessionVersion !== tokenSessionVersion) return null;
+
   return {
-    id: user.id as string,
-    email: user.email as string,
-    name: user.name as string | null,
-    role: user.role as UserRole,
-    clientId: (user.clientId as string) || null,
+    id: dbUser.id,
+    email: dbUser.email,
+    name: dbUser.name,
+    role: dbUser.role as UserRole,
+    clientId: dbUser.clientId,
+    sessionVersion: dbUser.sessionVersion,
   };
 }
 

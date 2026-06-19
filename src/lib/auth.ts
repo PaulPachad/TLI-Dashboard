@@ -50,6 +50,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           role: user.role as UserRole,
           clientId: user.clientId,
+          sessionVersion: user.sessionVersion,
         };
       },
     }),
@@ -59,6 +60,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.role = (user as Record<string, unknown>).role as string;
         token.clientId = (user as Record<string, unknown>).clientId as string | null;
+        token.sessionVersion = (user as Record<string, unknown>)
+          .sessionVersion as number;
       }
       return token;
     },
@@ -68,6 +71,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role as UserRole;
         session.user.clientId =
           typeof token.clientId === "string" ? token.clientId : null;
+        session.user.sessionVersion =
+          typeof token.sessionVersion === "number" ? token.sessionVersion : 0;
       }
       return session;
     },

@@ -19,6 +19,7 @@ model User {
   passwordHash String?
   name         String?
   role         String   @default("CLIENT")
+  sessionVersion Int    @default(0)
 
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id])

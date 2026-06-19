@@ -9,6 +9,7 @@ declare module "next-auth" {
   interface User {
     role?: UserRole;
     clientId?: string | null;
+    sessionVersion?: number;
   }
 
   interface Session {
@@ -18,6 +19,7 @@ declare module "next-auth" {
       name?: string | null;
       role: UserRole;
       clientId: string | null;
+      sessionVersion: number;
     };
   }
 }
@@ -26,5 +28,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     role?: string;
     clientId?: string | null;
+    sessionVersion?: number;
   }
 }

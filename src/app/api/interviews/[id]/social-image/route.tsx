@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { ImageResponse } from "next/og";
 import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
+import { remoteHtmlToText } from "@/lib/images/remote-html";
 import { remoteImageUrlToDataUrl } from "@/lib/images/remote-image";
 import {
   extractArticleMetadata,
@@ -166,29 +167,13 @@ async function fetchArticleMetadata(articleUrl?: string | null): Promise<{
   }
 
   try {
-    const url = new URL(articleUrl);
-    const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
-    if (
-      hostname !== "medium.com" &&
-      hostname !== "authoritymagazine.com" &&
-      !hostname.endsWith(".authoritymagazine.com")
-    ) {
-      return { imageUrl: null, title: null };
-    }
-
-    const response = await fetch(url, {
-      headers: {
-        Accept: "text/html",
-        "User-Agent":
-          "Mozilla/5.0 (compatible; TLI-Leverage-Dashboard/1.0; social-image)",
-      },
-      redirect: "follow",
-      signal: AbortSignal.timeout(8_000),
+    const html = await remoteHtmlToText(articleUrl, {
+      isAllowedUrl: isAllowedArticleUrl,
     });
 
-    if (!response.ok) return { imageUrl: null, title: null };
+    if (!html) return { imageUrl: null, title: null };
 
-    const metadata = extractArticleMetadata(await response.text());
+    const metadata = extractArticleMetadata(html);
     articleMetadataCache.set(articleUrl, {
       ...metadata,
       expiresAt: Date.now() + 10 * 60 * 1000,
@@ -197,6 +182,16 @@ async function fetchArticleMetadata(articleUrl?: string | null): Promise<{
   } catch {
     return { imageUrl: null, title: null };
   }
+}
+
+function isAllowedArticleUrl(url: URL): boolean {
+  const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+  return (
+    hostname === "medium.com" ||
+    hostname.endsWith(".medium.com") ||
+    hostname === "authoritymagazine.com" ||
+    hostname.endsWith(".authoritymagazine.com")
+  );
 }
 
 async function firstAvailableImageDataUrl(

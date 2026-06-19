@@ -10,6 +10,10 @@ import {
   parseRemoteImageUrl,
   remoteImageUrlToDataUrl,
 } from "../src/lib/images/remote-image";
+import {
+  parseRemoteHtmlUrl,
+  remoteHtmlToText,
+} from "../src/lib/images/remote-html";
 
 const existingClient = {
   id: "client_1",
@@ -161,4 +165,65 @@ test("remote social image fetching enforces content type and size", async () => 
     }
   );
   assert.equal(imageResult, "data:image/png;base64,AQID");
+});
+
+test("remote article metadata fetching rejects unsafe URLs and redirects", async () => {
+  assert.equal(parseRemoteHtmlUrl("file:///etc/passwd"), null);
+  assert.equal(parseRemoteHtmlUrl("https://user:pass@example.com/a"), null);
+
+  let fetchCalled = false;
+  const localResult = await remoteHtmlToText("http://127.0.0.1/article", {
+    fetchImpl: async () => {
+      fetchCalled = true;
+      return new Response("<html></html>");
+    },
+  });
+  assert.equal(localResult, null);
+  assert.equal(fetchCalled, false);
+
+  let redirectFetches = 0;
+  const redirectResult = await remoteHtmlToText("https://203.0.113.20/article", {
+    fetchImpl: async () => {
+      redirectFetches += 1;
+      return new Response(null, {
+        status: 302,
+        headers: { location: "http://127.0.0.1/private" },
+      });
+    },
+  });
+  assert.equal(redirectResult, null);
+  assert.equal(redirectFetches, 1);
+});
+
+test("remote article metadata fetching enforces allowed host, type, and size", async () => {
+  const wrongHost = await remoteHtmlToText("https://203.0.113.30/article", {
+    isAllowedUrl: (url) => url.hostname === "authoritymagazine.com",
+    fetchImpl: async () => new Response("<html></html>"),
+  });
+  assert.equal(wrongHost, null);
+
+  const textResult = await remoteHtmlToText("https://203.0.113.31/article", {
+    fetchImpl: async () =>
+      new Response("plain", {
+        headers: { "content-type": "text/plain" },
+      }),
+  });
+  assert.equal(textResult, null);
+
+  const oversizedResult = await remoteHtmlToText("https://203.0.113.32/article", {
+    maxBytes: 4,
+    fetchImpl: async () =>
+      new Response("<html>too large</html>", {
+        headers: { "content-type": "text/html" },
+      }),
+  });
+  assert.equal(oversizedResult, null);
+
+  const htmlResult = await remoteHtmlToText("https://203.0.113.33/article", {
+    fetchImpl: async () =>
+      new Response("<html><title>Safe</title></html>", {
+        headers: { "content-type": "text/html; charset=utf-8" },
+      }),
+  });
+  assert.equal(htmlResult, "<html><title>Safe</title></html>");
 });
