@@ -5,6 +5,7 @@ import { requireApiAuth } from "@/lib/auth-helpers";
 import { remoteHtmlToText } from "@/lib/images/remote-html";
 import { remoteImageUrlToDataUrl } from "@/lib/images/remote-image";
 import {
+  extractArticleTitleFromUrl,
   extractArticleMetadata,
   normalizeSheetImageUrl,
 } from "@/lib/images/interview-image";
@@ -44,7 +45,10 @@ export async function GET(
       normalizeSheetImageUrl(interview.image2Url),
     ];
     const featureImageUrl = await firstAvailableImageDataUrl(imageCandidates);
-    const headline = articleMetadata.title || buildFallbackHeadline(interview);
+    const headline =
+      articleMetadata.title ||
+      extractArticleTitleFromUrl(interview.articleUrl) ||
+      buildFallbackHeadline(interview);
     
     return new ImageResponse(
       (

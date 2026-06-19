@@ -12,6 +12,7 @@ import {
   extractArticleImage,
   extractArticleMetadata,
   extractArticleTitle,
+  extractArticleTitleFromUrl,
   normalizeSheetImageUrl,
 } from "../src/lib/images/interview-image";
 
@@ -207,13 +208,13 @@ test("converts Google Drive image links to direct thumbnails", () => {
     normalizeSheetImageUrl(
       "https://drive.google.com/open?id=example-drive-image"
     ),
-    "https://drive.google.com/thumbnail?id=example-drive-image&sz=w800"
+    "https://lh3.googleusercontent.com/d/example-drive-image=w1200"
   );
   assert.equal(
     normalizeSheetImageUrl(
       "https://drive.google.com/file/d/example-file-image/view"
     ),
-    "https://drive.google.com/thumbnail?id=example-file-image&sz=w800"
+    "https://lh3.googleusercontent.com/d/example-file-image=w1200"
   );
 });
 
@@ -251,5 +252,20 @@ test("extracts and cleans article titles from metadata", () => {
       title: "A Real Article",
       imageUrl: "https://cdn.example.com/a.jpg",
     }
+  );
+});
+
+test("extracts readable article titles from Medium URL slugs", () => {
+  assert.equal(
+    extractArticleTitleFromUrl(
+      "https://medium.com/authority-magazine/rising-star-tegan-muggeridge-on-the-five-things-you-need-to-shine-in-the-entertainment-industry-87e9d984f96f"
+    ),
+    "Rising Star Tegan Muggeridge on the Five Things You Need to Shine in the Entertainment Industry"
+  );
+  assert.equal(
+    extractArticleTitleFromUrl(
+      "https://authoritymagazine.com/unpublished/sheet/3"
+    ),
+    null
   );
 });

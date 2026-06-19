@@ -27,9 +27,9 @@ export function normalizeSheetImageUrl(value?: string | null): string | null {
       (url.hostname === "drive.google.com" ||
         url.hostname === "docs.google.com")
     ) {
-      return `https://drive.google.com/thumbnail?id=${encodeURIComponent(
+      return `https://lh3.googleusercontent.com/d/${encodeURIComponent(
         driveId
-      )}&sz=w800`;
+      )}=w1200`;
     }
 
     if (url.protocol === "http:" || url.protocol === "https:") {
@@ -48,6 +48,41 @@ export function extractArticleImage(html: string): string | null {
 
 export function extractArticleTitle(html: string): string | null {
   return extractArticleMetadata(html).title;
+}
+
+export function extractArticleTitleFromUrl(value?: string | null): string | null {
+  if (!value || value.includes("/unpublished/")) return null;
+
+  try {
+    const url = new URL(value);
+    const slug = url.pathname
+      .split("/")
+      .filter(Boolean)
+      .at(-1)
+      ?.replace(/-[a-f0-9]{10,}$/i, "");
+
+    if (!slug || !/[a-z]/i.test(slug)) return null;
+
+    const words = slug
+      .split(/[-_]+/)
+      .filter(Boolean)
+      .map((word) => {
+        const lower = decodeURIComponent(word).toLowerCase();
+        if (["a", "an", "and", "as", "at", "but", "by", "for", "in", "nor", "of", "on", "or", "per", "the", "to", "vs", "via"].includes(lower)) {
+          return lower;
+        }
+        if (/^[A-Z0-9]{2,}$/.test(word)) return word;
+        return lower.charAt(0).toUpperCase() + lower.slice(1);
+      });
+
+    if (words.length > 0) {
+      words[0] = words[0].charAt(0).toUpperCase() + words[0].slice(1);
+    }
+
+    return cleanArticleTitle(words.join(" "));
+  } catch {
+    return null;
+  }
 }
 
 export function extractArticleMetadata(html: string): {
