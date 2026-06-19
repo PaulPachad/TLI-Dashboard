@@ -8,8 +8,8 @@ import {
   buildInterviewImageSources,
   extractArticleTitleFromUrl,
   extractArticleMetadata,
-  fetchArticleMetadata,
 } from "@/lib/images/interview-image";
+import { fetchArticleMetadata } from "@/lib/images/interview-image-server";
 import { readFile } from "fs/promises";
 import path from "path";
 

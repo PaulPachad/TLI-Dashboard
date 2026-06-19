@@ -17,7 +17,7 @@ import {
   buildZoomInviteEmailBody,
 } from "@/lib/email/copy";
 import { Resend } from "resend";
-import { fetchArticleMetadata } from "@/lib/images/interview-image";
+import { fetchArticleMetadata } from "@/lib/images/interview-image-server";
 
 interface ActionData {
   intervieweeEmail?: string;
