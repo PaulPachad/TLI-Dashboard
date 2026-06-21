@@ -66,6 +66,7 @@ export interface InterviewView {
   companyRevenueUsd?: number | null;
   largestSocialFollowerCount?: number | null;
   prominenceNotes?: string | null;
+  prominenceSignalsJson?: string | null;
   publicistName?: string | null;
   publicistEmail?: string | null;
   topic?: string | null;

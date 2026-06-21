@@ -2,6 +2,39 @@
 
 ## June 21, 2026
 
+### Standout Signals Now Use Useful Structured Facts
+
+Yitzi noticed that the VIP information on card backs was not useful because it repeated generic research wording instead of explaining why a person stood out.
+
+- **What was changed**:
+  - Added durable structured standout-signal storage on interviews.
+  - Changed the research pipeline so new scans save compact signal facts instead of only a long memo.
+  - Updated card backs and detail panels from "VIP Signals" to "Standout Signals."
+  - Kept front-card flags reserved for truly exceptional people, while useful role, company, audience, and revenue facts stay on the back.
+
+- **What the feature does**:
+  - Shows useful reasons like senior leadership, company scale, large audiences, awards, speaking, Wikipedia, and source-backed evidence.
+  - Prevents generic wording like "Here are the concise prominence signals..." from appearing as the card explanation.
+  - Lets background scanning refresh older memo-style records into the cleaner format.
+
+- **Why it is useful or exciting**:
+  - Yitzi can flip a card and quickly understand why a person matters without reading noisy research output.
+
+- **Interesting problem solved**:
+  - The app now separates useful standout context from true front-card VIP flags, so ordinary executives can have helpful back-card facts without being overpromoted.
+  - The validator rejects generic AI narration, unsafe source links, and bad memo-only copy; older cards now get a modest refresh message until structured facts are generated.
+
+- **What remains**:
+  - Deploy the migration, allow old cards to be refreshed, and tune wording after reviewing more real production cards.
+
+- **Relevant files**:
+  - Schema: [schema.prisma](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/prisma/schema.prisma)
+  - Signal logic: [signals.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/lib/prominence/signals.ts)
+  - Research logic: [research.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/lib/prominence/research.ts)
+  - Card display: [interview-card.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/dashboard/interview-card.tsx)
+  - Detail panel: [interview-detail-panel.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/panels/interview-detail-panel.tsx)
+  - Tests: [workflow-logic.test.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/tests/workflow-logic.test.ts)
+
 ### Adjust VIP Research Cron for Vercel Hobby Limits
 
 - **What was changed**: Adjusted the Vercel cron schedule in `vercel.json` from every 15 minutes to once per day (`0 4 * * *`).

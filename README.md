@@ -50,7 +50,7 @@ Copy `.env.example` to `.env.local` and configure:
 - `NEXTAUTH_URL`: the public application URL.
 - `ADMIN_EMAIL` and `ADMIN_PASSWORD`: initial admin login.
 - `GOOGLE_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`.
-- `GEMINI_API_KEY`: enables the card-level VIP Signals research button through
+- `GEMINI_API_KEY`: enables the card-level Standout Signals research button through
   Gemini grounded search. Optional fallback: `GOOGLE_CUSTOM_SEARCH_API_KEY` and
   `GOOGLE_CUSTOM_SEARCH_ENGINE_ID`.
 - `RESEND_API_KEY` and `EMAIL_FROM`.
@@ -88,7 +88,7 @@ Replies are sent to the client's configured reply-to address. Outside demo
 mode, the app refuses to mark an email successful when Resend is missing or
 reports a delivery error.
 
-## VIP Signals Research Setup
+## Standout Signals Research Setup
 
 The dashboard can research interviewees and companies from each interview card
 to find prominence signals such as large audiences, major company scale, senior
@@ -109,11 +109,11 @@ Fallback setup:
 3. Set `GOOGLE_CUSTOM_SEARCH_API_KEY`.
 4. Set `GOOGLE_CUSTOM_SEARCH_ENGINE_ID`.
 
-When configured, the "Research VIP signals" button stores the discovered
+When configured, the "Research standout signals" button stores the discovered
 signals on the interview, updates the card badges, and records the research in
 the action timeline.
 
-Background VIP research runs through Vercel Cron every 15 minutes at
+Background standout research runs through Vercel Cron every 15 minutes at
 `/api/cron/vip-prominence-scan`. Set `CRON_SECRET` in Vercel so the cron
 request is authorized, and optionally set `VIP_PROMINENCE_CRON_LIMIT` to tune
 the batch size. The default batch size is 6 and the app caps it at 12 to keep

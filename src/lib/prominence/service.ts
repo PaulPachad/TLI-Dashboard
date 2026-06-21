@@ -33,6 +33,7 @@ export async function saveProminenceResearch(
       companyRevenueUsd: result.companyRevenueUsd,
       largestSocialFollowerCount: result.largestSocialFollowerCount,
       prominenceNotes: result.prominenceNotes,
+      prominenceSignalsJson: result.prominenceSignalsJson,
     },
   });
 
@@ -44,8 +45,8 @@ export async function saveProminenceResearch(
       status: "SUCCESS",
       note:
         result.assessment.tier === "standard"
-          ? "Researched VIP signals. No strong prominence signals found yet."
-          : `Researched VIP signals and flagged ${result.assessment.tierLabel}.`,
+          ? "Researched standout signals. No strong standout found yet."
+          : `Researched standout signals and flagged ${result.assessment.tierLabel}.`,
       metadataJson: JSON.stringify({
         score: result.assessment.score,
         tier: result.assessment.tier,

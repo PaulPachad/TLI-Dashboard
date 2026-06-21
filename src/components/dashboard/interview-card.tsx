@@ -202,8 +202,8 @@ export function InterviewCard({
                   : autoScanQueued
                     ? "Will research automatically"
                   : hasSignals
-                    ? "Refresh VIP research"
-                    : "Research VIP signals"}
+                    ? "Refresh standout research"
+                    : "Research standout signals"}
               </button>
             </div>
           </div>
@@ -383,11 +383,11 @@ export function InterviewCard({
               <BackRow label="Email" value={interview.intervieweeEmail} isEmail />
             </BackSection>
 
-            {/* VIP Signals */}
+            {/* Standout Signals */}
             {prominence && signalGroups && hasSignals && (
-              <BackSection title="VIP Signals">
+              <BackSection title="Standout Signals">
                 <SignalGroup
-                  title="Role/Notability"
+                  title="Role & Notability"
                   signals={signalGroups.exceptional}
                 />
                 <SignalGroup title="Audience" signals={signalGroups.audience} />
@@ -678,7 +678,7 @@ function formatActionType(type: string): string {
     NOTE_ADDED: "Note added",
     CONTACT_INFO_UPDATED: "Contact info updated",
     IMPORT_CREATED: "Interview imported",
-    PROMINENCE_RESEARCHED: "VIP signals researched",
+    PROMINENCE_RESEARCHED: "Standout signals researched",
   };
   return labels[type] || type;
 }

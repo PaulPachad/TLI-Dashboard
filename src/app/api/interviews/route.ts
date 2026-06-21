@@ -51,6 +51,7 @@ const interviewSelect = {
   companyRevenueUsd: true,
   largestSocialFollowerCount: true,
   prominenceNotes: true,
+  prominenceSignalsJson: true,
 } satisfies Prisma.InterviewSelect;
 
 type InterviewWithActions = Prisma.InterviewGetPayload<{
@@ -200,6 +201,7 @@ async function findInterviews(
       companyRevenueUsd: null,
       largestSocialFollowerCount: null,
       prominenceNotes: null,
+      prominenceSignalsJson: null,
     }));
   }
 }
@@ -219,7 +221,7 @@ function isMissingProminenceColumnError(error: unknown): boolean {
   const message =
     error instanceof Error ? error.message : JSON.stringify(error);
   return (
-    /companyEmployeeCount|companyRevenueUsd|largestSocialFollowerCount|prominenceNotes/.test(
+    /companyEmployeeCount|companyRevenueUsd|largestSocialFollowerCount|prominenceNotes|prominenceSignalsJson/.test(
       message
     ) &&
     /does not exist|no such column|unknown column|invalid/i.test(message)

@@ -57,7 +57,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     panel: "interviews",
     selector: '[id^="research-vip-"]',
-    title: "VIP Signals",
+    title: "Standout Signals",
     body: "The dashboard researches standout, audience, and company signals in the background. This button is a manual refresh if you want to re-check one person.",
   },
   {

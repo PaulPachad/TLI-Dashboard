@@ -7,9 +7,11 @@ import {
 } from "../src/lib/linkedin/generator";
 import {
   assessInterviewProminence,
+  buildProminenceSignalsJson,
   parseCountMetric,
   parseMoneyMetric,
   parseProminenceEvidenceSources,
+  parseStoredStandoutSignals,
   summarizeProminenceEvidence,
 } from "../src/lib/prominence/signals";
 import {
@@ -30,6 +32,18 @@ const contact = {
   intervieweeEmail: "guest@example.com",
   publicistEmail: null,
 };
+
+const AI_BOILERPLATE_PHRASES = [
+  "Here are the concise prominence signals",
+  "Based on the research",
+  "No information found",
+  "Prominence signals include",
+  "### Role / Notability",
+  "Unfortunately",
+  "This person appears to be",
+  "I found",
+  "The following are",
+];
 
 test("next action follows the complete leverage workflow", () => {
   assert.equal(
@@ -330,13 +344,261 @@ test("prominence assessment exposes compact evidence fields", () => {
   assert.ok(assessment.evidenceSummary.length <= 140);
 });
 
-test("background VIP scanner only targets never-scanned interviews", () => {
+test("structured standout signals keep useful role details off the front badge", () => {
+  const prominenceSignalsJson = JSON.stringify({
+    version: 1,
+    standoutSummary:
+      "Kym Renner is President & CEO of RennerVation Foundation.",
+    signals: [
+      {
+        kind: "role",
+        label: "Senior Leadership",
+        value: "President & CEO",
+        detail: "Kym Renner is President & CEO of RennerVation Foundation.",
+        confidence: "medium",
+        sourceTitle: "RennerVation Foundation",
+        sourceUrl: "https://example.com/kym",
+        placement: "back",
+      },
+    ],
+    sourceCount: 1,
+    researchedAt: "2026-06-21T00:00:00.000Z",
+    provider: "gemini_grounded_search",
+  });
+
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Kym Renner",
+    intervieweeCompany: "RennerVation Foundation",
+    prominenceSignalsJson,
+    prominenceNotes:
+      "Here are the concise prominence signals for Kym Renner and RennerVation Foundation: President & CEO of Renn...",
+  });
+
+  assert.equal(assessment.frontFlag, null);
+  assert.equal(assessment.signalGroups.exceptional[0]?.label, "Senior Leadership");
+  assert.match(
+    assessment.signalGroups.exceptional[0]?.detail || "",
+    /President & CEO/
+  );
+  assert.doesNotMatch(
+    [
+      assessment.evidenceSummary,
+      assessment.signalGroups.exceptional[0]?.detail,
+      assessment.frontFlag?.reason,
+    ]
+      .filter(Boolean)
+      .join(" "),
+    /Here are|concise prominence signals|Evidence Summary/i
+  );
+});
+
+test("structured standout signals win over old prompt-like notes", () => {
+  const prominenceSignalsJson = JSON.stringify({
+    version: 1,
+    standoutSummary: "Ari Lane has a verified 1.2M audience.",
+    signals: [
+      {
+        kind: "audience",
+        label: "Audience",
+        value: "1.2M",
+        detail: "Ari Lane has 1.2M followers on a public social profile.",
+        confidence: "medium",
+        sourceTitle: "Social profile",
+        sourceUrl: "https://example.com/social",
+        placement: "back",
+      },
+    ],
+    sourceCount: 1,
+    researchedAt: "2026-06-21T00:00:00.000Z",
+    provider: "gemini_grounded_search",
+  });
+
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Ari Lane",
+    prominenceSignalsJson,
+    prominenceNotes:
+      "Evidence Summary: Here are the concise prominence signals for Ari Lane: not useful boilerplate.",
+  });
+
+  assert.equal(assessment.signalGroups.audience[0]?.value, "1.2M");
+  assert.equal(assessment.tier, "high_value");
+  assert.equal(assessment.frontFlag, null);
+  assert.doesNotMatch(assessment.evidenceSummary || "", /Evidence Summary|Here are/i);
+});
+
+test("structured signal builder extracts Kym Renner style leadership detail", () => {
+  const json = buildProminenceSignalsJson({
+    intervieweeName: "Kym Renner",
+    intervieweeCompany: "RennerVation Foundation",
+    results: [
+      {
+        title: "RennerVation Foundation profile",
+        url: "https://example.com/renner",
+        snippet:
+          "Kym Renner Senior Leadership: President & CEO of RennerVation Foundation.",
+      },
+    ],
+    provider: "gemini_grounded_search",
+  });
+
+  assert.ok(json);
+  const stored = parseStoredStandoutSignals(json);
+  assert.ok(stored);
+  assert.equal(stored.signals[0]?.kind, "role");
+  assert.match(stored.signals[0]?.detail || "", /President & CEO/);
+  assert.doesNotMatch(stored.standoutSummary || "", /Here are|prominence signals/i);
+});
+
+test("structured standout validator rejects AI boilerplate phrases", () => {
+  const prominenceSignalsJson = JSON.stringify({
+    version: 1,
+    standoutSummary:
+      "Here are the concise prominence signals found for this person.",
+    signals: [
+      {
+        kind: "role",
+        label: "Senior Leadership",
+        value: "President",
+        detail:
+          "Morgan Vale is President of Example Health and leads national programs.",
+        confidence: "medium",
+        sourceTitle: "Example Health",
+        sourceUrl: "https://example.com/profile",
+        placement: "back",
+      },
+      ...AI_BOILERPLATE_PHRASES.map((phrase) => ({
+        kind: "context",
+        label: "Evidence",
+        detail: `${phrase}: this should not be shown.`,
+        confidence: "medium",
+        sourceTitle: "Bad source",
+        sourceUrl: "https://example.com/bad",
+        placement: "evidence",
+      })),
+    ],
+    sourceCount: 2,
+    researchedAt: "2026-06-21T00:00:00.000Z",
+    provider: "test",
+  });
+
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Morgan Vale",
+    prominenceSignalsJson,
+    prominenceNotes:
+      "Based on the research, prominence signals include this raw memo.",
+  });
+
+  const visibleText = collectProminenceText(assessment);
+  for (const phrase of AI_BOILERPLATE_PHRASES) {
+    assert.doesNotMatch(visibleText, new RegExp(escapeRegExp(phrase), "i"));
+  }
+  assert.match(visibleText, /President of Example Health/);
+});
+
+test("structured standout sources ignore unsafe URLs", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Morgan Vale",
+    prominenceSignalsJson: JSON.stringify({
+      version: 1,
+      standoutSummary: "Morgan Vale is President of Example Health.",
+      signals: [
+        {
+          kind: "role",
+          label: "Senior Leadership",
+          detail: "Morgan Vale is President of Example Health.",
+          confidence: "medium",
+          sourceTitle: "Unsafe",
+          sourceUrl: "javascript:alert(1)",
+          placement: "back",
+        },
+      ],
+      sourceCount: 1,
+      researchedAt: "2026-06-21T00:00:00.000Z",
+      provider: "test",
+    }),
+  });
+
+  assert.equal(assessment.evidenceSources.length, 0);
+  assert.match(assessment.signalGroups.exceptional[0]?.detail || "", /President/);
+});
+
+test("invalid structured payload suppresses raw prominence notes", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Legacy Person",
+    prominenceSignalsJson: "{not valid json",
+    prominenceNotes:
+      "Forbes: Here are the concise prominence signals for Legacy Person. (https://example.com/forbes)",
+  });
+
+  const visibleText = collectProminenceText(assessment);
+  assert.match(visibleText, /Refresh research to update this card/);
+  assert.doesNotMatch(visibleText, /Forbes|concise prominence signals/i);
+  assert.equal(assessment.evidenceSources.length, 0);
+});
+
+test("structured exceptional public prominence can create a front-card flag", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Robin Vale",
+    prominenceSignalsJson: JSON.stringify({
+      version: 1,
+      standoutSummary: "Robin Vale won a Grammy.",
+      signals: [
+        {
+          kind: "award",
+          label: "Major Award",
+          detail: "Robin Vale won a Grammy for a nationally recognized project.",
+          confidence: "high",
+          sourceTitle: "Awards profile",
+          sourceUrl: "https://example.com/award",
+          placement: "front",
+        },
+      ],
+      sourceCount: 1,
+      researchedAt: "2026-06-21T00:00:00.000Z",
+      provider: "test",
+    }),
+  });
+
+  assert.equal(assessment.frontFlag?.label, "Major Award");
+  assert.match(assessment.frontFlag?.reason || "", /Grammy/);
+});
+
+test("structured million-plus public audience can create a rare front flag", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Ari Lane",
+    prominenceSignalsJson: JSON.stringify({
+      version: 1,
+      standoutSummary: "Ari Lane has a 1.2M public audience.",
+      signals: [
+        {
+          kind: "audience",
+          label: "Audience",
+          value: "1.2M",
+          detail: "Ari Lane has 1.2M followers on a public social profile.",
+          confidence: "high",
+          sourceTitle: "Social profile",
+          sourceUrl: "https://example.com/social",
+          placement: "front",
+        },
+      ],
+      sourceCount: 1,
+      researchedAt: "2026-06-21T00:00:00.000Z",
+      provider: "test",
+    }),
+  });
+
+  assert.equal(assessment.frontFlag?.label, "Audience");
+  assert.match(assessment.frontFlag?.reason || "", /1.2M/);
+});
+
+test("background standout scanner targets never-scanned and legacy unstructured interviews", () => {
   assert.equal(
     shouldResearchProminenceInBackground({
       companyEmployeeCount: null,
       companyRevenueUsd: null,
       largestSocialFollowerCount: null,
       prominenceNotes: null,
+      prominenceSignalsJson: '{"version":1,"signals":[]}',
       actions: [],
     }),
     true
@@ -347,6 +609,23 @@ test("background VIP scanner only targets never-scanned interviews", () => {
       companyRevenueUsd: null,
       largestSocialFollowerCount: null,
       prominenceNotes: null,
+      prominenceSignalsJson: JSON.stringify({
+        version: 1,
+        standoutSummary: "Company has 10K employees.",
+        signals: [
+          {
+            kind: "company",
+            label: "Company Size",
+            value: "10K",
+            detail: "Company has 10K employees.",
+            confidence: "medium",
+            placement: "back",
+          },
+        ],
+        sourceCount: 1,
+        researchedAt: "2026-06-21T00:00:00.000Z",
+        provider: "test",
+      }),
       actions: [],
     }),
     false
@@ -357,19 +636,25 @@ test("background VIP scanner only targets never-scanned interviews", () => {
       companyRevenueUsd: null,
       largestSocialFollowerCount: null,
       prominenceNotes: null,
+      prominenceSignalsJson: null,
       actions: [{ actionType: "PROMINENCE_RESEARCHED" }],
     }),
-    false
+    true
   );
 
   assert.deepEqual(buildBackgroundProminenceWhere(), {
-    companyEmployeeCount: null,
-    companyRevenueUsd: null,
-    largestSocialFollowerCount: null,
-    prominenceNotes: null,
-    actions: {
-      none: { actionType: "PROMINENCE_RESEARCHED" },
-    },
+    OR: [
+      { prominenceSignalsJson: null },
+      {
+        companyEmployeeCount: null,
+        companyRevenueUsd: null,
+        largestSocialFollowerCount: null,
+        prominenceNotes: null,
+        actions: {
+          none: { actionType: "PROMINENCE_RESEARCHED" },
+        },
+      },
+    ],
   });
 });
 
@@ -438,6 +723,8 @@ test("prominence research extracts search-backed metrics", async () => {
   assert.equal(result.companyRevenueUsd, 150_000_000);
   assert.equal(result.largestSocialFollowerCount, 125_000);
   assert.equal(result.assessment.tier, "standard");
+  assert.ok(result.prominenceSignalsJson);
+  assert.ok(parseStoredStandoutSignals(result.prominenceSignalsJson));
 });
 
 test("prominence research queries include person and company identity", () => {
@@ -500,3 +787,27 @@ test("Gemini grounded response maps to prominence search results", () => {
   assert.equal(results[0].url, "https://example.com/acme");
   assert.match(results[0].snippet, /125K followers/);
 });
+
+function collectProminenceText(
+  assessment: ReturnType<typeof assessInterviewProminence>
+): string {
+  return [
+    assessment.evidenceSummary,
+    assessment.frontFlag?.reason,
+    ...assessment.reasons,
+    ...Object.values(assessment.signalGroups).flatMap((signals) =>
+      signals.flatMap((signal) => [signal.label, signal.value, signal.detail])
+    ),
+    ...assessment.evidenceSources.flatMap((source) => [
+      source.title,
+      source.summary,
+      source.url,
+    ]),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}

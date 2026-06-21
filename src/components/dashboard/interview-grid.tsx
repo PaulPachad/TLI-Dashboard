@@ -196,18 +196,18 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
           return;
         }
 
-        throw new Error(data.error || "VIP research failed.");
+        throw new Error(data.error || "Standout research failed.");
       }
 
       setNotice({
         tone: "success",
-        message: data.note || "VIP research complete.",
+        message: data.note || "Standout research complete.",
       });
       await fetchInterviews();
     } catch (err) {
       setNotice({
         tone: "warning",
-        message: err instanceof Error ? err.message : "VIP research failed.",
+        message: err instanceof Error ? err.message : "Standout research failed.",
       });
     } finally {
       setResearchingId(null);
@@ -464,7 +464,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
 function formatSearchConfigNotice(data: ProminenceResponse) {
   const base =
     data.error ||
-    "VIP research needs a Gemini or Google Search API key before it can run.";
+    "Standout research needs a Gemini or Google Search API key before it can run.";
 
   if (!data.diagnostics) return base;
 
@@ -493,9 +493,12 @@ function shouldQuietScanProminence(interview: InterviewView) {
     interview.largestSocialFollowerCount !== null &&
     interview.largestSocialFollowerCount !== undefined;
   const hasStoredNotes = Boolean(interview.prominenceNotes?.trim());
+  const hasStructuredSignals = Boolean(interview.prominenceSignalsJson?.trim());
   const alreadyResearched = interview.actions.some(
     (action) => action.actionType === "PROMINENCE_RESEARCHED"
   );
+
+  if (!hasStructuredSignals) return true;
 
   return (
     !alreadyResearched &&

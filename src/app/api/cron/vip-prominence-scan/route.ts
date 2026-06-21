@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       } catch (error) {
         if (error instanceof GoogleSearchConfigError) throw error;
         failed += 1;
-        console.warn("Cron VIP scan failed:", interview.id, error);
+        console.warn("Cron standout scan failed:", interview.id, error);
       }
     }
 
@@ -55,16 +55,16 @@ export async function GET(request: NextRequest) {
         {
           code: GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
           error:
-            "Background VIP research cannot see a search key in this deployment yet.",
+            "Background standout research cannot see a search key in this deployment yet.",
           diagnostics: getSearchDiagnostics(),
         },
         { status: 503 }
       );
     }
 
-    console.error("Cron VIP scan failed:", error);
+    console.error("Cron standout scan failed:", error);
     return NextResponse.json(
-      { error: "Could not run background VIP research." },
+      { error: "Could not run background standout research." },
       { status: 500 }
     );
   }

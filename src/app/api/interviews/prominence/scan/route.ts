@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         if (error instanceof GoogleSearchConfigError) throw error;
         failed += 1;
-        console.warn("Quiet VIP scan failed:", interview.id, error);
+        console.warn("Quiet standout scan failed:", interview.id, error);
       }
     }
 
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
         {
           code: GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
           error:
-            "VIP quiet scan cannot see a search key in this deployment yet.",
+            "Standout quiet scan cannot see a search key in this deployment yet.",
           diagnostics: getSearchDiagnostics(),
         },
         { status: 503 }
@@ -112,9 +112,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: err.message }, { status: err.status });
     }
 
-    console.error("Quiet VIP scan failed:", error);
+    console.error("Quiet standout scan failed:", error);
     return NextResponse.json(
-      { error: "Could not run the quiet VIP scan." },
+      { error: "Could not run the quiet standout scan." },
       { status: 500 }
     );
   }

@@ -122,12 +122,12 @@ export function InterviewDetailPanel({
           </Section>
 
           {interview.prominence?.hasAnySignals && (
-            <Section title="VIP Signals">
+            <Section title="Standout Signals">
               <DetailRow label="Tier" value={interview.prominence.tierLabel} />
               <DetailRow label="Score" value={`${interview.prominence.score}/100`} />
               <DetailRow label="Confidence" value={capitalize(interview.prominence.confidence)} />
               <DetailSignalGroup
-                title="Role/Notability"
+                title="Role & Notability"
                 signals={interview.prominence.signalGroups.exceptional}
               />
               <DetailSignalGroup
@@ -157,7 +157,7 @@ export function InterviewDetailPanel({
 
           {interview.prominence?.evidenceSources.length ? (
             <div ref={sourcesRef}>
-              <Section title="VIP Sources">
+              <Section title="Standout Sources">
                 <div className="space-y-3">
                   {interview.prominence.evidenceSources.map((source) => (
                     <div
@@ -460,7 +460,7 @@ function formatActionType(type: string): string {
     NOTE_ADDED: "Note added",
     CONTACT_INFO_UPDATED: "Contact info updated",
     IMPORT_CREATED: "Interview imported",
-    PROMINENCE_RESEARCHED: "VIP signals researched",
+    PROMINENCE_RESEARCHED: "Standout signals researched",
   };
   return labels[type] || type;
 }

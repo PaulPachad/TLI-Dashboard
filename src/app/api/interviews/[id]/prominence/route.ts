@@ -49,7 +49,7 @@ export async function POST(
       sourceCount: result.sourceResults.length,
       note:
         result.assessment.tier === "standard"
-          ? "Research complete. No strong VIP signal found yet."
+          ? "Research complete. No strong standout found yet."
           : `Research complete: ${result.assessment.tierLabel} (${result.assessment.score}/100).`,
     });
   } catch (error: unknown) {
@@ -59,7 +59,7 @@ export async function POST(
         {
           code: GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
           error:
-            "VIP research cannot see GEMINI_API_KEY in this project environment yet. Add it under Project Settings > Environment Variables, not AI Gateway > Bring Your Own Key, then redeploy.",
+            "Standout research cannot see GEMINI_API_KEY in this project environment yet. Add it under Project Settings > Environment Variables, not AI Gateway > Bring Your Own Key, then redeploy.",
           diagnostics,
         },
         { status: 503 }
@@ -76,7 +76,7 @@ export async function POST(
       {
         error:
           err.message ||
-          "Could not research VIP signals. Check the search configuration and try again.",
+          "Could not research standout signals. Check the search configuration and try again.",
       },
       { status: 500 }
     );

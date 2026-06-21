@@ -7,7 +7,7 @@ interface TutorialPanelProps {
 const TOUR_HIGHLIGHTS = [
   "Tabs and dashboard navigation",
   "Sync, search, filters, and cards",
-  "VIP signals and interview details",
+  "standout signals and interview details",
   "Email, LinkedIn, Zoom, and social image actions",
   "Topics, events, and press outreach",
 ];

@@ -8,6 +8,7 @@ interface ProminenceResearchStatus {
   companyRevenueUsd?: number | null;
   largestSocialFollowerCount?: number | null;
   prominenceNotes?: string | null;
+  prominenceSignalsJson?: string | null;
   actions?: Array<{ actionType: string }>;
 }
 
@@ -33,6 +34,8 @@ export function isCronRequestAuthorized(
 export function shouldResearchProminenceInBackground(
   interview: ProminenceResearchStatus
 ): boolean {
+  if (!interview.prominenceSignalsJson?.trim()) return true;
+
   const alreadyResearched = interview.actions?.some(
     (action) => action.actionType === "PROMINENCE_RESEARCHED"
   );
@@ -48,12 +51,17 @@ export function shouldResearchProminenceInBackground(
 
 export function buildBackgroundProminenceWhere(): Prisma.InterviewWhereInput {
   return {
-    companyEmployeeCount: null,
-    companyRevenueUsd: null,
-    largestSocialFollowerCount: null,
-    prominenceNotes: null,
-    actions: {
-      none: { actionType: "PROMINENCE_RESEARCHED" },
-    },
+    OR: [
+      { prominenceSignalsJson: null },
+      {
+        companyEmployeeCount: null,
+        companyRevenueUsd: null,
+        largestSocialFollowerCount: null,
+        prominenceNotes: null,
+        actions: {
+          none: { actionType: "PROMINENCE_RESEARCHED" },
+        },
+      },
+    ],
   };
 }

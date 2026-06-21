@@ -1,5 +1,6 @@
 import {
   assessInterviewProminence,
+  buildProminenceSignalsJson,
   parseCountMetric,
   parseMoneyMetric,
 } from "./signals";
@@ -31,13 +32,14 @@ export interface ProminenceResearchResult {
   companyRevenueUsd: number | null;
   largestSocialFollowerCount: number | null;
   prominenceNotes: string | null;
+  prominenceSignalsJson: string | null;
   sourceResults: SearchResult[];
   assessment: ReturnType<typeof assessInterviewProminence>;
 }
 
 export const GOOGLE_SEARCH_NOT_CONFIGURED_CODE = "GOOGLE_SEARCH_NOT_CONFIGURED";
 const SEARCH_NOT_CONFIGURED_MESSAGE =
-  "VIP research search is not configured. Add GEMINI_API_KEY to this deployment, or add GOOGLE_CUSTOM_SEARCH_API_KEY and GOOGLE_CUSTOM_SEARCH_ENGINE_ID.";
+  "Standout research search is not configured. Add GEMINI_API_KEY to this deployment, or add GOOGLE_CUSTOM_SEARCH_API_KEY and GOOGLE_CUSTOM_SEARCH_ENGINE_ID.";
 
 export class GoogleSearchConfigError extends Error {
   code = GOOGLE_SEARCH_NOT_CONFIGURED_CODE;
@@ -92,8 +94,9 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
                     {
                       text:
                         "Research this person or company for VIP/prospect prominence signals. " +
-                        "Return concise facts only. Look for employee count, annual revenue, " +
-                        "social followers/subscribers, press, awards, author/speaker signals, " +
+                        "Return compact facts, not a memo or intro. Prefer JSON with: " +
+                        "standoutSummary and signals containing kind, label, value, detail, confidence, sourceTitle, sourceUrl, placement. " +
+                        "Look for employee count, annual revenue, social followers/subscribers, press, awards, author/speaker signals, " +
                         `senior leadership, funding, acquisitions, or public-company status: ${query}`,
                     },
                   ],
@@ -256,15 +259,23 @@ export async function researchInterviewProminence(
 
   const extracted = extractProminenceSignals(sourceResults);
   const prominenceNotes = buildProminenceNotes(sourceResults);
+  const prominenceSignalsJson = buildProminenceSignalsJson({
+    ...interview,
+    ...extracted,
+    results: sourceResults,
+    provider: getProviderLabel(provider),
+  });
   const assessment = assessInterviewProminence({
     ...interview,
     ...extracted,
     prominenceNotes,
+    prominenceSignalsJson,
   });
 
   return {
     ...extracted,
     prominenceNotes,
+    prominenceSignalsJson,
     sourceResults,
     assessment,
   };
@@ -410,6 +421,12 @@ function maxMetric(current: number | null, next: number | null): number | null {
   if (next === null) return current;
   if (current === null) return next;
   return Math.max(current, next);
+}
+
+function getProviderLabel(provider: SearchProvider): string {
+  if (provider instanceof GeminiGroundedSearchProvider) return "gemini_grounded_search";
+  if (provider instanceof GoogleCustomSearchProvider) return "google_custom_search";
+  return "custom_search_provider";
 }
 
 function quote(value: string): string {

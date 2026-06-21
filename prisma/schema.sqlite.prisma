@@ -98,6 +98,7 @@ model Interview {
   companyRevenueUsd           Float?
   largestSocialFollowerCount  Int?
   prominenceNotes             String?
+  prominenceSignalsJson       String?
   publicistName               String?
   publicistEmail              String?
   topic                       String?
