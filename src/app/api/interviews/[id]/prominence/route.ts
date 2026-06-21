@@ -38,7 +38,8 @@ export async function POST(
 
     const { result, updated } = await saveProminenceResearch(
       interview,
-      user.id
+      user.id,
+      { trigger: "MANUAL" }
     );
 
     return NextResponse.json({

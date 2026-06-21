@@ -9,7 +9,15 @@ import {
   assessInterviewProminence,
   parseCountMetric,
   parseMoneyMetric,
+  parseProminenceEvidenceSources,
+  summarizeProminenceEvidence,
 } from "../src/lib/prominence/signals";
+import {
+  buildBackgroundProminenceWhere,
+  getVipProminenceCronLimit,
+  isCronRequestAuthorized,
+  shouldResearchProminenceInBackground,
+} from "../src/lib/prominence/background-scan";
 import {
   buildProminenceQueries,
   geminiResponseToSearchResults,
@@ -283,6 +291,97 @@ test("prominence display stays empty when no signal data exists", () => {
     company: [],
     context: [],
   });
+});
+
+test("prominence evidence parser returns source rows from stored notes", () => {
+  const notes = [
+    "Forbes: Taylor Chen has 1M followers and runs Acme Robotics. (https://example.com/forbes)",
+    "Company profile: Acme Robotics reports $1B annual revenue. (https://example.com/company)",
+  ].join("\n");
+
+  const sources = parseProminenceEvidenceSources(notes);
+
+  assert.equal(sources.length, 2);
+  assert.equal(sources[0].title, "Forbes");
+  assert.match(sources[0].summary, /1M followers/);
+  assert.equal(sources[0].url, "https://example.com/forbes");
+});
+
+test("prominence evidence summary stays short", () => {
+  const longNotes =
+    "Source: This is a very long evidence sentence about a notable person with awards, media coverage, followers, company revenue, and other details that should not appear in full on a dashboard card. (https://example.com/source)";
+
+  const summary = summarizeProminenceEvidence(longNotes, 80);
+
+  assert.ok(summary);
+  assert.ok(summary.length <= 80);
+  assert.doesNotMatch(summary, /dashboard card/);
+});
+
+test("prominence assessment exposes compact evidence fields", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Taylor Chen",
+    prominenceNotes:
+      "Forbes: Taylor Chen won a Grammy and has a public profile. (https://example.com/forbes)",
+  });
+
+  assert.equal(assessment.evidenceSources.length, 1);
+  assert.ok(assessment.evidenceSummary);
+  assert.ok(assessment.evidenceSummary.length <= 140);
+});
+
+test("background VIP scanner only targets never-scanned interviews", () => {
+  assert.equal(
+    shouldResearchProminenceInBackground({
+      companyEmployeeCount: null,
+      companyRevenueUsd: null,
+      largestSocialFollowerCount: null,
+      prominenceNotes: null,
+      actions: [],
+    }),
+    true
+  );
+  assert.equal(
+    shouldResearchProminenceInBackground({
+      companyEmployeeCount: 10_000,
+      companyRevenueUsd: null,
+      largestSocialFollowerCount: null,
+      prominenceNotes: null,
+      actions: [],
+    }),
+    false
+  );
+  assert.equal(
+    shouldResearchProminenceInBackground({
+      companyEmployeeCount: null,
+      companyRevenueUsd: null,
+      largestSocialFollowerCount: null,
+      prominenceNotes: null,
+      actions: [{ actionType: "PROMINENCE_RESEARCHED" }],
+    }),
+    false
+  );
+
+  assert.deepEqual(buildBackgroundProminenceWhere(), {
+    companyEmployeeCount: null,
+    companyRevenueUsd: null,
+    largestSocialFollowerCount: null,
+    prominenceNotes: null,
+    actions: {
+      none: { actionType: "PROMINENCE_RESEARCHED" },
+    },
+  });
+});
+
+test("background VIP cron auth and limit helpers are strict", () => {
+  assert.equal(isCronRequestAuthorized(null, "secret"), false);
+  assert.equal(isCronRequestAuthorized("Bearer wrong", "secret"), false);
+  assert.equal(isCronRequestAuthorized("Bearer secret", "secret"), true);
+  assert.equal(isCronRequestAuthorized("Bearer secret", ""), false);
+  assert.equal(getVipProminenceCronLimit(undefined), 6);
+  assert.equal(getVipProminenceCronLimit("0"), 1);
+  assert.equal(getVipProminenceCronLimit("10"), 10);
+  assert.equal(getVipProminenceCronLimit("99"), 12);
 });
 
 test("prominence reasons clean AI markdown and source prefixes", () => {

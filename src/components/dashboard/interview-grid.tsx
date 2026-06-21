@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { InterviewCard } from "./interview-card";
 import { ActionModal } from "./action-modal";
+import { InterviewDetailPanel } from "@/components/panels/interview-detail-panel";
 import type {
   InterviewActionType,
   InterviewView,
@@ -59,6 +60,8 @@ interface InterviewPagination {
   hasMore: boolean;
 }
 
+type DetailFocusTarget = "sources";
+
 export function InterviewGrid({ clientId }: InterviewGridProps) {
   const [interviews, setInterviews] = useState<InterviewView[]>([]);
   const [pagination, setPagination] = useState<InterviewPagination | null>(null);
@@ -72,6 +75,10 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
   const [activeInterviewId, setActiveInterviewId] = useState<string | null>(null);
   const [researchingId, setResearchingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<DashboardNotice | null>(null);
+  const [activeDetail, setActiveDetail] = useState<{
+    interviewId: string;
+    focus?: DetailFocusTarget;
+  } | null>(null);
   const quietScanStarted = useRef(false);
 
   const fetchInterviews = useCallback(async ({
@@ -237,6 +244,9 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
 
     return getProminenceSortScore(b) - getProminenceSortScore(a);
   });
+  const activeDetailInterview = activeDetail
+    ? interviews.find((interview) => interview.id === activeDetail.interviewId)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -393,6 +403,12 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
                 setActiveAction(action);
               }}
               onResearchProminence={researchProminence}
+              onViewDetails={(id, options) =>
+                setActiveDetail({
+                  interviewId: id,
+                  focus: options?.focus,
+                })
+              }
               researchingProminence={researchingId === interview.id}
               autoScanQueued={shouldQuietScanProminence(interview)}
             />
@@ -431,6 +447,14 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
             if (message) setNotice({ tone: "success", message });
             fetchInterviews();
           }}
+        />
+      )}
+
+      {activeDetail && activeDetailInterview && (
+        <InterviewDetailPanel
+          interview={activeDetailInterview}
+          initialFocus={activeDetail.focus}
+          onClose={() => setActiveDetail(null)}
         />
       )}
     </div>

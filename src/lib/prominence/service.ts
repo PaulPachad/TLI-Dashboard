@@ -17,10 +17,14 @@ type ResearchableInterview = Pick<
   | "twitterUrl"
 >;
 
+type ProminenceResearchTrigger = "MANUAL" | "QUIET_SCAN" | "CRON";
+
 export async function saveProminenceResearch(
   interview: ResearchableInterview,
-  createdByUserId?: string | null
+  createdByUserId?: string | null,
+  options: { trigger?: ProminenceResearchTrigger } = {}
 ) {
+  const trigger = options.trigger || "MANUAL";
   const result = await researchInterviewProminence(interview);
   const updated = await db.interview.update({
     where: { id: interview.id },
@@ -47,6 +51,7 @@ export async function saveProminenceResearch(
         tier: result.assessment.tier,
         confidence: result.assessment.confidence,
         sourceCount: result.sourceResults.length,
+        trigger,
       }),
       createdByUserId,
     },

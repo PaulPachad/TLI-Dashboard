@@ -25,6 +25,12 @@ export interface ProminenceSignalGroups {
   context: ProminenceSignal[];
 }
 
+export interface ProminenceEvidenceSource {
+  title: string;
+  summary: string;
+  url: string;
+}
+
 export interface ProminenceAssessment {
   score: number;
   tier: ProminenceTier;
@@ -35,6 +41,8 @@ export interface ProminenceAssessment {
   frontFlag: ProminenceFrontFlag | null;
   signalGroups: ProminenceSignalGroups;
   hasAnySignals: boolean;
+  evidenceSummary: string | null;
+  evidenceSources: ProminenceEvidenceSource[];
 }
 
 interface ProminenceInput {
@@ -234,7 +242,7 @@ export function assessInterviewProminence(
     reasons.push(detail);
     signalGroups.exceptional.push({
       label: "Major Conference",
-      detail,
+      detail: summarizeSignalDetail(detail),
       tone: "amber",
     });
   }
@@ -247,7 +255,7 @@ export function assessInterviewProminence(
     reasons.push(detail);
     signalGroups.exceptional.push({
       label: "Unicorn Founder",
-      detail,
+      detail: summarizeSignalDetail(detail),
       tone: "violet",
     });
   }
@@ -260,7 +268,7 @@ export function assessInterviewProminence(
     reasons.push(detail);
     signalGroups.exceptional.push({
       label: "Wikipedia",
-      detail,
+      detail: summarizeSignalDetail(detail),
       tone: "amber",
     });
   }
@@ -276,7 +284,7 @@ export function assessInterviewProminence(
     reasons.push(detail);
     signalGroups.exceptional.push({
       label: "Major Award",
-      detail,
+      detail: summarizeSignalDetail(detail),
       tone: "amber",
     });
   }
@@ -294,7 +302,7 @@ export function assessInterviewProminence(
       if (PUBLIC_PERSON_PATTERN.test(notes)) {
         signalGroups.exceptional.push({
           label: "Exceptional",
-          detail,
+          detail: summarizeSignalDetail(detail),
           tone: "amber",
         });
       }
@@ -317,16 +325,17 @@ export function assessInterviewProminence(
   const visibleBadges = getVisibleBadges(tier, badges);
   const frontFlag = getFrontFlag(signalGroups.exceptional);
   const visibleReasons = uniqueStrings(reasons).slice(0, 4);
+  const evidenceSources = parseProminenceEvidenceSources(input.prominenceNotes);
+  const evidenceSummary =
+    summarizeProminenceEvidence(input.prominenceNotes) ||
+    summarizeSignalDetail(visibleReasons[0] || null);
 
-  if (hasPrimarySignals(signalGroups)) {
-    for (const reason of visibleReasons) {
-      if (!reason) continue;
-      signalGroups.context.push({
-        label: "Evidence",
-        detail: reason,
-        tone: "slate",
-      });
-    }
+  if (hasPrimarySignals(signalGroups) && evidenceSummary) {
+    signalGroups.context.push({
+      label: "Evidence Summary",
+      detail: evidenceSummary,
+      tone: "slate",
+    });
   }
 
   const hasAnySignals = Object.values(signalGroups).some(
@@ -343,7 +352,75 @@ export function assessInterviewProminence(
     frontFlag,
     signalGroups,
     hasAnySignals,
+    evidenceSummary,
+    evidenceSources,
   };
+}
+
+export function parseProminenceEvidenceSources(
+  value?: string | null
+): ProminenceEvidenceSource[] {
+  if (!value) return [];
+
+  return value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map(parseProminenceEvidenceLine)
+    .filter(
+      (source): source is ProminenceEvidenceSource => source !== null
+    );
+}
+
+export function summarizeProminenceEvidence(
+  value?: string | null,
+  maxLength = 140
+): string | null {
+  const source = parseProminenceEvidenceSources(value)[0];
+  const text = source?.summary || cleanProminenceText(value || "");
+  if (!text) return null;
+  return truncateSummary(firstSentence(text), maxLength);
+}
+
+function parseProminenceEvidenceLine(
+  line: string
+): ProminenceEvidenceSource | null {
+  const urlMatch = line.match(/\((https?:\/\/[^)]+)\)\s*$/i);
+  if (!urlMatch) return null;
+
+  const url = urlMatch[1].trim();
+  const withoutUrl = line.slice(0, urlMatch.index).trim();
+  const separatorIndex = withoutUrl.indexOf(":");
+  const rawTitle =
+    separatorIndex >= 0 ? withoutUrl.slice(0, separatorIndex) : "Source";
+  const rawSummary =
+    separatorIndex >= 0
+      ? withoutUrl.slice(separatorIndex + 1)
+      : withoutUrl;
+  const title = cleanProminenceText(rawTitle) || "Source";
+  const summary = cleanProminenceText(rawSummary);
+
+  if (!summary) return null;
+  return { title, summary, url };
+}
+
+function summarizeSignalDetail(value: string | null): string | null {
+  if (!value) return null;
+  return truncateSummary(firstSentence(cleanProminenceText(value)), 140);
+}
+
+function firstSentence(value: string): string {
+  const clean = value.replace(/\s+/g, " ").trim();
+  if (!clean) return "";
+  const match = clean.match(/^(.+?[.!?])(?:\s|$)/);
+  return match?.[1] || clean;
+}
+
+function truncateSummary(value: string, maxLength: number): string | null {
+  const clean = value.replace(/\s+/g, " ").trim();
+  if (!clean) return null;
+  if (clean.length <= maxLength) return clean;
+  return `${clean.slice(0, Math.max(0, maxLength - 3)).trimEnd()}...`;
 }
 
 function getFrontFlag(

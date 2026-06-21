@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
 import { UserRole } from "@/types/db";
+import { buildBackgroundProminenceWhere } from "@/lib/prominence/background-scan";
 import {
   GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
   GoogleSearchConfigError,
@@ -47,17 +48,11 @@ export async function POST(request: NextRequest) {
       : [];
 
     const where: Prisma.InterviewWhereInput = {
+      ...buildBackgroundProminenceWhere(),
       ...(targetClientId ? { clientId: targetClientId } : {}),
       ...(requestedInterviewIds.length > 0
         ? { id: { in: requestedInterviewIds } }
         : {}),
-      companyEmployeeCount: null,
-      companyRevenueUsd: null,
-      largestSocialFollowerCount: null,
-      prominenceNotes: null,
-      actions: {
-        none: { actionType: "PROMINENCE_RESEARCHED" },
-      },
     };
 
     const candidates = await db.interview.findMany({
@@ -81,7 +76,9 @@ export async function POST(request: NextRequest) {
     let failed = 0;
     for (const interview of candidates) {
       try {
-        await saveProminenceResearch(interview, user.id);
+        await saveProminenceResearch(interview, user.id, {
+          trigger: "QUIET_SCAN",
+        });
         updated += 1;
       } catch (error) {
         if (error instanceof GoogleSearchConfigError) throw error;

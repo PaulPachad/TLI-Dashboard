@@ -34,7 +34,7 @@ const TOUR_STEPS: TourStep[] = [
     panel: "interviews",
     selector: '[data-tour="interview-stats"]',
     title: "Dashboard Totals",
-    body: "These counters show the workload at a glance, including live/upcoming items and rare VIP signals.",
+    body: "These counters show the workload at a glance, including live/upcoming items and researched signals found.",
   },
   {
     panel: "interviews",
@@ -58,13 +58,13 @@ const TOUR_STEPS: TourStep[] = [
     panel: "interviews",
     selector: '[id^="research-vip-"]',
     title: "VIP Signals",
-    body: "The dashboard quietly researches rare standout markers. This button is a manual refresh if you want to re-check one person.",
+    body: "The dashboard researches standout, audience, and company signals in the background. This button is a manual refresh if you want to re-check one person.",
   },
   {
     panel: "interviews",
     selector: '[id^="view-details-"]',
     title: "Details",
-    body: "Open the full side panel for contacts, VIP reasons, links, media, and action history.",
+    body: "Open the full side panel for contacts, signal sources, links, media, and action history.",
   },
   {
     panel: "interviews",

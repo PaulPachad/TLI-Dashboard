@@ -15,7 +15,10 @@ import { buildInterviewImageSources } from "@/lib/images/interview-image";
 interface InterviewCardProps {
   interview: InterviewView;
   onAction?: (interviewId: string, action: InterviewActionType) => void;
-  onViewDetails?: (interviewId: string) => void;
+  onViewDetails?: (
+    interviewId: string,
+    options?: { focus?: "sources" }
+  ) => void;
   onResearchProminence?: (interviewId: string) => void;
   researchingProminence?: boolean;
   autoScanQueued?: boolean;
@@ -169,7 +172,8 @@ export function InterviewCard({
                   id={`view-details-${interview.id}`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIsFlipped(true);
+                    if (onViewDetails) onViewDetails(interview.id);
+                    else setIsFlipped(true);
                   }}
                   className="text-xs font-medium text-slate-500 hover:text-indigo-700"
                 >
@@ -196,7 +200,7 @@ export function InterviewCard({
                 {researchingProminence
                   ? "Researching..."
                   : autoScanQueued
-                    ? "VIP auto-scan queued"
+                    ? "Will research automatically"
                   : hasSignals
                     ? "Refresh VIP research"
                     : "Research VIP signals"}
@@ -400,6 +404,18 @@ export function InterviewCard({
                   )}
                 />
                 <SignalGroup title="Evidence" signals={signalGroups.context} />
+                {prominence.evidenceSources.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewDetails?.(interview.id, { focus: "sources" });
+                    }}
+                    className="mt-1 text-left text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+                  >
+                    View sources
+                  </button>
+                )}
                 <div className="mt-2 grid grid-cols-3 gap-2 border-t border-slate-100 pt-2 text-[10px] text-slate-500">
                   <div>
                     <span className="block font-semibold text-slate-700">

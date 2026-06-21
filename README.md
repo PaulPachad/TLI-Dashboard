@@ -113,6 +113,12 @@ When configured, the "Research VIP signals" button stores the discovered
 signals on the interview, updates the card badges, and records the research in
 the action timeline.
 
+Background VIP research runs through Vercel Cron every 15 minutes at
+`/api/cron/vip-prominence-scan`. Set `CRON_SECRET` in Vercel so the cron
+request is authorized, and optionally set `VIP_PROMINENCE_CRON_LIMIT` to tune
+the batch size. The default batch size is 6 and the app caps it at 12 to keep
+search usage controlled.
+
 ## Production Database And Deployment
 
 PostgreSQL is the default schema. The one-click demo explicitly uses the

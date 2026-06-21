@@ -2,6 +2,38 @@
 
 ## June 21, 2026
 
+### VIP Research Can Now Run in the Background
+
+Yitzi asked whether VIP signal research only runs while he is logged in, and then asked for a real background scanner plus a cleaner way to handle long evidence.
+
+- **What was changed**:
+  - Added a Vercel cron job that calls the app every 15 minutes to research a small batch of unscanned interviews.
+  - Protected the cron route with `CRON_SECRET` so only the scheduled job can run it.
+  - Kept manual and quiet dashboard scans, but now records whether research came from manual use, quiet scan, or cron.
+  - Added short evidence summaries and source parsing so huge evidence text can stay hidden behind a link.
+  - Wired the existing details panel so `View sources` opens a full source list instead of cramming evidence onto the card.
+
+- **What the feature does**:
+  - VIP research can keep progressing after Yitzi closes the dashboard.
+  - Card backs stay short and readable, while source evidence remains available when someone wants to inspect it.
+
+- **Why it is useful or exciting**:
+  - Imported interviews can gradually become smarter in the background, and the dashboard stays cleaner for real daily use.
+
+- **Interesting problem solved**:
+  - The app already had the research engine, but it was tied to a logged-in page session. The new cron route reuses the same trusted research service without adding a second scoring system.
+
+- **What remains**:
+  - Add `CRON_SECRET` in Vercel before relying on the scheduled job in production.
+  - Watch the first production cron runs to confirm the search key and batch size are behaving as expected.
+
+- **Relevant files**:
+  - Cron route: [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/app/api/cron/vip-prominence-scan/route.ts)
+  - Cron config: [vercel.json](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/vercel.json)
+  - Evidence display: [interview-card.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/dashboard/interview-card.tsx)
+  - Source panel: [interview-detail-panel.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/panels/interview-detail-panel.tsx)
+  - Tests: [workflow-logic.test.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/tests/workflow-logic.test.ts)
+
 ### VIP Signals Are Now Split Between Front Flags and Back-Card Details
 
 Yitzi wanted the dashboard to stop treating every useful signal as a front-of-card VIP badge. A person with a huge following or a large company can still matter, but that is different from a person who is publicly exceptional.

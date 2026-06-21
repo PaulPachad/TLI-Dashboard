@@ -24,6 +24,12 @@ export interface InterviewProminenceSignal {
   detail?: string | null;
 }
 
+export interface InterviewProminenceEvidenceSource {
+  title: string;
+  summary: string;
+  url: string;
+}
+
 export interface InterviewProminenceView {
   score: number;
   tier: "elite" | "high_value" | "notable" | "standard";
@@ -46,6 +52,8 @@ export interface InterviewProminenceView {
     context: InterviewProminenceSignal[];
   };
   hasAnySignals: boolean;
+  evidenceSummary: string | null;
+  evidenceSources: InterviewProminenceEvidenceSource[];
 }
 
 export interface InterviewView {

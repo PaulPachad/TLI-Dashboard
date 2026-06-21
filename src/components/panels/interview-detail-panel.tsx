@@ -5,16 +5,33 @@
 // ==============================================================================
 
 import { useEffect, useRef } from "react";
-import type { InterviewView } from "@/types/interview";
+import type {
+  InterviewProminenceSignal,
+  InterviewView,
+} from "@/types/interview";
 
 interface InterviewDetailPanelProps {
   interview: InterviewView;
   onClose: () => void;
+  initialFocus?: "sources";
 }
 
-export function InterviewDetailPanel({ interview, onClose }: InterviewDetailPanelProps) {
+const PROMINENCE_TONES: Record<string, string> = {
+  amber: "border-amber-200 bg-amber-50 text-amber-800",
+  emerald: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  sky: "border-sky-200 bg-sky-50 text-sky-700",
+  violet: "border-violet-200 bg-violet-50 text-violet-700",
+  slate: "border-slate-200 bg-slate-50 text-slate-700",
+};
+
+export function InterviewDetailPanel({
+  interview,
+  onClose,
+  initialFocus,
+}: InterviewDetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const sourcesRef = useRef<HTMLDivElement>(null);
   const isUnpublished =
     interview.articleUrl.includes("/unpublished/") ||
     interview.liveEmailStatusImported?.toUpperCase() !== "LIVE";
@@ -54,6 +71,13 @@ export function InterviewDetailPanel({ interview, onClose }: InterviewDetailPane
       previouslyFocused?.focus();
     };
   }, [onClose]);
+
+  useEffect(() => {
+    if (initialFocus !== "sources") return;
+    window.setTimeout(() => {
+      sourcesRef.current?.scrollIntoView({ block: "start" });
+    }, 0);
+  }, [initialFocus]);
 
   return (
     <>
@@ -97,41 +121,66 @@ export function InterviewDetailPanel({ interview, onClose }: InterviewDetailPane
             <DetailRow label="Email" value={interview.intervieweeEmail} isEmail />
           </Section>
 
-          {interview.prominence && interview.prominence.tier !== "standard" && (
+          {interview.prominence?.hasAnySignals && (
             <Section title="VIP Signals">
               <DetailRow label="Tier" value={interview.prominence.tierLabel} />
               <DetailRow label="Score" value={`${interview.prominence.score}/100`} />
               <DetailRow label="Confidence" value={capitalize(interview.prominence.confidence)} />
-              <div className="flex items-start gap-3">
-                <span className="text-xs text-slate-400 w-20 shrink-0 pt-0.5">Badges</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {interview.prominence.badges.map((badge) => (
-                    <span
-                      key={badge.label}
-                      className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800"
-                    >
-                      {badge.label}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              {interview.prominence.reasons.length > 0 && (
-                <div className="rounded-lg border border-amber-100 bg-amber-50/50 p-3">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-800">
-                    Why this person is notable
-                  </p>
-                  <ul className="space-y-2 text-sm leading-relaxed text-slate-700">
-                    {interview.prominence.reasons.map((reason) => (
-                      <li key={reason} className="flex gap-2">
-                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
-                        <span>{reason}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              <DetailSignalGroup
+                title="Role/Notability"
+                signals={interview.prominence.signalGroups.exceptional}
+              />
+              <DetailSignalGroup
+                title="Audience"
+                signals={interview.prominence.signalGroups.audience}
+              />
+              <DetailSignalGroup
+                title="Company Size"
+                signals={interview.prominence.signalGroups.company.filter(
+                  (signal) => signal.label !== "Revenue"
+                )}
+              />
+              <DetailSignalGroup
+                title="Revenue"
+                signals={interview.prominence.signalGroups.company.filter(
+                  (signal) => signal.label === "Revenue"
+                )}
+              />
+              {interview.prominence.evidenceSummary && (
+                <DetailRow
+                  label="Summary"
+                  value={interview.prominence.evidenceSummary}
+                />
               )}
             </Section>
           )}
+
+          {interview.prominence?.evidenceSources.length ? (
+            <div ref={sourcesRef}>
+              <Section title="VIP Sources">
+                <div className="space-y-3">
+                  {interview.prominence.evidenceSources.map((source) => (
+                    <div
+                      key={`${source.title}-${source.url}`}
+                      className="border-l-2 border-slate-100 pl-3"
+                    >
+                      <a
+                        href={source.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+                      >
+                        {source.title}
+                      </a>
+                      <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                        {source.summary}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </Section>
+            </div>
+          ) : null}
 
           {/* Publicist info */}
           {(interview.publicistName || interview.publicistEmail) && (
@@ -316,6 +365,49 @@ function DetailRow({
       ) : (
         <span className="text-sm text-slate-700">{value}</span>
       )}
+    </div>
+  );
+}
+
+function DetailSignalGroup({
+  title,
+  signals,
+}: {
+  title: string;
+  signals: InterviewProminenceSignal[];
+}) {
+  if (signals.length === 0) return null;
+
+  return (
+    <div className="flex items-start gap-3">
+      <span className="text-xs text-slate-400 w-20 shrink-0 pt-0.5">
+        {title}
+      </span>
+      <div className="min-w-0 flex-1 space-y-2">
+        {signals.map((signal, index) => (
+          <div key={`${signal.label}-${signal.value ?? ""}-${index}`}>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-sm font-semibold text-slate-700">
+                {signal.label}
+              </span>
+              {signal.value && (
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
+                    PROMINENCE_TONES[signal.tone]
+                  }`}
+                >
+                  {signal.value}
+                </span>
+              )}
+            </div>
+            {signal.detail && (
+              <p className="mt-0.5 text-sm leading-relaxed text-slate-500">
+                {signal.detail}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
