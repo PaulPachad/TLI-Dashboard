@@ -2,6 +2,15 @@
 
 ## June 21, 2026
 
+### Adjust VIP Research Cron for Vercel Hobby Limits
+
+- **What was changed**: Adjusted the Vercel cron schedule in `vercel.json` from every 15 minutes to once per day (`0 4 * * *`).
+- **What the feature does**: Conforms the background prominence cron route to Vercel Hobby plan limitations (which only permit one cron execution per day).
+- **Why it is useful or exciting**: Unblocks all deployments, ensuring today's code updates and dashboard fixes can build and go live.
+- **Interesting problem solved**: Diagnosed that Vercel was silently blocking all deployments after commit `de3a241` because the cron interval violated Hobby plan constraints.
+- **What remains**: If a 15-minute background scanning interval is required in the future, the Vercel team account must be upgraded to Pro.
+- **Relevant files**: [vercel.json](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/vercel.json).
+
 ### VIP Research Can Now Run in the Background
 
 Yitzi asked whether VIP signal research only runs while he is logged in, and then asked for a real background scanner plus a cleaner way to handle long evidence.
