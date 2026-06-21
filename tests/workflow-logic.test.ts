@@ -152,6 +152,9 @@ test("prominence assessment treats Wikipedia as notable", () => {
 
   assert.equal(assessment.tier, "notable");
   assert.ok(assessment.badges.some((badge) => badge.label === "Wikipedia"));
+  assert.equal(assessment.frontFlag?.label, "Wikipedia");
+  assert.equal(assessment.signalGroups.exceptional.length, 1);
+  assert.equal(assessment.hasAnySignals, true);
 });
 
 test("prominence assessment treats million follower audiences as standout", () => {
@@ -162,6 +165,10 @@ test("prominence assessment treats million follower audiences as standout", () =
 
   assert.equal(assessment.tier, "high_value");
   assert.ok(assessment.badges.some((badge) => badge.label === "1M+ Audience"));
+  assert.equal(assessment.frontFlag, null);
+  assert.equal(assessment.signalGroups.audience[0]?.label, "Audience");
+  assert.equal(assessment.signalGroups.audience[0]?.value, "1.2M");
+  assert.equal(assessment.hasAnySignals, true);
 });
 
 test("prominence assessment treats Fortune 500 C-level leaders as high value", () => {
@@ -177,6 +184,12 @@ test("prominence assessment treats Fortune 500 C-level leaders as high value", (
   assert.ok(
     assessment.badges.some((badge) => badge.label === "Fortune 500 C-Level")
   );
+  assert.equal(assessment.frontFlag, null);
+  assert.ok(
+    assessment.signalGroups.company.some(
+      (signal) => signal.label === "Role/Company Scale"
+    )
+  );
 });
 
 test("prominence assessment treats major conference speakers as notable", () => {
@@ -190,6 +203,7 @@ test("prominence assessment treats major conference speakers as notable", () => 
   assert.ok(
     assessment.badges.some((badge) => badge.label === "Major Conference Speaker")
   );
+  assert.equal(assessment.frontFlag?.label, "Major Conference");
 });
 
 test("prominence assessment treats unicorn founders as high value", () => {
@@ -202,6 +216,8 @@ test("prominence assessment treats unicorn founders as high value", () => {
 
   assert.equal(assessment.tier, "high_value");
   assert.ok(assessment.badges.some((badge) => badge.label === "Unicorn Founder"));
+  assert.equal(assessment.frontFlag?.label, "Unicorn Founder");
+  assert.equal(assessment.frontFlag?.tone, "violet");
 });
 
 test("prominence assessment treats major award recognition as notable", () => {
@@ -213,6 +229,60 @@ test("prominence assessment treats major award recognition as notable", () => {
 
   assert.equal(assessment.tier, "notable");
   assert.ok(assessment.badges.some((badge) => badge.label === "Major Award"));
+  assert.equal(assessment.frontFlag?.label, "Major Award");
+});
+
+test("prominence display keeps large company metrics on the back only", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Jamie Morgan",
+    companyEmployeeCount: 50_000,
+    companyRevenueUsd: 1_200_000_000,
+  });
+
+  assert.equal(assessment.frontFlag, null);
+  assert.ok(
+    assessment.signalGroups.company.some(
+      (signal) => signal.label === "Company Size" && signal.value === "50K"
+    )
+  );
+  assert.ok(
+    assessment.signalGroups.company.some(
+      (signal) => signal.label === "Revenue" && signal.value === "$1.2B"
+    )
+  );
+  assert.equal(assessment.hasAnySignals, true);
+});
+
+test("prominence display combines exceptional flag with back metrics", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Robin Vale",
+    companyRevenueUsd: 1_200_000_000,
+    prominenceNotes:
+      "Robin Vale was nominated for an Emmy and later won a Grammy.",
+  });
+
+  assert.equal(assessment.frontFlag?.label, "Major Award");
+  assert.ok(
+    assessment.signalGroups.company.some(
+      (signal) => signal.label === "Revenue" && signal.value === "$1.2B"
+    )
+  );
+  assert.ok(assessment.signalGroups.context.length > 0);
+});
+
+test("prominence display stays empty when no signal data exists", () => {
+  const assessment = assessInterviewProminence({
+    intervieweeName: "No Signals",
+  });
+
+  assert.equal(assessment.frontFlag, null);
+  assert.equal(assessment.hasAnySignals, false);
+  assert.deepEqual(assessment.signalGroups, {
+    exceptional: [],
+    audience: [],
+    company: [],
+    context: [],
+  });
 });
 
 test("prominence reasons clean AI markdown and source prefixes", () => {

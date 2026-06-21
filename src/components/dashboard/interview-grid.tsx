@@ -26,12 +26,6 @@ const STATUS_FILTERS = [
   { value: "leveraged", label: "Leveraged" },
 ];
 
-const PROMINENCE_PRIORITY: Record<string, number> = {
-  elite: 3,
-  high_value: 2,
-  notable: 1,
-  standard: 0,
-};
 const QUIET_SCAN_LIMIT = 6;
 const PAGE_SIZE = 120;
 
@@ -226,8 +220,8 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
     needsAction: interviews.filter((interview) => !isUnpublished(interview) && interview.currentStatus !== "leveraged").length,
     leveraged: interviews.filter((interview) => interview.currentStatus === "leveraged").length,
     needsContact: interviews.filter((interview) => interview.currentStatus === "needs_contact").length,
-    spotlight: interviews.filter((interview) =>
-      ["elite", "high_value"].includes(interview.prominence?.tier ?? "standard")
+    signalsFound: interviews.filter(
+      (interview) => interview.prominence?.hasAnySignals
     ).length,
   };
 
@@ -241,10 +235,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
     const workflowSort = getScore(a) - getScore(b);
     if (workflowSort !== 0) return workflowSort;
 
-    return (
-      (PROMINENCE_PRIORITY[b.prominence?.tier ?? "standard"] ?? 0) -
-      (PROMINENCE_PRIORITY[a.prominence?.tier ?? "standard"] ?? 0)
-    );
+    return getProminenceSortScore(b) - getProminenceSortScore(a);
   });
 
   return (
@@ -283,7 +274,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
         <StatCard label="Needs Action" value={stats.needsAction} color="amber" />
         <StatCard label="Fully Leveraged" value={stats.leveraged} color="emerald" />
         <StatCard label="Needs Contact" value={stats.needsContact} color="rose" />
-        <StatCard label="VIP Signals" value={stats.spotlight} color="violet" />
+        <StatCard label="Signals Found" value={stats.signalsFound} color="violet" />
       </div>
 
       {/* Search and filters */}
@@ -489,6 +480,20 @@ function shouldQuietScanProminence(interview: InterviewView) {
     !hasStoredAudience &&
     !hasStoredNotes
   );
+}
+
+function getProminenceSortScore(interview: InterviewView) {
+  const prominence = interview.prominence;
+  if (!prominence) return 0;
+  if (prominence.frontFlag) return 3;
+  if (
+    prominence.signalGroups.audience.length > 0 ||
+    prominence.signalGroups.company.length > 0
+  ) {
+    return 2;
+  }
+  if (prominence.hasAnySignals) return 1;
+  return 0;
 }
 
 function StatCard({

@@ -5,7 +5,11 @@
 // ==============================================================================
 
 import { useState } from "react";
-import type { InterviewActionType, InterviewView } from "@/types/interview";
+import type {
+  InterviewActionType,
+  InterviewProminenceSignal,
+  InterviewView,
+} from "@/types/interview";
 import { buildInterviewImageSources } from "@/lib/images/interview-image";
 
 interface InterviewCardProps {
@@ -50,13 +54,16 @@ export function InterviewCard({
   const imageSources = buildInterviewImageSources(interview);
   const currentImage = imageSources[imageIndex];
   const prominence = interview.prominence;
-  const isSpotlight =
-    prominence && ["elite", "high_value"].includes(prominence.tier);
+  const frontFlag = prominence?.frontFlag ?? null;
+  const signalGroups = prominence?.signalGroups;
+  const hasSignals = prominence?.hasAnySignals ?? false;
 
-  const cardBorderClasses = prominence?.tier === "elite"
-    ? "border-amber-300 ring-1 ring-amber-100"
-    : isSpotlight
-      ? "border-violet-200"
+  const cardBorderClasses = frontFlag
+    ? frontFlag.tone === "violet"
+      ? "border-violet-300 ring-1 ring-violet-100"
+      : "border-amber-300 ring-1 ring-amber-100"
+    : hasSignals
+      ? "border-sky-100"
       : "border-slate-200";
 
   return (
@@ -98,12 +105,28 @@ export function InterviewCard({
               </div>
             )}
             <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-slate-900/20 to-transparent" />
-            {isSpotlight && (
-              <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-xs font-semibold text-slate-900 shadow-sm backdrop-blur">
-                <svg className="h-3.5 w-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+            {frontFlag && (
+              <div
+                title={frontFlag.reason}
+                className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-white/75 bg-white/95 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur ${
+                  frontFlag.tone === "violet"
+                    ? "text-violet-800"
+                    : "text-amber-800"
+                }`}
+              >
+                <svg
+                  className={`h-3.5 w-3.5 ${
+                    frontFlag.tone === "violet"
+                      ? "text-violet-500"
+                      : "text-amber-500"
+                  }`}
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  aria-hidden="true"
+                >
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.539 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81H7.03a1 1 0 00.95-.69l1.07-3.292z" />
                 </svg>
-                {prominence.tierLabel}
+                {frontFlag.label}
               </div>
             )}
           </div>
@@ -129,27 +152,6 @@ export function InterviewCard({
                 <p className="text-xs text-slate-400 truncate">
                   {interview.intervieweeTitle}
                 </p>
-              )}
-              {isSpotlight && (
-                <div className="mt-3 border-l-2 border-amber-300 pl-3">
-                  <div className="flex flex-wrap gap-1.5">
-                    {prominence.badges.map((badge) => (
-                      <span
-                        key={badge.label}
-                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                          PROMINENCE_TONES[badge.tone]
-                        }`}
-                      >
-                        {badge.label}
-                      </span>
-                    ))}
-                  </div>
-                  {prominence.reasons[0] && (
-                    <p className="mt-1.5 text-xs leading-relaxed text-slate-500 line-clamp-2">
-                      {prominence.reasons[0]}
-                    </p>
-                  )}
-                </div>
               )}
               <div className="mt-1.5 flex items-center justify-between gap-2">
                 {isUnpublished ? (
@@ -195,7 +197,7 @@ export function InterviewCard({
                   ? "Researching..."
                   : autoScanQueued
                     ? "VIP auto-scan queued"
-                  : prominence && prominence.tier !== "standard"
+                  : hasSignals
                     ? "Refresh VIP research"
                     : "Research VIP signals"}
               </button>
@@ -377,39 +379,47 @@ export function InterviewCard({
               <BackRow label="Email" value={interview.intervieweeEmail} isEmail />
             </BackSection>
 
-            {/* VIP Signals if notable */}
-            {prominence && prominence.tier !== "standard" && (
+            {/* VIP Signals */}
+            {prominence && signalGroups && hasSignals && (
               <BackSection title="VIP Signals">
-                <BackRow label="Tier" value={prominence.tierLabel} />
-                <BackRow label="Score" value={`${prominence.score}/100`} />
-                <BackRow label="Confidence" value={capitalize(prominence.confidence)} />
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {prominence.badges.map((badge) => (
-                    <span
-                      key={badge.label}
-                      className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase ${
-                        PROMINENCE_TONES[badge.tone]
-                      }`}
-                    >
-                      {badge.label}
+                <SignalGroup
+                  title="Role/Notability"
+                  signals={signalGroups.exceptional}
+                />
+                <SignalGroup title="Audience" signals={signalGroups.audience} />
+                <SignalGroup
+                  title="Company Size"
+                  signals={signalGroups.company.filter(
+                    (signal) => signal.label !== "Revenue"
+                  )}
+                />
+                <SignalGroup
+                  title="Revenue"
+                  signals={signalGroups.company.filter(
+                    (signal) => signal.label === "Revenue"
+                  )}
+                />
+                <SignalGroup title="Evidence" signals={signalGroups.context} />
+                <div className="mt-2 grid grid-cols-3 gap-2 border-t border-slate-100 pt-2 text-[10px] text-slate-500">
+                  <div>
+                    <span className="block font-semibold text-slate-700">
+                      {prominence.tierLabel}
                     </span>
-                  ))}
-                </div>
-                {prominence.reasons.length > 0 && (
-                  <div className="mt-2.5 rounded-lg border border-amber-100 bg-amber-50/40 p-2 text-[11px] leading-relaxed text-slate-700">
-                    <p className="font-semibold text-amber-800 uppercase tracking-wide text-[9px] mb-1">
-                      Why this person is notable
-                    </p>
-                    <ul className="space-y-1">
-                      {prominence.reasons.map((reason) => (
-                        <li key={reason} className="flex gap-1.5">
-                          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-500" />
-                          <span>{reason}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    Tier
                   </div>
-                )}
+                  <div>
+                    <span className="block font-semibold text-slate-700">
+                      {prominence.score}/100
+                    </span>
+                    Score
+                  </div>
+                  <div>
+                    <span className="block font-semibold text-slate-700">
+                      {capitalize(prominence.confidence)}
+                    </span>
+                    Confidence
+                  </div>
+                </div>
               </BackSection>
             )}
 
@@ -549,6 +559,52 @@ function BackSection({ title, children }: { title: string; children: React.React
         {title}
       </h5>
       <div className="space-y-1.5">{children}</div>
+    </div>
+  );
+}
+
+function SignalGroup({
+  title,
+  signals,
+}: {
+  title: string;
+  signals: InterviewProminenceSignal[];
+}) {
+  if (signals.length === 0) return null;
+
+  return (
+    <div className="space-y-1.5 border-l-2 border-slate-100 pl-2">
+      <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+        {title}
+      </p>
+      {signals.map((signal, index) => (
+        <div
+          key={`${signal.label}-${signal.value ?? ""}-${index}`}
+          className="flex items-start justify-between gap-2 text-[11px]"
+        >
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-semibold text-slate-700">
+                {signal.label}
+              </span>
+              {signal.value && (
+                <span
+                  className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold ${
+                    PROMINENCE_TONES[signal.tone]
+                  }`}
+                >
+                  {signal.value}
+                </span>
+              )}
+            </div>
+            {signal.detail && (
+              <p className="mt-0.5 leading-relaxed text-slate-500">
+                {signal.detail}
+              </p>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -2,6 +2,35 @@
 
 ## June 21, 2026
 
+### VIP Signals Are Now Split Between Front Flags and Back-Card Details
+
+Yitzi wanted the dashboard to stop treating every useful signal as a front-of-card VIP badge. A person with a huge following or a large company can still matter, but that is different from a person who is publicly exceptional.
+
+- **What was changed**:
+  - The VIP research result now separates signals into exceptional person signals, audience signals, company signals, and evidence.
+  - The card front only shows a top-left flag for truly exceptional person-specific signals, such as Wikipedia, major awards, major conferences, or unicorn founder evidence.
+  - Audience size, revenue, employee count, enterprise company clues, and Fortune 500 role clues now appear on the back of the card instead of creating a front VIP flag by themselves.
+  - The dashboard stat now says "Signals Found" so it does not imply every signal is a VIP.
+
+- **What the feature does**:
+  - The front of the card stays clean and only calls out exceptional people.
+  - The back of the card explains why someone or their company may matter, even if they are not an exceptional public figure.
+
+- **Why it is useful or exciting**:
+  - Yitzi can scan the dashboard quickly without false VIP noise, then flip a card to understand useful business or audience context.
+
+- **Interesting problem solved**:
+  - The old display mixed "exceptional person" and "valuable metric" into the same visual treatment. The new display layer keeps the existing scoring pipeline but presents the signals in the right place.
+
+- **What remains**:
+  - Test the deployed dashboard with real researched cards and tune the wording if any signal labels feel unclear.
+
+- **Relevant files**:
+  - Signal classifier: [signals.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/lib/prominence/signals.ts)
+  - Card display: [interview-card.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/dashboard/interview-card.tsx)
+  - Dashboard stats/sorting: [interview-grid.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/dashboard/interview-grid.tsx)
+  - Tests: [workflow-logic.test.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/tests/workflow-logic.test.ts)
+
 ### Google Form Upload Images Now Map Into Interview Cards
 
 Yitzi noticed that dashboard cards were showing initials instead of photos and asked whether the images were slow to load or mapped incorrectly.

@@ -17,6 +17,37 @@ export interface InterviewActionRecord {
   metadataJson?: unknown;
 }
 
+export interface InterviewProminenceSignal {
+  label: string;
+  tone: "amber" | "emerald" | "sky" | "violet" | "slate";
+  value?: string | null;
+  detail?: string | null;
+}
+
+export interface InterviewProminenceView {
+  score: number;
+  tier: "elite" | "high_value" | "notable" | "standard";
+  tierLabel: string;
+  confidence: "high" | "medium" | "low";
+  badges: Array<{
+    label: string;
+    tone: "amber" | "emerald" | "sky" | "violet" | "slate";
+  }>;
+  reasons: string[];
+  frontFlag: null | {
+    label: string;
+    tone: "amber" | "violet";
+    reason: string;
+  };
+  signalGroups: {
+    exceptional: InterviewProminenceSignal[];
+    audience: InterviewProminenceSignal[];
+    company: InterviewProminenceSignal[];
+    context: InterviewProminenceSignal[];
+  };
+  hasAnySignals: boolean;
+}
+
 export interface InterviewView {
   id: string;
   intervieweeName: string;
@@ -56,15 +87,5 @@ export interface InterviewView {
     markedShared: boolean;
     zoomInviteSent: boolean;
   };
-  prominence?: {
-    score: number;
-    tier: "elite" | "high_value" | "notable" | "standard";
-    tierLabel: string;
-    confidence: "high" | "medium" | "low";
-    badges: Array<{
-      label: string;
-      tone: "amber" | "emerald" | "sky" | "violet" | "slate";
-    }>;
-    reasons: string[];
-  };
+  prominence?: InterviewProminenceView;
 }

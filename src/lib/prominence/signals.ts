@@ -5,6 +5,26 @@ export interface ProminenceBadge {
   tone: "amber" | "emerald" | "sky" | "violet" | "slate";
 }
 
+export interface ProminenceSignal {
+  label: string;
+  tone: ProminenceBadge["tone"];
+  value?: string | null;
+  detail?: string | null;
+}
+
+export interface ProminenceFrontFlag {
+  label: string;
+  tone: "amber" | "violet";
+  reason: string;
+}
+
+export interface ProminenceSignalGroups {
+  exceptional: ProminenceSignal[];
+  audience: ProminenceSignal[];
+  company: ProminenceSignal[];
+  context: ProminenceSignal[];
+}
+
 export interface ProminenceAssessment {
   score: number;
   tier: ProminenceTier;
@@ -12,6 +32,9 @@ export interface ProminenceAssessment {
   confidence: "high" | "medium" | "low";
   badges: ProminenceBadge[];
   reasons: string[];
+  frontFlag: ProminenceFrontFlag | null;
+  signalGroups: ProminenceSignalGroups;
+  hasAnySignals: boolean;
 }
 
 interface ProminenceInput {
@@ -62,6 +85,8 @@ const LEADER_TITLE_PATTERN =
   /\b(vp|vice president|svp|evp|partner|principal|head of|director|executive director|publisher|editor-in-chief)\b/i;
 const STRONG_PROMINENCE_PATTERN =
   /\b(forbes|fortune|fast company|nyt|new york times|wsj|wall street journal|bloomberg|cnbc|tedx?|bestseller|best-selling|award|winner|honoree|keynote|wikipedia|verified|shark tank|unicorn|public company|fortune 500|inc\. 500|inc 500)\b/i;
+const PUBLIC_PERSON_PATTERN =
+  /\b(forbes|fast company|nyt|new york times|wsj|wall street journal|bloomberg|cnbc|tedx?|bestseller|best-selling|shark tank|verified public figure|public figure|inc\. 500|inc 500)\b/i;
 const C_LEVEL_TITLE_PATTERN =
   /\b(ceo|cfo|coo|cto|cio|cmo|chro|cro|chief|c-suite)\b/i;
 const FORTUNE_500_PATTERN = /\bfortune\s*500\b/i;
@@ -80,6 +105,12 @@ export function assessInterviewProminence(
 ): ProminenceAssessment {
   const badges: ProminenceBadge[] = [];
   const reasons: string[] = [];
+  const signalGroups: ProminenceSignalGroups = {
+    exceptional: [],
+    audience: [],
+    company: [],
+    context: [],
+  };
   let score = 0;
   let hardEvidenceCount = 0;
   let forceNotable = false;
@@ -87,6 +118,12 @@ export function assessInterviewProminence(
 
   const employees = input.companyEmployeeCount ?? null;
   if (employees !== null) {
+    signalGroups.company.push({
+      label: "Company Size",
+      value: formatCount(employees),
+      detail: "employees",
+      tone: employees >= 10_000 ? "emerald" : "slate",
+    });
     hardEvidenceCount++;
     if (employees >= 50_000) {
       score += 32;
@@ -104,6 +141,12 @@ export function assessInterviewProminence(
 
   const revenue = input.companyRevenueUsd ?? null;
   if (revenue !== null) {
+    signalGroups.company.push({
+      label: "Revenue",
+      value: formatMoney(revenue),
+      detail: "annual revenue",
+      tone: revenue >= 500_000_000 ? "emerald" : "slate",
+    });
     hardEvidenceCount++;
     if (revenue >= 1_000_000_000) {
       score += 30;
@@ -121,6 +164,12 @@ export function assessInterviewProminence(
 
   const followers = input.largestSocialFollowerCount ?? null;
   if (followers !== null) {
+    signalGroups.audience.push({
+      label: "Audience",
+      value: formatCount(followers),
+      detail: "largest social following",
+      tone: followers >= 500_000 ? "sky" : "slate",
+    });
     hardEvidenceCount++;
     if (followers >= 1_000_000) {
       score += 32;
@@ -142,6 +191,11 @@ export function assessInterviewProminence(
     score += 20;
     badges.push({ label: "Enterprise Company", tone: "emerald" });
     reasons.push("Company name matches a widely recognized enterprise brand.");
+    signalGroups.company.push({
+      label: "Enterprise Brand",
+      detail: "Company name matches a widely recognized enterprise brand.",
+      tone: "emerald",
+    });
   }
 
   const title = input.intervieweeTitle ?? "";
@@ -164,27 +218,51 @@ export function assessInterviewProminence(
     reasons.push(
       `C-level leader at a Fortune 500 company: ${title}.`
     );
+    signalGroups.company.push({
+      label: "Role/Company Scale",
+      value: "Fortune 500",
+      detail: `C-level leader: ${title}.`,
+      tone: "emerald",
+    });
   }
   if (MAJOR_CONFERENCE_SPEAKER_PATTERN.test(notes)) {
     score += 20;
     hardEvidenceCount++;
     forceNotable = true;
     badges.push({ label: "Major Conference Speaker", tone: "amber" });
-    reasons.push(summarizeProminenceNotes(input.prominenceNotes));
+    const detail = summarizeProminenceNotes(input.prominenceNotes);
+    reasons.push(detail);
+    signalGroups.exceptional.push({
+      label: "Major Conference",
+      detail,
+      tone: "amber",
+    });
   }
   if (UNICORN_FOUNDER_PATTERN.test([title, notes].filter(Boolean).join(" "))) {
     score += 32;
     hardEvidenceCount++;
     forceHighValue = true;
     badges.push({ label: "Unicorn Founder", tone: "emerald" });
-    reasons.push(summarizeProminenceNotes(input.prominenceNotes));
+    const detail = summarizeProminenceNotes(input.prominenceNotes);
+    reasons.push(detail);
+    signalGroups.exceptional.push({
+      label: "Unicorn Founder",
+      detail,
+      tone: "violet",
+    });
   }
   if (WIKIPEDIA_PATTERN.test(notes)) {
     score += 20;
     hardEvidenceCount++;
     forceNotable = true;
     badges.push({ label: "Wikipedia", tone: "amber" });
-    reasons.push(summarizeProminenceNotes(input.prominenceNotes));
+    const detail = summarizeProminenceNotes(input.prominenceNotes);
+    reasons.push(detail);
+    signalGroups.exceptional.push({
+      label: "Wikipedia",
+      detail,
+      tone: "amber",
+    });
   }
   if (
     MAJOR_AWARD_PATTERN.test(notes) &&
@@ -194,7 +272,13 @@ export function assessInterviewProminence(
     hardEvidenceCount++;
     forceNotable = true;
     badges.push({ label: "Major Award", tone: "amber" });
-    reasons.push(summarizeProminenceNotes(input.prominenceNotes));
+    const detail = summarizeProminenceNotes(input.prominenceNotes);
+    reasons.push(detail);
+    signalGroups.exceptional.push({
+      label: "Major Award",
+      detail,
+      tone: "amber",
+    });
   }
   if (STRONG_PROMINENCE_PATTERN.test(notes)) {
     score += 14;
@@ -205,7 +289,15 @@ export function assessInterviewProminence(
       )
     ) {
       badges.push({ label: "Prominent Person", tone: "amber" });
-      reasons.push(summarizeProminenceNotes(input.prominenceNotes));
+      const detail = summarizeProminenceNotes(input.prominenceNotes);
+      reasons.push(detail);
+      if (PUBLIC_PERSON_PATTERN.test(notes)) {
+        signalGroups.exceptional.push({
+          label: "Exceptional",
+          detail,
+          tone: "amber",
+        });
+      }
     }
   }
 
@@ -223,6 +315,23 @@ export function assessInterviewProminence(
   const tier = getTier(cappedScore, badges, { forceNotable, forceHighValue });
   const tierLabel = getTierLabel(tier);
   const visibleBadges = getVisibleBadges(tier, badges);
+  const frontFlag = getFrontFlag(signalGroups.exceptional);
+  const visibleReasons = uniqueStrings(reasons).slice(0, 4);
+
+  if (hasPrimarySignals(signalGroups)) {
+    for (const reason of visibleReasons) {
+      if (!reason) continue;
+      signalGroups.context.push({
+        label: "Evidence",
+        detail: reason,
+        tone: "slate",
+      });
+    }
+  }
+
+  const hasAnySignals = Object.values(signalGroups).some(
+    (signals) => signals.length > 0
+  );
 
   return {
     score: cappedScore,
@@ -230,8 +339,43 @@ export function assessInterviewProminence(
     tierLabel,
     confidence: getConfidence(hardEvidenceCount, input),
     badges: visibleBadges,
-    reasons: reasons.slice(0, 4),
+    reasons: visibleReasons,
+    frontFlag,
+    signalGroups,
+    hasAnySignals,
   };
+}
+
+function getFrontFlag(
+  exceptionalSignals: ProminenceSignal[]
+): ProminenceFrontFlag | null {
+  const signal = exceptionalSignals[0];
+  if (!signal) return null;
+
+  return {
+    label: signal.label,
+    tone: signal.tone === "violet" ? "violet" : "amber",
+    reason: signal.detail || signal.value || signal.label,
+  };
+}
+
+function hasPrimarySignals(signalGroups: ProminenceSignalGroups): boolean {
+  return (
+    signalGroups.exceptional.length > 0 ||
+    signalGroups.audience.length > 0 ||
+    signalGroups.company.length > 0
+  );
+}
+
+function uniqueStrings(values: string[]): string[] {
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const value of values) {
+    if (seen.has(value)) continue;
+    seen.add(value);
+    unique.push(value);
+  }
+  return unique;
 }
 
 export function parseCountMetric(value: string | null): number | null {
