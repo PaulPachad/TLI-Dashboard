@@ -61,6 +61,12 @@ export interface UnpublishedInterviewRow {
   reason: string;
 }
 
+export interface LimitedImportRows {
+  rows: string[][];
+  rowOffset: number;
+  usableRows: number;
+}
+
 function extractUrlForHosts(value: string, hosts: string[]): string | null {
   const urls = value.match(/https?:\/\/[^\s,;)\]]+/gi) ?? [];
 
@@ -272,6 +278,63 @@ export function normalizeRows(
     totalRows: dataRows.length,
     warnings,
   };
+}
+
+export function takeLastUsableRows(
+  rawData: string[][],
+  mappings: Array<Pick<HeaderMapping, "field" | "columnIndex">>,
+  targetLimit: number
+): LimitedImportRows {
+  const dataRows = rawData.slice(1);
+  const estimatedPublishDateColumn = mappings.find(
+    (mapping) => mapping.field === "estimatedPublishDate"
+  )?.columnIndex;
+
+  let startIndex = dataRows.length;
+  let usableRows = 0;
+
+  for (let index = dataRows.length - 1; index >= 0; index--) {
+    const row = dataRows[index];
+    startIndex = index;
+
+    if (isImportLimiterUsableRow(row, estimatedPublishDateColumn)) {
+      usableRows++;
+    }
+
+    if (usableRows >= targetLimit) {
+      break;
+    }
+  }
+
+  return {
+    rows: dataRows.slice(startIndex),
+    rowOffset: startIndex,
+    usableRows,
+  };
+}
+
+function isImportLimiterUsableRow(
+  row: string[],
+  estimatedPublishDateColumn?: number
+): boolean {
+  if (!row || row.every((cell) => !cell || String(cell).trim() === "")) {
+    return false;
+  }
+
+  if (estimatedPublishDateColumn === undefined) {
+    return true;
+  }
+
+  const estimatedPublishDate = row[estimatedPublishDateColumn];
+  if (!estimatedPublishDate) {
+    return true;
+  }
+
+  const normalized = String(estimatedPublishDate).trim().toLowerCase();
+  return (
+    !normalized.includes("attention needed") &&
+    !normalized.includes("please resubmit")
+  );
 }
 
 function isAuthorityMagazineUrl(value: string): boolean {

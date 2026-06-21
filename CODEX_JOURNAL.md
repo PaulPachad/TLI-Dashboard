@@ -1,5 +1,82 @@
 # Codex Journal
 
+## June 20, 2026
+
+### Yitzi Weiner Dashboard Was Cleared After Bad Import
+
+Yitzi asked to remove the overloaded import from his own dashboard after the large sheet caused browser trouble.
+
+- **What was changed**:
+  - Found the production "Yitzi Weiner" client record.
+  - Backed up the imported interviews, actions, and sheet source locally.
+  - Deleted the imported dashboard entries tied to the "Form Responses 1" sheet source.
+
+- **Why it is useful**:
+  - Yitzi's dashboard can be opened without trying to load thousands of accidentally imported records.
+
+- **Problem solved**:
+  - The bad import was isolated to one sheet source with 6,130 interviews and 6,137 related actions. The cleanup removed those records while leaving the client account itself intact.
+
+- **What remains to be done**:
+  - Re-import with the fixed large-sheet limiter so only the intended usable rows return.
+
+- **Relevant Files**:
+  - Local backup: [yitzi-weiner-import-delete-backup-2026-06-21T02-39-56-217Z.json](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/scratch/yitzi-weiner-import-delete-backup-2026-06-21T02-39-56-217Z.json)
+
+## June 20, 2026
+
+### Attention-Needed Rows No Longer Steal Import Slots
+
+Yitzi found that a large sheet with many "attention needed" rows near the end could import only one real interview, even though the app was supposed to import the latest 100.
+
+- **What was changed**:
+  - The large-sheet limiter now walks backward until it finds 100 usable rows.
+  - Rows marked "attention needed" or "please resubmit" are skipped without counting against that 100-row window.
+  - A regression test now recreates the 2,100-row case with 99 attention-needed rows near the end.
+
+- **Why it is useful**:
+  - The browser safety limit still exists, but it no longer blocks real interview imports because skipped rows got counted first.
+
+- **Problem solved**:
+  - The old code sliced the last 100 physical rows before the attention-needed filter ran. The new shared limiter expands the slice enough for 100 usable interviews to survive while preserving the original sheet row numbers.
+
+- **What remains to be done**:
+  - Re-test the real production sheet and confirm the preview/import count now matches the expected 100 usable rows.
+
+- **Relevant Files**:
+  - Sheet Import API: [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/app/api/import-google-sheet/route.ts)
+  - Row Normalizer: [row-normalizer.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/lib/google-sheets/row-normalizer.ts)
+  - Google Sheets Exports: [index.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/lib/google-sheets/index.ts)
+  - Tests: [google-sheets.test.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/tests/google-sheets.test.ts)
+
+## June 20, 2026
+
+### Chrome Rescue and Large Import Browser Guardrails
+
+Yitzi discovered that a very large interviews sheet could overload Chrome after the browser tried to reopen the app.
+
+- **What was changed**:
+  - Moved Chrome's active session-restore files for the recently touched profiles into a safe backup folder.
+  - Limited the Google Sheets import preview to a small visible sample while keeping the full import count.
+  - Added paged loading to the interview dashboard so thousands of interviews are not rendered all at once.
+
+- **Why it is useful**:
+  - Chrome should be able to open again without restoring the overloaded tab.
+  - Large client histories can still be imported, but the app keeps the browser calm and responsive.
+
+- **Problem solved**:
+  - The app already limited normal large-sheet imports, but "import all" and the dashboard list could still send thousands of rows into the browser. The new preview cap and dashboard pagination close that gap.
+
+- **What remains to be done**:
+  - Open Chrome again and confirm the profile starts normally.
+  - Re-test the real 5,000-row production import after deployment.
+
+- **Relevant Files**:
+  - Sheet Import API: [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/app/api/import-google-sheet/route.ts)
+  - Sheet Import UI: [sheet-import-form.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/admin/sheet-import-form.tsx)
+  - Interviews API: [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/app/api/interviews/route.ts)
+  - Dashboard Grid: [interview-grid.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/dashboard/interview-grid.tsx)
+
 ## June 19, 2026
 
 ### Smarter Column Detection & Manual Column Mapping UI

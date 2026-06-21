@@ -11,9 +11,12 @@ interface ImportPreview {
   sheetTitle: string;
   totalRows: number;
   published: number;
+  unpublishedTotal?: number;
   skippedNoArticle: number;
   skippedInvalidArticle: number;
   skippedEmpty: number;
+  previewLimit?: number;
+  previewTruncated?: boolean;
   interviews: Array<{
     rowNumber: number;
     intervieweeName: string;
@@ -66,6 +69,8 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
 
   const previewInterviews = preview?.interviews ?? [];
   const unpublishedInterviews = preview?.unpublished ?? [];
+  const unpublishedTotal = preview?.unpublishedTotal ?? unpublishedInterviews.length;
+  const importableTotal = (preview?.published ?? 0) + unpublishedTotal;
   const headerMappings = preview?.headerMappings ?? [];
   const unmappedHeaders = preview?.unmappedHeaders ?? [];
 
@@ -447,9 +452,16 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
               </div>
               <div className="bg-amber-50 rounded-lg p-3">
                 <p className="text-xs text-amber-600">Unpublished</p>
-                <p className="font-semibold text-amber-700">{preview.unpublished?.length ?? 0}</p>
+                <p className="font-semibold text-amber-700">{unpublishedTotal}</p>
               </div>
             </div>
+
+            {preview.previewTruncated && (
+              <div className="mb-4 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+                Showing the first {preview.previewLimit ?? previewInterviews.length} preview rows so the browser stays fast.
+                The full {importableTotal} interview(s) will still be imported when confirmed.
+              </div>
+            )}
 
             {/* Column mappings */}
             <div className="flex items-center justify-between mb-4">
@@ -586,15 +598,15 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
             <button
               id="confirm-import-btn"
               onClick={handleConfirmImport}
-              disabled={loading || (preview.published === 0 && (!preview.unpublished || preview.unpublished.length === 0))}
+              disabled={loading || importableTotal === 0}
               className="px-6 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium
                          hover:bg-emerald-700 disabled:opacity-50 transition-colors"
             >
               {loading
                 ? "Importing..."
-                : preview.published === 0 && (!preview.unpublished || preview.unpublished.length === 0)
+                : importableTotal === 0
                   ? "No Interviews Found"
-                  : `Import ${preview.published + (preview.unpublished?.length ?? 0)} Interview(s)`}
+                  : `Import ${importableTotal} Interview(s)`}
             </button>
           </div>
         </div>

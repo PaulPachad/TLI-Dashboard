@@ -14,6 +14,7 @@ import {
   readSheetData,
   mapHeaders,
   normalizeRows,
+  takeLastUsableRows,
   deduplicateInterviewRecords,
   isDemoMode,
   SheetsConfigError,
@@ -27,6 +28,8 @@ interface ImportRequest {
   importAll?: boolean; // If true, sync all. Otherwise limit to last 100 if > 200 entries.
   customMappings?: Record<string, number>;
 }
+
+const PREVIEW_ROW_LIMIT = 100;
 
 export async function POST(request: NextRequest) {
   try {
@@ -125,19 +128,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // --- Limit large sheets to the last 100 rows by default ---
+    // --- Limit large sheets to the last 100 usable rows by default ---
     const totalDataRows = rawData.length - 1;
     let finalRawData = rawData;
     let rowOffset = 0;
+    let limitedCandidateRows = 0;
     const importAll = !!body.importAll;
     const wasLimited = !importAll && totalDataRows > 200;
 
     if (wasLimited) {
       const targetLimit = 100;
-      const skippedCount = totalDataRows - targetLimit;
-      const dataRows = rawData.slice(1);
-      finalRawData = [rawData[0], ...dataRows.slice(-targetLimit)];
-      rowOffset = skippedCount;
+      const limitedRows = takeLastUsableRows(
+        rawData,
+        headerResult.mappings,
+        targetLimit
+      );
+      finalRawData = [rawData[0], ...limitedRows.rows];
+      rowOffset = limitedRows.rowOffset;
+      limitedCandidateRows = limitedRows.usableRows;
     }
 
     // --- Normalize rows ---
@@ -149,16 +157,43 @@ export async function POST(request: NextRequest) {
       r.articleUrl.includes("/unpublished/") ||
       r.liveEmailStatusImported?.toUpperCase() !== "LIVE";
 
+    const publishedPreviewRows = importRecords.filter(
+      (r) => !isRecordUnpublished(r)
+    );
+    const unpublishedRows = [
+      ...normResult.unpublished.map((r) => ({
+        rowNumber: r.sourceRowNumber,
+        intervieweeName: r.intervieweeName,
+        topic: r.topic,
+        estimatedPublishDate: r.estimatedPublishDate,
+        reason: r.reason,
+      })),
+      ...importRecords
+        .filter((r) => !r.articleUrl.includes("/unpublished/") && r.liveEmailStatusImported?.toUpperCase() !== "LIVE")
+        .map((r) => ({
+          rowNumber: r.sourceRowNumber,
+          intervieweeName: r.intervieweeName,
+          topic: r.topic,
+          estimatedPublishDate: r.estimatedPublishDate,
+          reason: `Authority Magazine Link exists, but status is "${r.liveEmailStatusImported || "blank"}" (needs "LIVE")`,
+        })),
+    ].sort((a, b) => a.rowNumber - b.rowNumber);
+
     const basePreview = {
       demoMode: isDemoMode(),
       sheetTitle: tabTitle,
       totalRows: normResult.totalRows,
-      published: importRecords.filter((r) => !isRecordUnpublished(r)).length,
+      published: publishedPreviewRows.length,
+      unpublishedTotal: unpublishedRows.length,
       skippedNoArticle: 0,
       skippedInvalidArticle: 0,
       skippedEmpty: normResult.skippedEmptyRow,
-      interviews: importRecords
-        .filter((r) => !isRecordUnpublished(r))
+      previewLimit: PREVIEW_ROW_LIMIT,
+      previewTruncated:
+        publishedPreviewRows.length > PREVIEW_ROW_LIMIT ||
+        unpublishedRows.length > PREVIEW_ROW_LIMIT,
+      interviews: publishedPreviewRows
+        .slice(0, PREVIEW_ROW_LIMIT)
         .map((r) => ({
           rowNumber: r.sourceRowNumber,
           intervieweeName: r.intervieweeName,
@@ -174,24 +209,7 @@ export async function POST(request: NextRequest) {
               ? true
               : false,
         })),
-      unpublished: [
-        ...normResult.unpublished.map((r) => ({
-          rowNumber: r.sourceRowNumber,
-          intervieweeName: r.intervieweeName,
-          topic: r.topic,
-          estimatedPublishDate: r.estimatedPublishDate,
-          reason: r.reason,
-        })),
-        ...importRecords
-          .filter((r) => !r.articleUrl.includes("/unpublished/") && r.liveEmailStatusImported?.toUpperCase() !== "LIVE")
-          .map((r) => ({
-            rowNumber: r.sourceRowNumber,
-            intervieweeName: r.intervieweeName,
-            topic: r.topic,
-            estimatedPublishDate: r.estimatedPublishDate,
-            reason: `Authority Magazine Link exists, but status is "${r.liveEmailStatusImported || "blank"}" (needs "LIVE")`,
-          })),
-      ].sort((a, b) => a.rowNumber - b.rowNumber),
+      unpublished: unpublishedRows.slice(0, PREVIEW_ROW_LIMIT),
       headerMappings: headerResult.mappings.map((m) => ({
         field: m.field,
         matchedHeader: m.matchedHeader,
@@ -258,8 +276,9 @@ export async function POST(request: NextRequest) {
     const warnings = [...headerResult.warnings, ...normResult.warnings];
     if (wasLimited) {
       warnings.push(
-        `This sheet has ${totalDataRows} entries. By default, only the last 100 entries ` +
-          `are loaded. Check "Import all entries" to load the entire sheet.`
+        `This sheet has ${totalDataRows} entries. By default, only the last ${limitedCandidateRows} usable entries ` +
+          `are loaded; rows marked "attention needed" or "please resubmit" do not count toward that limit. ` +
+          `Check "Import all entries" to load the entire sheet.`
       );
     }
     if (deduplicated.duplicates.length > 0) {

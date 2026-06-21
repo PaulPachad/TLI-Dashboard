@@ -33,6 +33,7 @@ const PROMINENCE_PRIORITY: Record<string, number> = {
   standard: 0,
 };
 const QUIET_SCAN_LIMIT = 6;
+const PAGE_SIZE = 120;
 
 type NoticeTone = "success" | "warning";
 
@@ -56,9 +57,19 @@ interface ProminenceResponse {
   diagnostics?: SearchDiagnostics;
 }
 
+interface InterviewPagination {
+  totalCount: number;
+  offset: number;
+  limit: number;
+  returned: number;
+  hasMore: boolean;
+}
+
 export function InterviewGrid({ clientId }: InterviewGridProps) {
   const [interviews, setInterviews] = useState<InterviewView[]>([]);
+  const [pagination, setPagination] = useState<InterviewPagination | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -69,15 +80,24 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
   const [notice, setNotice] = useState<DashboardNotice | null>(null);
   const quietScanStarted = useRef(false);
 
-  const fetchInterviews = useCallback(async () => {
+  const fetchInterviews = useCallback(async ({
+    append = false,
+    offset = 0,
+  }: {
+    append?: boolean;
+    offset?: number;
+  } = {}) => {
     try {
-      setLoading(true);
+      if (append) setLoadingMore(true);
+      else setLoading(true);
       setError(null);
 
       const params = new URLSearchParams();
       if (clientId) params.set("clientId", clientId);
       if (search) params.set("search", search);
       if (statusFilter !== "all") params.set("status", statusFilter);
+      params.set("limit", String(PAGE_SIZE));
+      params.set("offset", String(offset));
 
       const res = await fetch(`/api/interviews?${params.toString()}`);
       if (!res.ok) {
@@ -86,11 +106,16 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
       }
 
       const data = await res.json();
-      setInterviews(data.interviews || []);
+      const nextInterviews = data.interviews || [];
+      setInterviews((current) =>
+        append ? [...current, ...nextInterviews] : nextInterviews
+      );
+      setPagination(data.pagination || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load interviews.");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }, [clientId, search, statusFilter]);
 
@@ -196,7 +221,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
 
   // Stats
   const stats = {
-    total: interviews.length,
+    total: pagination?.totalCount ?? interviews.length,
     upcoming: interviews.filter(isUnpublished).length,
     needsAction: interviews.filter((interview) => !isUnpublished(interview) && interview.currentStatus !== "leveraged").length,
     leveraged: interviews.filter((interview) => interview.currentStatus === "leveraged").length,
@@ -333,11 +358,18 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
         <div className="bg-rose-50 border border-rose-200 rounded-xl p-6 text-center">
           <p className="text-rose-700 font-medium">{error}</p>
           <button
-            onClick={fetchInterviews}
+            onClick={() => fetchInterviews()}
             className="mt-3 px-4 py-2 bg-rose-600 text-white rounded-lg text-sm hover:bg-rose-700 transition-colors"
           >
             Try Again
           </button>
+        </div>
+      )}
+
+      {!loading && !error && pagination && pagination.totalCount > PAGE_SIZE && (
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+          Showing {interviews.length} of {pagination.totalCount} interview(s).
+          Use search or filters to narrow the list, or load more when needed.
         </div>
       )}
 
@@ -374,6 +406,24 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
               autoScanQueued={shouldQuietScanProminence(interview)}
             />
           ))}
+        </div>
+      )}
+
+      {!loading && !error && pagination?.hasMore && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() =>
+              fetchInterviews({
+                append: true,
+                offset: pagination.offset + pagination.limit,
+              })
+            }
+            disabled={loadingMore}
+            className="rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loadingMore ? "Loading..." : "Load more"}
+          </button>
         </div>
       )}
 

@@ -7,6 +7,7 @@ import { parseGoogleSheetUrl, appendSheetUrlParams } from "../src/lib/google-she
 import {
   extractSocialProfiles,
   normalizeRows,
+  takeLastUsableRows,
 } from "../src/lib/google-sheets/row-normalizer";
 import {
   buildInterviewImageSources,
@@ -315,6 +316,53 @@ test("ignores rows with 'attention needed' in the estimated publishing date", ()
   assert.ok(result.warnings.some(w => w.includes("2 row(s) were ignored because their Estimated Publishing Date contains")));
 });
 
+test("large sheet limiter does not count attention-needed rows toward the 100-row import window", () => {
+  const rows = [
+    ["Authority Magazine Link", "Interviewee Name", "Estimated Publishing Date"],
+  ];
+
+  for (let index = 1; index <= 2000; index++) {
+    rows.push([
+      `https://medium.com/authority-magazine/valid-older-${index}`,
+      `Older Guest ${index}`,
+      "2026-07-01",
+    ]);
+  }
+
+  for (let index = 1; index <= 99; index++) {
+    rows.push([
+      `https://medium.com/authority-magazine/attention-needed-${index}`,
+      `Attention Guest ${index}`,
+      "Attention Needed",
+    ]);
+  }
+
+  rows.push([
+    "https://medium.com/authority-magazine/newest-valid",
+    "Newest Valid Guest",
+    "2026-07-02",
+  ]);
+
+  const mappings = mapHeaders(rows[0]).mappings;
+  const limitedRows = takeLastUsableRows(rows, mappings, 100);
+  const normalized = normalizeRows(
+    [rows[0], ...limitedRows.rows],
+    mappings,
+    0,
+    "test-spreadsheet-id",
+    limitedRows.rowOffset
+  );
+
+  assert.equal(limitedRows.usableRows, 100);
+  assert.equal(limitedRows.rows.length, 199);
+  assert.equal(normalized.published.length, 100);
+  assert.equal(normalized.skippedNeedsAttention, 99);
+  assert.equal(
+    normalized.published.at(-1)?.intervieweeName,
+    "Newest Valid Guest"
+  );
+});
+
 test("serializes and parses customMappings and importAll parameters in Google Sheets URLs", () => {
   const originalUrl = "https://docs.google.com/spreadsheets/d/abc-123/edit#gid=456";
   const updatedUrl = appendSheetUrlParams(originalUrl, {
@@ -388,4 +436,3 @@ test("smart detection ignores dropbox.com/ URLs and URLs whose path merely conta
   const res4 = mapHeaders(["Header"], [["Header"], ["x.com/user"]]);
   assert.ok(res4.mappings.find((m) => m.field === "twitterUrl"));
 });
-

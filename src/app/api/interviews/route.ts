@@ -57,6 +57,9 @@ type InterviewWithActions = Prisma.InterviewGetPayload<{
   select: typeof interviewSelect;
 }>;
 
+const DEFAULT_PAGE_SIZE = 120;
+const MAX_PAGE_SIZE = 250;
+
 export async function GET(request: NextRequest) {
   try {
     const user = await requireApiAuth();
@@ -65,6 +68,12 @@ export async function GET(request: NextRequest) {
     const clientId = searchParams.get("clientId");
     const search = searchParams.get("search");
     const status = searchParams.get("status"); // "new" | "email_sent" | "shared" | "needs_contact" | "all"
+    const limit = clampPositiveInteger(
+      searchParams.get("limit"),
+      DEFAULT_PAGE_SIZE,
+      MAX_PAGE_SIZE
+    );
+    const offset = clampPositiveInteger(searchParams.get("offset"), 0);
 
     // Determine which client's interviews to fetch
     let targetClientId: string;
@@ -75,10 +84,22 @@ export async function GET(request: NextRequest) {
       targetClientId = user.clientId;
     } else if (user.role === UserRole.ADMIN) {
       // Admin without specific client — return all
+      const totalCount = await db.interview.count();
       const interviews = await findInterviews({
         orderBy: { createdAt: "desc" },
+        skip: offset,
+        take: limit,
       });
-      return NextResponse.json({ interviews: interviews.map(enrichInterview) });
+      return NextResponse.json({
+        interviews: interviews.map(enrichInterview),
+        pagination: {
+          totalCount,
+          offset,
+          limit,
+          returned: interviews.length,
+          hasMore: offset + interviews.length < totalCount,
+        },
+      });
     } else {
       return NextResponse.json(
         { error: "No client associated with this account." },
@@ -105,9 +126,12 @@ export async function GET(request: NextRequest) {
       where.publicistEmail = null;
     }
 
+    const totalCount = await db.interview.count({ where });
     const interviews = await findInterviews({
       where,
       orderBy: { createdAt: "desc" },
+      skip: offset,
+      take: limit,
     });
 
     let enriched = interviews.map(enrichInterview);
@@ -127,7 +151,16 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ interviews: enriched });
+    return NextResponse.json({
+      interviews: enriched,
+      pagination: {
+        totalCount,
+        offset,
+        limit,
+        returned: enriched.length,
+        hasMore: offset + interviews.length < totalCount,
+      },
+    });
   } catch (error: unknown) {
     const err = error as { status?: number; message?: string };
     if (err.status) {
@@ -144,7 +177,7 @@ export async function GET(request: NextRequest) {
 // --- Interview enrichment: compute status and next action ---
 
 async function findInterviews(
-  args: Pick<Prisma.InterviewFindManyArgs, "where" | "orderBy">
+  args: Pick<Prisma.InterviewFindManyArgs, "where" | "orderBy" | "skip" | "take">
 ): Promise<InterviewWithActions[]> {
   try {
     return await db.interview.findMany({
@@ -169,6 +202,17 @@ async function findInterviews(
       prominenceNotes: null,
     }));
   }
+}
+
+function clampPositiveInteger(
+  value: string | null,
+  fallback: number,
+  max?: number
+): number {
+  if (!value) return fallback;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  return max ? Math.min(parsed, max) : parsed;
 }
 
 function isMissingProminenceColumnError(error: unknown): boolean {
