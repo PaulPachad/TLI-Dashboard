@@ -3,6 +3,10 @@ export type { ParsedSheetUrl } from "./parse-url";
 
 export { mapHeaders } from "./header-mapper";
 export type { HeaderMapping, HeaderMappingResult } from "./header-mapper";
+export {
+  getSpreadsheetColumnLabel,
+  parseSpreadsheetColumnReference,
+} from "./column-label";
 
 export {
   getSheetsClient,

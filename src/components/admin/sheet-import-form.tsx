@@ -5,6 +5,7 @@
 // ==============================================================================
 
 import { useState } from "react";
+import { getSpreadsheetColumnLabel } from "@/lib/google-sheets/column-label";
 
 interface ImportPreview {
   demoMode: boolean;
@@ -36,6 +37,7 @@ interface ImportPreview {
     field: string;
     matchedHeader: string;
     matchType: string;
+    columnIndex: number;
   }>;
   unmappedHeaders?: string[];
 }
@@ -334,7 +336,7 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
                       <option value="">Auto-detect</option>
                       {sheetHeaders.map((header, idx) => (
                         <option key={idx} value={idx}>
-                          Col {idx + 1}: {header || `Column ${idx + 1}`}
+                          Column {getSpreadsheetColumnLabel(idx)}: {header || "Blank header"}
                         </option>
                       ))}
                     </select>
@@ -472,6 +474,9 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
                 <div className="mt-2 bg-slate-50 rounded-lg p-3 space-y-1">
                   {headerMappings.map((m, i) => (
                     <div key={i} className="text-xs flex items-center gap-2">
+                      <span className="text-slate-500 w-16 shrink-0 font-mono">
+                        Column {getSpreadsheetColumnLabel(m.columnIndex)}
+                      </span>
                       <span className="text-slate-400 w-36 truncate">{m.matchedHeader}</span>
                       <span className="text-slate-300">→</span>
                       <span className="text-slate-700 font-medium">{m.field}</span>

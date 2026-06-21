@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import {
+  getSpreadsheetColumnLabel,
+  parseSpreadsheetColumnReference,
+} from "../src/lib/google-sheets/column-label";
 import { resolveTabTitle } from "../src/lib/google-sheets/client";
 import { deduplicateInterviewRecords } from "../src/lib/google-sheets/deduplicate";
 import { mapHeaders } from "../src/lib/google-sheets/header-mapper";
@@ -53,6 +57,32 @@ test("rejects links that are not Google Sheets URLs", () => {
     () => parseGoogleSheetUrl("https://example.com/spreadsheet"),
     /does not look like a Google Sheets URL/
   );
+});
+
+test("formats spreadsheet column indexes as Google Sheets letters", () => {
+  assert.equal(getSpreadsheetColumnLabel(0), "A");
+  assert.equal(getSpreadsheetColumnLabel(18), "S");
+  assert.equal(getSpreadsheetColumnLabel(25), "Z");
+  assert.equal(getSpreadsheetColumnLabel(26), "AA");
+  assert.equal(getSpreadsheetColumnLabel(27), "AB");
+  assert.equal(getSpreadsheetColumnLabel(701), "ZZ");
+  assert.equal(getSpreadsheetColumnLabel(702), "AAA");
+});
+
+test("parses spreadsheet column letters in saved custom mappings", () => {
+  assert.equal(parseSpreadsheetColumnReference("A"), 0);
+  assert.equal(parseSpreadsheetColumnReference("S"), 18);
+  assert.equal(parseSpreadsheetColumnReference("AA"), 26);
+  assert.equal(parseSpreadsheetColumnReference("19"), 19);
+
+  const parsed = parseGoogleSheetUrl(
+    "https://docs.google.com/spreadsheets/d/sheet-id/edit#gid=789&colmap=articleUrl:S,intervieweeName:B"
+  );
+
+  assert.deepEqual(parsed.customMappings, {
+    articleUrl: 18,
+    intervieweeName: 1,
+  });
 });
 
 test("link-accessible mode preserves a real spreadsheet tab gid", async () => {

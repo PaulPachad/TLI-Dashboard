@@ -2,6 +2,35 @@
 
 ## June 20, 2026
 
+### Column Mapping Now Uses Google Sheets Letters
+
+Yitzi noticed that the manual import mapper was hard to use because it showed columns as numbers, like "Col 19," while Google Sheets labels that same column with a letter, like "S."
+
+- **What was changed**:
+  - The column mapping dropdown now shows spreadsheet-style letters, such as "Column A," "Column S," and "Column AA."
+  - The import preview's mapping summary also shows the matching column letter beside each detected field.
+  - Saved mapping links can now understand letter-based column references too, while still supporting the older numeric format.
+
+- **What the feature does**:
+  - It lets Yitzi choose import columns using the same letters shown at the top of the Google Sheet.
+
+- **Why it is useful or exciting**:
+  - Manual mapping now lines up with what Yitzi sees in the real sheet, so fixing unusual sheets no longer requires counting columns by hand.
+
+- **Interesting problem solved**:
+  - The app still keeps its internal zero-based column indexes for imports, but translates them into familiar spreadsheet letters for people using the UI.
+
+- **What remains**:
+  - Try it against the real sheet that caused the confusion and confirm the correct Authority Magazine link column is easy to select.
+
+- **Relevant files**:
+  - Import UI: [sheet-import-form.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/admin/sheet-import-form.tsx)
+  - Column letter helper: [column-label.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/lib/google-sheets/column-label.ts)
+  - URL parser: [parse-url.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/lib/google-sheets/parse-url.ts)
+  - Tests: [google-sheets.test.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/tests/google-sheets.test.ts)
+
+## June 20, 2026
+
 ### Yitzi Weiner Dashboard Was Cleared After Bad Import
 
 Yitzi asked to remove the overloaded import from his own dashboard after the large sheet caused browser trouble.

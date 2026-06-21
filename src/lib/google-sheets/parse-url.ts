@@ -10,6 +10,8 @@
 //
 // If no gid is found, returns null (caller should use first tab).
 
+import { parseSpreadsheetColumnReference } from "./column-label";
+
 export interface ParsedSheetUrl {
   spreadsheetId: string;
   gid: string | null;
@@ -72,8 +74,8 @@ export function parseGoogleSheetUrl(url: string): ParsedSheetUrl {
       for (const part of parts) {
         const [field, indexStr] = part.split(":");
         if (field && indexStr) {
-          const idx = parseInt(indexStr, 10);
-          if (!isNaN(idx)) {
+          const idx = parseSpreadsheetColumnReference(indexStr);
+          if (idx !== null) {
             customMappings[field] = idx;
           }
         }
