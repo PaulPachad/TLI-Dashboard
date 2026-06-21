@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {
   buildBackgroundProminenceWhere,
+  buildLegacyBackgroundProminenceWhere,
   getVipProminenceCronLimit,
+  isMissingProminenceSignalsColumnError,
   isCronRequestAuthorized,
 } from "@/lib/prominence/background-scan";
 import {
@@ -12,6 +14,20 @@ import {
 } from "@/lib/prominence/research";
 import { saveProminenceResearch } from "@/lib/prominence/service";
 
+const researchableInterviewSelect = {
+  id: true,
+  clientId: true,
+  intervieweeName: true,
+  intervieweeCompany: true,
+  intervieweeTitle: true,
+  topic: true,
+  articleUrl: true,
+  buzzfeedUrl: true,
+  interviewDocUrl: true,
+  linkedinUrl: true,
+  twitterUrl: true,
+} as const;
+
 export async function GET(request: NextRequest) {
   if (!isCronRequestAuthorized(request.headers.get("authorization"))) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -19,14 +35,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const limit = getVipProminenceCronLimit();
-    const candidates = await db.interview.findMany({
-      where: buildBackgroundProminenceWhere(),
-      orderBy: [
-        { estimatedPublishDate: "asc" },
-        { createdAt: "desc" },
-      ],
-      take: limit,
-    });
+    const candidates = await findCronProminenceCandidates(limit);
 
     let updated = 0;
     let failed = 0;
@@ -67,5 +76,24 @@ export async function GET(request: NextRequest) {
       { error: "Could not run background standout research." },
       { status: 500 }
     );
+  }
+}
+
+async function findCronProminenceCandidates(limit: number) {
+  try {
+    return await db.interview.findMany({
+      where: buildBackgroundProminenceWhere(),
+      orderBy: [{ estimatedPublishDate: "asc" }, { createdAt: "desc" }],
+      take: limit,
+      select: researchableInterviewSelect,
+    });
+  } catch (error) {
+    if (!isMissingProminenceSignalsColumnError(error)) throw error;
+    return db.interview.findMany({
+      where: buildLegacyBackgroundProminenceWhere(),
+      orderBy: [{ estimatedPublishDate: "asc" }, { createdAt: "desc" }],
+      take: limit,
+      select: researchableInterviewSelect,
+    });
   }
 }

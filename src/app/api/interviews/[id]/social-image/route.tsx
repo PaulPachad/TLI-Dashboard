@@ -2,12 +2,10 @@ import { NextRequest } from "next/server";
 import { ImageResponse } from "next/og";
 import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
-import { remoteHtmlToText } from "@/lib/images/remote-html";
 import { remoteImageUrlToDataUrl } from "@/lib/images/remote-image";
 import {
   buildInterviewImageSources,
   extractArticleTitleFromUrl,
-  extractArticleMetadata,
 } from "@/lib/images/interview-image";
 import { fetchArticleMetadata } from "@/lib/images/interview-image-server";
 import { readFile } from "fs/promises";
@@ -26,7 +24,16 @@ export async function GET(
 
     const interview = await db.interview.findUnique({
       where: { id },
-      include: { client: true },
+      select: {
+        id: true,
+        clientId: true,
+        intervieweeName: true,
+        intervieweeCompany: true,
+        intervieweeTitle: true,
+        articleUrl: true,
+        image1Url: true,
+        image2Url: true,
+      },
     });
 
     if (!interview) {

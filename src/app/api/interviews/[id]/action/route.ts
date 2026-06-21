@@ -34,6 +34,22 @@ interface ActionBody {
   data?: ActionData;
 }
 
+const actionInterviewSelect = {
+  id: true,
+  clientId: true,
+  intervieweeName: true,
+  intervieweeCompany: true,
+  intervieweeEmail: true,
+  publicistName: true,
+  publicistEmail: true,
+  topic: true,
+  articleUrl: true,
+  client: true,
+  actions: {
+    select: { actionType: true, status: true },
+  },
+} as const;
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -44,12 +60,7 @@ export async function GET(
 
     const interview = await db.interview.findUnique({
       where: { id },
-      include: {
-        client: true,
-        actions: {
-          select: { actionType: true, status: true },
-        },
-      },
+      select: actionInterviewSelect,
     });
 
     if (!interview) {
@@ -145,12 +156,7 @@ export async function POST(
     // Fetch the interview details
     const interview = await db.interview.findUnique({
       where: { id },
-      include: {
-        client: true,
-        actions: {
-          select: { actionType: true, status: true },
-        },
-      },
+      select: actionInterviewSelect,
     });
 
     if (!interview) {
@@ -207,6 +213,12 @@ export async function POST(
             intervieweeEmail: intervieweeEmail || interview.intervieweeEmail,
             publicistName: publicistName || interview.publicistName,
             publicistEmail: publicistEmail || interview.publicistEmail,
+          },
+          select: {
+            id: true,
+            intervieweeEmail: true,
+            publicistName: true,
+            publicistEmail: true,
           },
         });
 

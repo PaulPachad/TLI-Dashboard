@@ -35,6 +35,20 @@ Yitzi noticed that the VIP information on card backs was not useful because it r
   - Detail panel: [interview-detail-panel.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/panels/interview-detail-panel.tsx)
   - Tests: [workflow-logic.test.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/tests/workflow-logic.test.ts)
 
+### Standout Signals Migration Gap Was Safely Handled
+
+Yitzi saw the dashboard warn that the new `prominenceSignalsJson` column did not exist in the current database.
+
+- **What was changed**: The app now uses narrower interview reads and a legacy save fallback around standout research, so the dashboard can keep working even if the database migration has not been applied yet.
+- **What the fix does**: Manual research, quiet research, cron research, card actions, and social-image generation avoid loading the new column unnecessarily. When the column is missing, research can still save the older safe fields instead of crashing.
+- **Why it is useful or exciting**: This protects the dashboard during deployment/migration timing gaps, which is exactly when a new database field is most likely to cause a scary user-facing error.
+- **Interesting problem solved**: The code was correct after migration, but Prisma can still fail before migration because full-row reads include every known field. The fix makes the app more tolerant while the database catches up.
+- **What remains**: Apply the production PostgreSQL migration so structured Standout Signals can be stored permanently in production.
+- **Relevant files**:
+  - [background-scan.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/lib/prominence/background-scan.ts)
+  - [service.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/lib/prominence/service.ts)
+  - [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/app/api/interviews/[id]/prominence/route.ts)
+
 ### Adjust VIP Research Cron for Vercel Hobby Limits
 
 - **What was changed**: Adjusted the Vercel cron schedule in `vercel.json` from every 15 minutes to once per day (`0 4 * * *`).

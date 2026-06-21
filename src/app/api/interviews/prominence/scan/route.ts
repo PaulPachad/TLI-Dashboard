@@ -3,7 +3,11 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
 import { UserRole } from "@/types/db";
-import { buildBackgroundProminenceWhere } from "@/lib/prominence/background-scan";
+import {
+  buildBackgroundProminenceWhere,
+  buildLegacyBackgroundProminenceWhere,
+  isMissingProminenceSignalsColumnError,
+} from "@/lib/prominence/background-scan";
 import {
   GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
   GoogleSearchConfigError,
@@ -13,6 +17,19 @@ import { saveProminenceResearch } from "@/lib/prominence/service";
 
 const DEFAULT_SCAN_LIMIT = 3;
 const MAX_SCAN_LIMIT = 6;
+const researchableInterviewSelect = {
+  id: true,
+  clientId: true,
+  intervieweeName: true,
+  intervieweeCompany: true,
+  intervieweeTitle: true,
+  topic: true,
+  articleUrl: true,
+  buzzfeedUrl: true,
+  interviewDocUrl: true,
+  linkedinUrl: true,
+  twitterUrl: true,
+} satisfies Prisma.InterviewSelect;
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,14 +72,7 @@ export async function POST(request: NextRequest) {
         : {}),
     };
 
-    const candidates = await db.interview.findMany({
-      where,
-      orderBy: [
-        { estimatedPublishDate: "asc" },
-        { createdAt: "desc" },
-      ],
-      take: limit,
-    });
+    const candidates = await findProminenceCandidates(where, limit);
     const candidateOrder = new Map(
       requestedInterviewIds.map((id, index) => [id, index])
     );
@@ -117,5 +127,31 @@ export async function POST(request: NextRequest) {
       { error: "Could not run the quiet standout scan." },
       { status: 500 }
     );
+  }
+}
+
+async function findProminenceCandidates(
+  where: Prisma.InterviewWhereInput,
+  limit: number
+) {
+  try {
+    return await db.interview.findMany({
+      where,
+      orderBy: [{ estimatedPublishDate: "asc" }, { createdAt: "desc" }],
+      take: limit,
+      select: researchableInterviewSelect,
+    });
+  } catch (error) {
+    if (!isMissingProminenceSignalsColumnError(error)) throw error;
+    return db.interview.findMany({
+      where: {
+        ...buildLegacyBackgroundProminenceWhere(),
+        clientId: where.clientId,
+        id: where.id,
+      },
+      orderBy: [{ estimatedPublishDate: "asc" }, { createdAt: "desc" }],
+      take: limit,
+      select: researchableInterviewSelect,
+    });
   }
 }

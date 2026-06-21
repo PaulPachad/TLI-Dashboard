@@ -8,6 +8,20 @@ import {
 } from "@/lib/prominence/research";
 import { saveProminenceResearch } from "@/lib/prominence/service";
 
+const researchableInterviewSelect = {
+  id: true,
+  clientId: true,
+  intervieweeName: true,
+  intervieweeCompany: true,
+  intervieweeTitle: true,
+  topic: true,
+  articleUrl: true,
+  buzzfeedUrl: true,
+  interviewDocUrl: true,
+  linkedinUrl: true,
+  twitterUrl: true,
+} as const;
+
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -18,11 +32,7 @@ export async function POST(
 
     const interview = await db.interview.findUnique({
       where: { id },
-      include: {
-        actions: {
-          select: { actionType: true, status: true },
-        },
-      },
+      select: researchableInterviewSelect,
     });
 
     if (!interview) {

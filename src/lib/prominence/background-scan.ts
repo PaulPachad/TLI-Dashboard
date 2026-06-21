@@ -53,15 +53,28 @@ export function buildBackgroundProminenceWhere(): Prisma.InterviewWhereInput {
   return {
     OR: [
       { prominenceSignalsJson: null },
-      {
-        companyEmployeeCount: null,
-        companyRevenueUsd: null,
-        largestSocialFollowerCount: null,
-        prominenceNotes: null,
-        actions: {
-          none: { actionType: "PROMINENCE_RESEARCHED" },
-        },
-      },
+      buildLegacyBackgroundProminenceWhere(),
     ],
   };
+}
+
+export function buildLegacyBackgroundProminenceWhere(): Prisma.InterviewWhereInput {
+  return {
+    companyEmployeeCount: null,
+    companyRevenueUsd: null,
+    largestSocialFollowerCount: null,
+    prominenceNotes: null,
+    actions: {
+      none: { actionType: "PROMINENCE_RESEARCHED" },
+    },
+  };
+}
+
+export function isMissingProminenceSignalsColumnError(error: unknown): boolean {
+  const message =
+    error instanceof Error ? error.message : JSON.stringify(error);
+  return (
+    /prominenceSignalsJson/.test(message) &&
+    /does not exist|no such column|unknown column|invalid/i.test(message)
+  );
 }
