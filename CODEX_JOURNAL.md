@@ -2,6 +2,35 @@
 
 ## June 20, 2026
 
+### LIVE Status Now Wins Over Emailed Yes
+
+Yitzi spotted a confusing import preview: the sheet clearly showed "LIVE" in the Estimated Publishing Date column, but the dashboard still said the rows could not import because the status was "Yes."
+
+- **What was changed**:
+  - The import preview now treats "Estimated Publishing Date = LIVE" as the real live/published status.
+  - If the separate "Emailed" column says "Yes," it no longer overrides the LIVE value.
+  - The same status rule is shared by manual import and background sync.
+
+- **What the feature does**:
+  - Rows with an Authority Magazine link and "LIVE" in the publish/status column show up as importable published rows instead of being pushed into "Real rows not yet published."
+
+- **Why it is useful or exciting**:
+  - The dashboard now matches what Yitzi sees in the source Google Sheet, which makes previewing a large import much less confusing.
+
+- **Interesting problem solved**:
+  - The app had two nearby status-like columns: one said "LIVE," and another said "Yes." The old preview looked at the "Yes" field first. The new shared helper uses the publish/status field as the source of truth when it is present.
+
+- **What remains**:
+  - Re-preview Yitzi's real sheet and confirm the rows that show "LIVE" move into the published/importable section.
+
+- **Relevant files**:
+  - Import API: [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/app/api/import-google-sheet/route.ts)
+  - Sync API: [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/app/api/sync/route.ts)
+  - Row normalizer: [row-normalizer.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/lib/google-sheets/row-normalizer.ts)
+  - Tests: [google-sheets.test.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/tests/google-sheets.test.ts)
+
+## June 20, 2026
+
 ### Column Mapping Now Uses Google Sheets Letters
 
 Yitzi noticed that the manual import mapper was hard to use because it showed columns as numbers, like "Col 19," while Google Sheets labels that same column with a letter, like "S."

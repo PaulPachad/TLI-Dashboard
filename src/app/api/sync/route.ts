@@ -9,6 +9,7 @@ import {
   readSheetData,
   mapHeaders,
   normalizeRows,
+  getImportedPublishStatus,
   deduplicateInterviewRecords,
 } from "@/lib/google-sheets";
 
@@ -250,7 +251,7 @@ export async function POST(request: NextRequest) {
                   linkedinUrl: existing.linkedinUrl || record.linkedinUrl,
                   twitterUrl: existing.twitterUrl || record.twitterUrl,
                   liveEmailStatusImported:
-                    record.estimatedPublishDate || record.liveEmailStatusImported,
+                    getImportedPublishStatus(record),
                   pressFollowupStatusImported:
                     record.pressFollowupStatusImported,
                   estimatedPublishDate: parseOptionalDate(
@@ -308,7 +309,7 @@ export async function POST(request: NextRequest) {
                 linkedinUrl: record.linkedinUrl,
                 twitterUrl: record.twitterUrl,
                 liveEmailStatusImported:
-                  record.estimatedPublishDate || record.liveEmailStatusImported,
+                  getImportedPublishStatus(record),
                 pressFollowupStatusImported:
                   record.pressFollowupStatusImported,
                 estimatedPublishDate: parseOptionalDate(

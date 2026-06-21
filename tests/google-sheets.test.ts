@@ -10,6 +10,8 @@ import { mapHeaders } from "../src/lib/google-sheets/header-mapper";
 import { parseGoogleSheetUrl, appendSheetUrlParams } from "../src/lib/google-sheets/parse-url";
 import {
   extractSocialProfiles,
+  getImportedPublishStatus,
+  isImportedRecordLive,
   normalizeRows,
   takeLastUsableRows,
 } from "../src/lib/google-sheets/row-normalizer";
@@ -204,6 +206,34 @@ test("imports unpublished guest rows when spreadsheetId is provided", () => {
 
   assert.equal(result.published[1].articleUrl, "https://authoritymagazine.com/unpublished/test-spreadsheet-id/3");
   assert.equal(result.published[2].articleUrl, "https://authoritymagazine.com/unpublished/test-spreadsheet-id/4");
+});
+
+test("treats Estimated Publishing Date LIVE as the live status even when Emailed says Yes", () => {
+  const rows = [
+    ["Estimated Publishing Date", "Authority Magazine Link", "Emailed"],
+    ["LIVE", "https://medium.com/authority-magazine/live-guest", "Yes"],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const result = normalizeRows(rows, mappings, 0, "test-spreadsheet-id");
+  const record = result.published[0];
+
+  assert.equal(record.estimatedPublishDate, "LIVE");
+  assert.equal(record.liveEmailStatusImported, "Yes");
+  assert.equal(getImportedPublishStatus(record), "LIVE");
+  assert.equal(isImportedRecordLive(record), true);
+});
+
+test("keeps rows with a future publish date unpublished even when Emailed says Yes", () => {
+  const rows = [
+    ["Estimated Publishing Date", "Authority Magazine Link", "Emailed"],
+    ["2026-07-01", "https://medium.com/authority-magazine/future-guest", "Yes"],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const result = normalizeRows(rows, mappings, 0, "test-spreadsheet-id");
+  const record = result.published[0];
+
+  assert.equal(getImportedPublishStatus(record), "2026-07-01");
+  assert.equal(isImportedRecordLive(record), false);
 });
 
 test("deduplicates repeated article links within one sheet", () => {

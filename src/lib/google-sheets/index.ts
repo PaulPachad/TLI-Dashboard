@@ -19,7 +19,12 @@ export {
 } from "./client";
 export type { SheetTab } from "./client";
 
-export { normalizeRows, takeLastUsableRows } from "./row-normalizer";
+export {
+  getImportedPublishStatus,
+  isImportedRecordLive,
+  normalizeRows,
+  takeLastUsableRows,
+} from "./row-normalizer";
 export type { InterviewRecord, NormalizationResult } from "./row-normalizer";
 
 export { deduplicateInterviewRecords } from "./deduplicate";

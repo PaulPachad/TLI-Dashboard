@@ -15,6 +15,8 @@ import {
   mapHeaders,
   normalizeRows,
   takeLastUsableRows,
+  getImportedPublishStatus,
+  isImportedRecordLive,
   deduplicateInterviewRecords,
   isDemoMode,
   SheetsConfigError,
@@ -155,7 +157,7 @@ export async function POST(request: NextRequest) {
 
     const isRecordUnpublished = (r: typeof importRecords[0]) =>
       r.articleUrl.includes("/unpublished/") ||
-      r.liveEmailStatusImported?.toUpperCase() !== "LIVE";
+      !isImportedRecordLive(r);
 
     const publishedPreviewRows = importRecords.filter(
       (r) => !isRecordUnpublished(r)
@@ -169,13 +171,13 @@ export async function POST(request: NextRequest) {
         reason: r.reason,
       })),
       ...importRecords
-        .filter((r) => !r.articleUrl.includes("/unpublished/") && r.liveEmailStatusImported?.toUpperCase() !== "LIVE")
+        .filter((r) => !r.articleUrl.includes("/unpublished/") && !isImportedRecordLive(r))
         .map((r) => ({
           rowNumber: r.sourceRowNumber,
           intervieweeName: r.intervieweeName,
           topic: r.topic,
           estimatedPublishDate: r.estimatedPublishDate,
-          reason: `Authority Magazine Link exists, but status is "${r.liveEmailStatusImported || "blank"}" (needs "LIVE")`,
+          reason: `Authority Magazine Link exists, but status is "${getImportedPublishStatus(r) || "blank"}" (needs "LIVE")`,
         })),
     ].sort((a, b) => a.rowNumber - b.rowNumber);
 
@@ -417,7 +419,7 @@ export async function POST(request: NextRequest) {
               videoUrl: record.videoUrl,
               linkedinUrl: existing.linkedinUrl || record.linkedinUrl,
               twitterUrl: existing.twitterUrl || record.twitterUrl,
-              liveEmailStatusImported: record.estimatedPublishDate || record.liveEmailStatusImported,
+              liveEmailStatusImported: getImportedPublishStatus(record),
               pressFollowupStatusImported:
                 record.pressFollowupStatusImported,
               estimatedPublishDate: parseOptionalDate(
@@ -463,7 +465,7 @@ export async function POST(request: NextRequest) {
             videoUrl: record.videoUrl,
             linkedinUrl: record.linkedinUrl,
             twitterUrl: record.twitterUrl,
-            liveEmailStatusImported: record.estimatedPublishDate || record.liveEmailStatusImported,
+            liveEmailStatusImported: getImportedPublishStatus(record),
             pressFollowupStatusImported:
               record.pressFollowupStatusImported,
             estimatedPublishDate: parseOptionalDate(

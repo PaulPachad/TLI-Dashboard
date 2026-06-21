@@ -67,6 +67,23 @@ export interface LimitedImportRows {
   usableRows: number;
 }
 
+export function getImportedPublishStatus(
+  record: Pick<InterviewRecord, "estimatedPublishDate" | "liveEmailStatusImported">
+): string | null {
+  const estimatedPublishStatus = normalizeStatusValue(record.estimatedPublishDate);
+  if (estimatedPublishStatus) {
+    return estimatedPublishStatus;
+  }
+
+  return normalizeStatusValue(record.liveEmailStatusImported);
+}
+
+export function isImportedRecordLive(
+  record: Pick<InterviewRecord, "estimatedPublishDate" | "liveEmailStatusImported">
+): boolean {
+  return getImportedPublishStatus(record)?.toUpperCase() === "LIVE";
+}
+
 function extractUrlForHosts(value: string, hosts: string[]): string | null {
   const urls = value.match(/https?:\/\/[^\s,;)\]]+/gi) ?? [];
 
@@ -373,4 +390,9 @@ function normalizeEmail(email: string | null): string | null {
     return cleaned;
   }
   return null; // Invalid email format
+}
+
+function normalizeStatusValue(value: string | null): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
 }
