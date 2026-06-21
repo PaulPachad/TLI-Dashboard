@@ -201,7 +201,8 @@ export async function POST(request: NextRequest) {
               usedInterviewIds.add(existing.id);
               if (
                 existing.sourceRowHash === record.sourceRowHash &&
-                existing.sourceRowNumber === record.sourceRowNumber
+                existing.sourceRowNumber === record.sourceRowNumber &&
+                !hasBackfillableImportChanges(existing, record)
               ) {
                 batchUnchanged++;
                 continue;
@@ -398,6 +399,43 @@ function parseOptionalDate(value: string | null): Date | null {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function hasBackfillableImportChanges(
+  existing: {
+    interviewDocUrl?: string | null;
+    image1Url?: string | null;
+    image2Url?: string | null;
+    extraImagesUrl?: string | null;
+    videoUrl?: string | null;
+    liveEmailStatusImported?: string | null;
+  },
+  record: {
+    interviewDocUrl: string | null;
+    image1Url: string | null;
+    image2Url: string | null;
+    extraImagesUrl: string | null;
+    videoUrl: string | null;
+    liveEmailStatusImported: string | null;
+    estimatedPublishDate: string | null;
+  }
+): boolean {
+  const mediaFields = [
+    "interviewDocUrl",
+    "image1Url",
+    "image2Url",
+    "extraImagesUrl",
+    "videoUrl",
+  ] as const;
+
+  if (
+    (existing.liveEmailStatusImported || null) !==
+    getImportedPublishStatus(record)
+  ) {
+    return true;
+  }
+
+  return mediaFields.some((field) => !existing[field] && !!record[field]);
 }
 
 function chunk<T>(items: T[], size: number): T[][] {

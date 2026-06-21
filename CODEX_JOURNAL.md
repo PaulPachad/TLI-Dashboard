@@ -1,5 +1,36 @@
 # Codex Journal
 
+## June 21, 2026
+
+### Google Form Upload Images Now Map Into Interview Cards
+
+Yitzi noticed that dashboard cards were showing initials instead of photos and asked whether the images were slow to load or mapped incorrectly.
+
+- **What was changed**:
+  - Confirmed the affected interviews had blank image fields in the database.
+  - Added the real Google Form upload headers to the sheet mapper:
+    - "Kindly upload your interview in a Word Document here"
+    - "Kindly upload your first image (headshot) here"
+    - "Kindly upload your second image (action shot or group photo) here"
+  - Updated sync so it can backfill newly recognized media fields even when the sheet row itself has not changed.
+
+- **What the feature does**:
+  - New imports and future syncs can now pull the uploaded headshot/action-shot links from the sheet into the dashboard cards.
+
+- **Why it is useful or exciting**:
+  - The dashboard can show real guest photos instead of fallback initials, making it much easier to scan and more polished for client use.
+
+- **Interesting problem solved**:
+  - The images were not failing because of slow loading. They were missing because the Google Form headers were long upload questions that did not match the old simple aliases like "Photo" or "Headshot."
+
+- **What remains**:
+  - Re-sync the real sheet after deployment so existing blank image fields are backfilled.
+
+- **Relevant files**:
+  - Header mapper: [header-mapper.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/lib/google-sheets/header-mapper.ts)
+  - Sync API: [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/app/api/sync/route.ts)
+  - Tests: [google-sheets.test.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/tests/google-sheets.test.ts)
+
 ## June 20, 2026
 
 ### LIVE Status Now Wins Over Emailed Yes

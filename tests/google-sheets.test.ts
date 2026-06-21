@@ -135,6 +135,52 @@ test("maps common Authority Magazine sheet headers", () => {
   );
 });
 
+test("maps Google Form upload columns to interview document and sheet images", () => {
+  const rows = [
+    [
+      "Interviewee's Name and Company",
+      "Kindly upload your interview in a Word Document here",
+      "Kindly upload your first image (headshot) here ",
+      "Kindly upload your second image (action shot or group photo) here ",
+      "(Optional:) If you would like to include additional images, kindly upload your hi resolution images (headshots and action shots) to a google photos, googledrive, or dropbox file and paste the share link here:",
+      "Authority Magazine Link",
+    ],
+    [
+      "Adam Temple | Evolved Extraction Solutions",
+      "https://drive.google.com/open?id=interview-doc",
+      "https://drive.google.com/open?id=headshot-image",
+      "https://drive.google.com/open?id=action-shot-image",
+      "https://drive.google.com/open?id=extra-images-folder",
+      "https://medium.com/authority-magazine/adam-temple",
+    ],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const result = normalizeRows(rows, mappings, 0, "test-spreadsheet-id");
+
+  assert.equal(
+    mappings.find((mapping) => mapping.field === "interviewDocUrl")
+      ?.columnIndex,
+    1
+  );
+  assert.equal(
+    mappings.find((mapping) => mapping.field === "image1Url")?.columnIndex,
+    2
+  );
+  assert.equal(
+    mappings.find((mapping) => mapping.field === "image2Url")?.columnIndex,
+    3
+  );
+  assert.equal(
+    mappings.find((mapping) => mapping.field === "extraImagesUrl")
+      ?.columnIndex,
+    4
+  );
+  assert.equal(result.published[0].interviewDocUrl, rows[1][1]);
+  assert.equal(result.published[0].image1Url, rows[1][2]);
+  assert.equal(result.published[0].image2Url, rows[1][3]);
+  assert.equal(result.published[0].extraImagesUrl, rows[1][4]);
+});
+
 test("maps and extracts social profiles from the combined sheet question", () => {
   const socialHeader =
     "(Optional:) If you would like us to tag you on social media when we share it, please list your profiles: ";
