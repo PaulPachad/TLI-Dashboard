@@ -2,6 +2,23 @@
 
 ## June 22, 2026
 
+### Production Database Schema Alignment and Local Sync TLS Fixes
+
+- **What Yitzi built or changed**:
+  - Deployed pending Prisma schema migrations to the production Neon PostgreSQL database, adding the missing `prominenceSignalsJson` database column.
+  - Successfully ran end-to-end prominence research using the live Gemini API for filmmaker/writer Amy Ephron on the production database, updating her status to "Notable Lead".
+  - Configured `ALLOW_INSECURE_LOCAL_TLS_FOR_GEMINI="true"` inside `.env.local`, `.env`, `.env.example`, and the startup script `run-demo.bat`.
+- **Why it is useful or exciting**:
+  - Fixes a silent data omission in production where research signals were successfully fetched but failed to save due to the missing database column, which previously caused everyone to load as a standard lead.
+  - Ensures local development can bypass local SSL certificate verification proxy issues when syncing sheets or running Gemini.
+- **Where the relevant files can be found**:
+  - `tli-leverage-dashboard/prisma/migrations/20260621190000_add_structured_prominence_signals/migration.sql`
+  - `run-demo.bat`
+  - `tli-leverage-dashboard/.env.local`, `tli-leverage-dashboard/.env`, `tli-leverage-dashboard/.env.example`
+
+## June 22, 2026
+
+
 ### Hardened local Google Sheets API sync against TLS certificate validation errors
 
 - **What Yitzi built or changed**:
