@@ -197,7 +197,16 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
           ) {
             throw new GeminiQuotaExceededError(`Model ${model} rate/quota limit: ${message}`);
           }
-          throw new Error(`Model ${model} failed: ${message}`);
+          console.warn(
+            `Gemini Interactions search failed for model ${model}; falling back to generateContent. Error:`,
+            message
+          );
+          const fallbackData = await requestGeminiGenerateContent(
+            model,
+            query,
+            this.apiKey
+          );
+          return geminiResponseToSearchResults(fallbackData);
         }
 
         return interactionResponseToSearchResults(data);
@@ -220,6 +229,51 @@ function buildGroundedResearchPrompt(query: string): string {
     "Look for employee count, annual revenue, social followers/subscribers, press, awards, author/speaker signals, " +
     `senior leadership, funding, acquisitions, or public-company status: ${query}`
   );
+}
+
+async function requestGeminiGenerateContent(
+  model: string,
+  query: string,
+  apiKey: string
+) {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: buildGroundedResearchPrompt(query),
+              },
+            ],
+          },
+        ],
+        tools: [{ google_search: {} }],
+      }),
+    }
+  );
+  const data = await response.json();
+  if (!response.ok) {
+    const message = data?.error?.message || "Gemini grounded search failed.";
+    if (
+      response.status === 429 ||
+      response.status === 503 ||
+      message.includes("quota") ||
+      message.includes("limit")
+    ) {
+      throw new GeminiQuotaExceededError(
+        `Model ${model} rate/quota limit: ${message}`
+      );
+    }
+    throw new Error(`Model ${model} generateContent failed: ${message}`);
+  }
+  return data;
 }
 
 export class GoogleCustomSearchProvider implements SearchProvider {
