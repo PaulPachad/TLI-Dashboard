@@ -203,14 +203,14 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
     }
 
     document.addEventListener("keydown", handleKeyDown);
-    closeButtonRef.current?.focus();
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus({ preventScroll: true });
+    const previousOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-      previouslyFocused?.focus();
+      document.documentElement.style.overflow = previousOverflow;
+      previouslyFocused?.focus({ preventScroll: true });
     };
   }, [onClose]);
 

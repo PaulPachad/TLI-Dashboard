@@ -1,3 +1,11 @@
+if (
+  process.env.NODE_ENV === "development" ||
+  process.env.DEMO_MODE === "true" ||
+  !process.env.VERCEL
+) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
+
 import {
   assessInterviewProminence,
   buildProminenceSignalsJson,
@@ -69,10 +77,10 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
       throw new GoogleSearchConfigError();
     }
 
-    // Attempt the primary model first, and dynamically fall back to gemini-2.5-flash
-    // (or gemini-3.5-flash if 2.5 was primary) if the request fails due to rate limits/quotas.
+    // Attempt the primary model first, and dynamically fall back to gemini-2.0-flash
+    // (or gemini-2.5-flash if 2.0 was primary) if the request fails due to rate limits/quotas.
     const primaryModel = this.model;
-    const fallbackModel = primaryModel === "gemini-2.5-flash" ? "gemini-3.5-flash" : "gemini-2.5-flash";
+    const fallbackModel = primaryModel === "gemini-2.5-flash" ? "gemini-2.0-flash" : "gemini-2.5-flash";
     const modelsToTry = [primaryModel, fallbackModel];
 
     let lastError: Error | null = null;
