@@ -205,113 +205,144 @@ export function buildProminenceSignalsJson(input: {
     .join(" ");
   const bestSource = sourceResults.find((result) => result.url) || null;
 
-  if (input.intervieweeTitle && SENIOR_TITLE_PATTERN.test(input.intervieweeTitle)) {
-    signals.push({
-      kind: "role",
-      label: "Senior Leadership",
-      value: input.intervieweeTitle,
-      detail: compactRoleDetail(input),
-      confidence: bestSource ? "medium" : "low",
-      sourceTitle: bestSource?.title || null,
-      sourceUrl: bestSource?.url || null,
-      placement: "back",
-    });
-  } else if (input.intervieweeTitle && LEADER_TITLE_PATTERN.test(input.intervieweeTitle)) {
-    signals.push({
-      kind: "role",
-      label: "Leadership Role",
-      value: input.intervieweeTitle,
-      detail: compactRoleDetail(input),
-      confidence: bestSource ? "medium" : "low",
-      sourceTitle: bestSource?.title || null,
-      sourceUrl: bestSource?.url || null,
-      placement: "back",
-    });
-  } else if (SENIOR_TITLE_PATTERN.test(sourceText) || LEADER_TITLE_PATTERN.test(sourceText)) {
-    const roleSource = sourceResults.find((result) =>
-      SENIOR_TITLE_PATTERN.test(`${result.title} ${result.snippet}`) ||
-      LEADER_TITLE_PATTERN.test(`${result.title} ${result.snippet}`)
-    );
-    const detail = roleSource
-      ? cleanSignalText(extractUsefulSnippet(roleSource.snippet, SENIOR_TITLE_PATTERN), 160)
-      : null;
-    if (detail) {
-      signals.push({
-        kind: "role",
-        label: SENIOR_TITLE_PATTERN.test(detail)
-          ? "Senior Leadership"
-          : "Leadership Role",
-        detail,
-        confidence: "medium",
-        sourceTitle: roleSource?.title || null,
-        sourceUrl: roleSource?.url || null,
-        placement: "back",
-      });
+  // Try to parse structured JSON from the snippets first (Gemini response)
+  let parsedFromJson = false;
+  for (const result of sourceResults) {
+    const jsonMatch = result.snippet.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed && Array.isArray(parsed.signals)) {
+          for (const rawSignal of parsed.signals) {
+            const normalized = normalizeStoredStandoutSignal(rawSignal);
+            if (normalized) {
+              if (!normalized.sourceUrl && isSafeHttpUrl(result.url)) {
+                normalized.sourceUrl = result.url;
+              }
+              if (!normalized.sourceTitle && result.title) {
+                normalized.sourceTitle = result.title;
+              }
+              signals.push(normalized);
+            }
+          }
+          parsedFromJson = true;
+          break;
+        }
+      } catch (e) {
+        // Fall back
+      }
     }
   }
 
-  if (input.companyEmployeeCount != null) {
-    signals.push({
-      kind: "company",
-      label: "Company Size",
-      value: formatCount(input.companyEmployeeCount),
-      detail: `${formatCount(input.companyEmployeeCount)} employees`,
-      confidence: bestSource ? "medium" : "low",
-      sourceTitle: bestSource?.title || null,
-      sourceUrl: bestSource?.url || null,
-      placement: "back",
-    });
-  }
+  if (!parsedFromJson) {
+    if (input.intervieweeTitle && SENIOR_TITLE_PATTERN.test(input.intervieweeTitle)) {
+      signals.push({
+        kind: "role",
+        label: "Senior Leadership",
+        value: input.intervieweeTitle,
+        detail: compactRoleDetail(input),
+        confidence: bestSource ? "medium" : "low",
+        sourceTitle: bestSource?.title || null,
+        sourceUrl: bestSource?.url || null,
+        placement: "back",
+      });
+    } else if (input.intervieweeTitle && LEADER_TITLE_PATTERN.test(input.intervieweeTitle)) {
+      signals.push({
+        kind: "role",
+        label: "Leadership Role",
+        value: input.intervieweeTitle,
+        detail: compactRoleDetail(input),
+        confidence: bestSource ? "medium" : "low",
+        sourceTitle: bestSource?.title || null,
+        sourceUrl: bestSource?.url || null,
+        placement: "back",
+      });
+    } else if (SENIOR_TITLE_PATTERN.test(sourceText) || LEADER_TITLE_PATTERN.test(sourceText)) {
+      const roleSource = sourceResults.find((result) =>
+        SENIOR_TITLE_PATTERN.test(`${result.title} ${result.snippet}`) ||
+        LEADER_TITLE_PATTERN.test(`${result.title} ${result.snippet}`)
+      );
+      const detail = roleSource
+        ? cleanSignalText(extractUsefulSnippet(roleSource.snippet, SENIOR_TITLE_PATTERN), 160)
+        : null;
+      if (detail) {
+        signals.push({
+          kind: "role",
+          label: SENIOR_TITLE_PATTERN.test(detail)
+            ? "Senior Leadership"
+            : "Leadership Role",
+          detail,
+          confidence: "medium",
+          sourceTitle: roleSource?.title || null,
+          sourceUrl: roleSource?.url || null,
+          placement: "back",
+        });
+      }
+    }
 
-  if (input.companyRevenueUsd != null) {
-    signals.push({
-      kind: "revenue",
-      label: "Revenue",
-      value: formatMoney(input.companyRevenueUsd),
-      detail: `${formatMoney(input.companyRevenueUsd)} annual revenue`,
-      confidence: bestSource ? "medium" : "low",
-      sourceTitle: bestSource?.title || null,
-      sourceUrl: bestSource?.url || null,
-      placement: "back",
-    });
-  }
+    if (input.companyEmployeeCount != null) {
+      signals.push({
+        kind: "company",
+        label: "Company Size",
+        value: formatCount(input.companyEmployeeCount),
+        detail: `${formatCount(input.companyEmployeeCount)} employees`,
+        confidence: bestSource ? "medium" : "low",
+        sourceTitle: bestSource?.title || null,
+        sourceUrl: bestSource?.url || null,
+        placement: "back",
+      });
+    }
 
-  if (input.largestSocialFollowerCount != null) {
-    signals.push({
-      kind: "audience",
-      label: "Audience",
-      value: formatCount(input.largestSocialFollowerCount),
-      detail: `${formatCount(input.largestSocialFollowerCount)} followers or subscribers`,
-      confidence: bestSource ? "medium" : "low",
-      sourceTitle: bestSource?.title || null,
-      sourceUrl: bestSource?.url || null,
-      placement:
-        bestSource && input.largestSocialFollowerCount >= 1_000_000
-          ? "front"
-          : "back",
-    });
-  }
+    if (input.companyRevenueUsd != null) {
+      signals.push({
+        kind: "revenue",
+        label: "Revenue",
+        value: formatMoney(input.companyRevenueUsd),
+        detail: `${formatMoney(input.companyRevenueUsd)} annual revenue`,
+        confidence: bestSource ? "medium" : "low",
+        sourceTitle: bestSource?.title || null,
+        sourceUrl: bestSource?.url || null,
+        placement: "back",
+      });
+    }
 
-  addPatternSignal(signals, sourceResults, "wikipedia", "Wikipedia", WIKIPEDIA_PATTERN);
-  addPatternSignal(
-    signals,
-    sourceResults,
-    "speaking",
-    "Major Conference",
-    MAJOR_CONFERENCE_SPEAKER_PATTERN
-  );
-  addPatternSignal(
-    signals,
-    sourceResults,
-    "unicorn",
-    "Unicorn Founder",
-    UNICORN_FOUNDER_PATTERN
-  );
-  if (MAJOR_AWARD_PATTERN.test(sourceText) && AWARD_RECOGNITION_PATTERN.test(sourceText)) {
-    addPatternSignal(signals, sourceResults, "award", "Major Award", MAJOR_AWARD_PATTERN);
-  }
-  if (PUBLIC_PERSON_PATTERN.test(sourceText)) {
-    addPatternSignal(signals, sourceResults, "press", "Public Profile", PUBLIC_PERSON_PATTERN);
+    if (input.largestSocialFollowerCount != null) {
+      signals.push({
+        kind: "audience",
+        label: "Audience",
+        value: formatCount(input.largestSocialFollowerCount),
+        detail: `${formatCount(input.largestSocialFollowerCount)} followers or subscribers`,
+        confidence: bestSource ? "medium" : "low",
+        sourceTitle: bestSource?.title || null,
+        sourceUrl: bestSource?.url || null,
+        placement:
+          bestSource && input.largestSocialFollowerCount >= 1_000_000
+            ? "front"
+            : "back",
+      });
+    }
+
+    addPatternSignal(signals, sourceResults, "wikipedia", "Wikipedia", WIKIPEDIA_PATTERN);
+    addPatternSignal(
+      signals,
+      sourceResults,
+      "speaking",
+      "Major Conference",
+      MAJOR_CONFERENCE_SPEAKER_PATTERN
+    );
+    addPatternSignal(
+      signals,
+      sourceResults,
+      "unicorn",
+      "Unicorn Founder",
+      UNICORN_FOUNDER_PATTERN
+    );
+    if (MAJOR_AWARD_PATTERN.test(sourceText) && AWARD_RECOGNITION_PATTERN.test(sourceText)) {
+      addPatternSignal(signals, sourceResults, "award", "Major Award", MAJOR_AWARD_PATTERN);
+    }
+    if (PUBLIC_PERSON_PATTERN.test(sourceText)) {
+      addPatternSignal(signals, sourceResults, "press", "Public Profile", PUBLIC_PERSON_PATTERN);
+    }
   }
 
   const cleanSignals = uniqueStoredSignals(
@@ -1041,9 +1072,12 @@ function normalizeStoredStandoutSignal(
     raw.confidence === "high" || raw.confidence === "medium" || raw.confidence === "low"
       ? raw.confidence
       : "medium";
+  const rawPlacement = String(raw.placement || "").toLowerCase().trim();
   const placement =
-    raw.placement === "front" || raw.placement === "evidence"
-      ? raw.placement
+    rawPlacement === "front" || rawPlacement === "top"
+      ? "front"
+      : rawPlacement === "evidence"
+      ? "evidence"
       : "back";
 
   return {
@@ -1066,26 +1100,47 @@ function normalizeStoredStandoutSignal(
 function normalizeSignalKind(value: unknown): StandoutSignalKind | null {
   if (typeof value !== "string") return null;
   const normalized = value.toLowerCase().trim().replaceAll("-", "_");
-  if (
-    [
-      "role",
-      "audience",
-      "company",
-      "revenue",
-      "award",
-      "speaking",
-      "wikipedia",
-      "unicorn",
-      "press",
-      "funding",
-      "acquisition",
-      "public_company",
-      "context",
-    ].includes(normalized)
-  ) {
+  
+  // Direct match
+  const allowedKinds: StandoutSignalKind[] = [
+    "role", "audience", "company", "revenue", "award", "speaking",
+    "wikipedia", "unicorn", "press", "funding", "acquisition",
+    "public_company", "context"
+  ];
+  if (allowedKinds.includes(normalized as StandoutSignalKind)) {
     return normalized as StandoutSignalKind;
   }
-  return null;
+
+  // Robust mapping for common variations returned by Gemini
+  if (["prominence", "author", "writer", "filmmaker", "director", "producer", "journalist", "executive", "founder", "co_founder", "leadership", "senior_leadership"].includes(normalized)) {
+    return "role";
+  }
+  if (["social_media", "followers", "subscribers", "audience_size", "audience"].includes(normalized)) {
+    return "audience";
+  }
+  if (["awards", "award_recognition", "recognition", "honors"].includes(normalized)) {
+    return "award";
+  }
+  if (["speaker", "conference", "speaking_engagement"].includes(normalized)) {
+    return "speaking";
+  }
+  if (["wiki"].includes(normalized)) {
+    return "wikipedia";
+  }
+  if (["valuation", "billion_dollar", "unicorn_status"].includes(normalized)) {
+    return "unicorn";
+  }
+  if (["funding_round", "investment"].includes(normalized)) {
+    return "funding";
+  }
+  if (["acquisitions"].includes(normalized)) {
+    return "acquisition";
+  }
+  if (["public", "ipo", "listed_company"].includes(normalized)) {
+    return "public_company";
+  }
+
+  return "context"; // Fallback to context/evidence instead of returning null and discarding!
 }
 
 function fallbackSignalLabel(kind: StandoutSignalKind): string {

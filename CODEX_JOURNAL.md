@@ -2,6 +2,17 @@
 
 ## June 22, 2026
 
+### Fixed Gemini prominence research JSON parsing and signal discarding
+
+- **What Yitzi built or changed**:
+  - Added direct structured JSON parsing in `buildProminenceSignalsJson`. When Gemini returns search grounding results, the parser now detects if the snippet is a JSON block and parses it directly, rather than running error-prone regexes on raw JSON strings (which previously caused double-quote escape corruption in the UI).
+  - Upgraded `normalizeSignalKind` to map diverse/custom kinds returned by Gemini (e.g. `author`, `journalist`, `speaker`, `social_media`, `awards`) to the strictly supported `StandoutSignalKind` enum values, and set a safe fallback to `context` instead of discarding unrecognized kinds.
+  - Mapped `"top"` and `"front"` placements to `"front"` to ensure notable flags render on card fronts.
+- **Why it is useful or exciting**:
+  - Fixes the bug where famous/notable figures (e.g. filmmakers, bestselling authors, and journalists with Wikipedia pages) were incorrectly classified as "Researched (Standard)" because their rich credentials were silently discarded during parsing.
+- **Where the relevant files can be found**:
+  - [signals.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority Mag SAAS/tli-leverage-dashboard/src/lib/prominence/signals.ts)
+
 ### Implemented Auto-TLS bypass and simulated fallback for prominence research
 
 - **What Yitzi built or changed**:
