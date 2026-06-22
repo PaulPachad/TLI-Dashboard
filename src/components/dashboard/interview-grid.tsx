@@ -197,14 +197,31 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
         }),
       });
 
-      if (!res.ok || cancelled) return;
+      if (cancelled) return;
 
-      const data = (await res.json()) as { updated?: number };
-      if (!cancelled && data.updated && data.updated > 0) {
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as ProminenceResponse;
+        console.error(`[Quiet VIP Scan Failure] HTTP ${res.status}: ${data.error || "Unknown error"}`);
+        
+        if (res.status === 503) {
+          setNotice({
+            tone: "warning",
+            message: `Quiet Standout scan was skipped: ${data.error || "Search is not configured."}`,
+          });
+        }
+        return;
+      }
+
+      const data = (await res.json()) as { updated?: number; failed?: number; scanned?: number };
+      console.log(
+        `[Quiet VIP Scan] Complete. Scanned: ${data.scanned || 0}, Updated: ${data.updated || 0}, Failed: ${data.failed || 0}`
+      );
+
+      if (data.updated && data.updated > 0) {
         await fetchInterviews();
       }
     })().catch((scanError) => {
-      console.warn("Quiet VIP scan skipped:", scanError);
+      console.error("[Quiet VIP Scan Exception] Unexpected error:", scanError);
     });
 
     return () => {

@@ -105,9 +105,13 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         if (error instanceof GoogleSearchConfigError) throw error;
         failed += 1;
-        console.warn("Quiet standout scan failed:", interview.id, error);
+        console.warn(`[Quiet VIP Scan Item Failed] Interview ${interview.id}:`, error);
       }
     }
+
+    console.log(
+      `[Quiet VIP Scan Completed] Client: ${targetClientId || "all-clients"}. Scanned: ${candidates.length}, Updated: ${updated}, Failed: ${failed}`
+    );
 
     return NextResponse.json({
       success: true,
@@ -119,6 +123,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     if (error instanceof GoogleSearchConfigError) {
+      console.warn("[Quiet VIP Scan Skipped] Google Search provider is not configured.");
       return NextResponse.json(
         {
           code: GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
@@ -132,9 +137,11 @@ export async function POST(request: NextRequest) {
 
     const err = error as { status?: number; message?: string };
     if (err.status) {
+      console.error(`[Quiet VIP Scan Error] Status ${err.status}: ${err.message || error}`);
       return NextResponse.json({ error: err.message }, { status: err.status });
     }
 
+    console.error("[Quiet VIP Scan Exception] Critical error running background scan:", error);
     return safeApiErrorResponse(error, {
       fallbackMessage: "Could not run the quiet standout scan.",
       logPrefix: "Quiet standout scan failed:",

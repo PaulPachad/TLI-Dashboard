@@ -1,5 +1,29 @@
 # Codex Journal
 
+## June 22, 2026
+
+### Hardened local TLS, verified Gemini models, added quiet scan logging, and fixed cron contradiction
+
+- **What was changed**:
+  - Hardened local TLS bypass logic in `research.ts` to be strictly opt-in (`ALLOW_INSECURE_LOCAL_TLS_FOR_GEMINI=true`), dev-only, and non-Vercel. Added a loud warning log in console and documented safe alternatives (e.g. corporate certificates, `NODE_EXTRA_CA_CERTS`).
+  - Validated Gemini models against the live Google API. Set default model to `gemini-3.5-flash` and fallback model to `gemini-2.5-flash`, avoiding the retired `gemini-2.0-flash`.
+  - Added detailed success/failure console logging on client and server for quiet background scans. Added a visible dashboard warning notice if the quiet scan fails due to missing search configurations (503).
+  - Corrected `README.md` to resolve the cron cadence contradiction (clarified that it runs once per day due to Vercel Hobby plan limitations).
+  - Fixed TypeScript compiler errors in `workflow-logic.test.ts`.
+
+- **Why it is useful or exciting**:
+  - Eliminates dangerous global TLS disable defaults.
+  - Ensures robust model fallbacks using currently active Google APIs.
+  - Gives admins clear visibility into background quiet scan operations and failures instead of failing silently.
+  - Fixes documentation inconsistencies so README instructions align with the production Vercel cron configuration.
+
+- **Relevant files**:
+  - Local TLS/Gemini: [research.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/lib/prominence/research.ts)
+  - Quiet scan API: [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/app/api/interviews/prominence/scan/route.ts)
+  - Grid component: [interview-grid.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/dashboard/interview-grid.tsx)
+  - Documentation: [README.md](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/README.md)
+  - Tests: [workflow-logic.test.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/tests/workflow-logic.test.ts)
+
 ## June 21, 2026
 
 ### Standout Signals Now Use Useful Structured Facts

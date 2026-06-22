@@ -1,8 +1,32 @@
+// ==============================================================================
+// Standout/VIP Prominence Research Module
+// ==============================================================================
+// SECURITY WARNING:
+// Disabling TLS verification (setting NODE_TLS_REJECT_UNAUTHORIZED = '0') is 
+// highly insecure, disables HTTPS validation globally for the entire Node process,
+// and is STRONGLY DISCOURAGED in production.
+//
+// For local environments behind corporate proxies/firewalls that intercept SSL,
+// prefer safer methods such as:
+//   1. Installing the corporate root certificate properly in Node.
+//   2. Using the NODE_EXTRA_CA_CERTS environment variable pointing to the certificate.
+//   3. Using Node's built-in system CA support (where available).
+//
+// If you absolutely must bypass TLS validation locally, set:
+//   ALLOW_INSECURE_LOCAL_TLS_FOR_GEMINI=true
+// ==============================================================================
+
 if (
-  process.env.NODE_ENV === "development" ||
-  process.env.DEMO_MODE === "true" ||
-  !process.env.VERCEL
+  process.env.NODE_ENV === "development" &&
+  !process.env.VERCEL &&
+  process.env.ALLOW_INSECURE_LOCAL_TLS_FOR_GEMINI === "true"
 ) {
+  console.warn(
+    "\x1b[33m%s\x1b[0m",
+    "⚠️ WARNING: ALLOW_INSECURE_LOCAL_TLS_FOR_GEMINI is enabled. " +
+      "Globally disabling TLS/HTTPS certificate verification for the entire Node process. " +
+      "THIS IS NOT PRODUCTION SAFE."
+  );
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 
@@ -69,7 +93,7 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
       "NEXT_PUBLIC_GEMINI_API_KEY",
     ]),
     private readonly model =
-      getFirstEnvValue(["GEMINI_SEARCH_MODEL"]) || "gemini-2.5-flash"
+      getFirstEnvValue(["GEMINI_SEARCH_MODEL"]) || "gemini-3.5-flash"
   ) {}
 
   async search(query: string): Promise<SearchResult[]> {
@@ -77,10 +101,10 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
       throw new GoogleSearchConfigError();
     }
 
-    // Attempt the primary model first, and dynamically fall back to gemini-2.0-flash
-    // (or gemini-2.5-flash if 2.0 was primary) if the request fails due to rate limits/quotas.
+    // Attempt the primary model first, and dynamically fall back to gemini-2.5-flash
+    // (or gemini-3.5-flash if 2.5 was primary) if the request fails due to rate limits/quotas.
     const primaryModel = this.model;
-    const fallbackModel = primaryModel === "gemini-2.5-flash" ? "gemini-2.0-flash" : "gemini-2.5-flash";
+    const fallbackModel = primaryModel === "gemini-3.5-flash" ? "gemini-2.5-flash" : "gemini-3.5-flash";
     const modelsToTry = [primaryModel, fallbackModel];
 
     let lastError: Error | null = null;

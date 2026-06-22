@@ -384,7 +384,7 @@ test("structured standout signals keep useful role details off the front badge",
     [
       assessment.evidenceSummary,
       assessment.signalGroups.exceptional[0]?.detail,
-      assessment.frontFlag?.reason,
+      (assessment.frontFlag as any)?.reason,
     ]
       .filter(Boolean)
       .join(" "),
@@ -795,9 +795,12 @@ function collectProminenceText(
     assessment.evidenceSummary,
     assessment.frontFlag?.reason,
     ...assessment.reasons,
-    ...Object.values(assessment.signalGroups).flatMap((signals) =>
-      signals.flatMap((signal) => [signal.label, signal.value, signal.detail])
-    ),
+    ...[
+      ...assessment.signalGroups.exceptional,
+      ...assessment.signalGroups.audience,
+      ...assessment.signalGroups.company,
+      ...assessment.signalGroups.context,
+    ].flatMap((signal) => [signal.label, signal.value, signal.detail]),
     ...assessment.evidenceSources.flatMap((source) => [
       source.title,
       source.summary,
