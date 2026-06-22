@@ -25,6 +25,10 @@ interface InterviewCardProps {
   onDismiss?: (interviewId: string) => void;
   onRestore?: (interviewId: string) => void;
   showRestoreMode?: boolean;
+  researchFeedback?: {
+    tone: "success" | "warning";
+    message: string;
+  };
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -53,6 +57,7 @@ export function InterviewCard({
   onDismiss,
   onRestore,
   showRestoreMode,
+  researchFeedback,
 }: InterviewCardProps) {
   const [imageIndex, setImageIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -252,6 +257,23 @@ export function InterviewCard({
                       ? "Refresh standout research"
                       : "Research standout signals"}
                 </button>
+                {(researchingProminence || researchFeedback) && (
+                  <p
+                    role="status"
+                    aria-live="polite"
+                    className={`max-w-full text-[11px] ${
+                      researchingProminence
+                        ? "text-indigo-600"
+                        : researchFeedback?.tone === "warning"
+                          ? "text-amber-700"
+                          : "text-emerald-700"
+                    }`}
+                  >
+                    {researchingProminence
+                      ? "Checking Google-grounded sources..."
+                      : researchFeedback?.message}
+                  </p>
+                )}
               </div>
             </div>
           </div>

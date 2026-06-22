@@ -39,6 +39,12 @@ interface DashboardNotice {
   tone: NoticeTone;
 }
 
+interface ResearchFeedback {
+  interviewId: string;
+  message: string;
+  tone: "success" | "warning";
+}
+
 interface SearchDiagnostics {
   hasGeminiSearch?: boolean;
   hasGoogleCustomSearch?: boolean;
@@ -77,6 +83,8 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
     useState<InterviewActionType | null>(null);
   const [activeInterviewId, setActiveInterviewId] = useState<string | null>(null);
   const [researchingId, setResearchingId] = useState<string | null>(null);
+  const [researchFeedback, setResearchFeedback] =
+    useState<ResearchFeedback | null>(null);
   const [notice, setNotice] = useState<DashboardNotice | null>(null);
   const [activeDetail, setActiveDetail] = useState<{
     interviewId: string;
@@ -244,6 +252,12 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
     return () => clearTimeout(timer);
   }, [notice]);
 
+  useEffect(() => {
+    if (!researchFeedback) return;
+    const timer = setTimeout(() => setResearchFeedback(null), 12000);
+    return () => clearTimeout(timer);
+  }, [researchFeedback]);
+
   const researchProminence = async (interviewId: string) => {
     try {
       setResearchingId(interviewId);
@@ -252,6 +266,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
         tone: "loading",
         message: `Researching standout signals for ${name}...`,
       });
+      setResearchFeedback(null);
       setError(null);
 
       const res = await fetch(`/api/interviews/${interviewId}/prominence`, {
@@ -264,6 +279,11 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
             tone: "warning",
             message: formatSearchConfigNotice(data),
           });
+          setResearchFeedback({
+            interviewId,
+            tone: "warning",
+            message: "Search setup needs attention. See the notification for details.",
+          });
           return;
         }
 
@@ -274,11 +294,23 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
         tone: data.simulated ? "warning" : "success",
         message: data.note || "Standout research complete.",
       });
+      setResearchFeedback({
+        interviewId,
+        tone: data.simulated ? "warning" : "success",
+        message: data.note || "Standout research complete.",
+      });
       await fetchInterviews();
     } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Standout research failed.";
       setNotice({
         tone: "warning",
-        message: err instanceof Error ? err.message : "Standout research failed.",
+        message,
+      });
+      setResearchFeedback({
+        interviewId,
+        tone: "warning",
+        message,
       });
     } finally {
       setResearchingId(null);
@@ -521,6 +553,14 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
                 })
               }
               researchingProminence={researchingId === interview.id}
+              researchFeedback={
+                researchFeedback?.interviewId === interview.id
+                  ? {
+                      tone: researchFeedback.tone,
+                      message: researchFeedback.message,
+                    }
+                  : undefined
+              }
               autoScanQueued={shouldQuietScanProminence(interview)}
               onDismiss={dismissCard}
               onRestore={restoreCard}
