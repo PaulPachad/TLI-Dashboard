@@ -22,6 +22,9 @@ interface InterviewCardProps {
   onResearchProminence?: (interviewId: string) => void;
   researchingProminence?: boolean;
   autoScanQueued?: boolean;
+  onDismiss?: (interviewId: string) => void;
+  onRestore?: (interviewId: string) => void;
+  showRestoreMode?: boolean;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -47,6 +50,9 @@ export function InterviewCard({
   onResearchProminence,
   researchingProminence,
   autoScanQueued,
+  onDismiss,
+  onRestore,
+  showRestoreMode,
 }: InterviewCardProps) {
   const [imageIndex, setImageIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -132,6 +138,38 @@ export function InterviewCard({
               </div>
             )}
           </button>
+          {/* Dismiss / Restore button */}
+          {showRestoreMode ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRestore?.(interview.id);
+              }}
+              aria-label={`Restore ${interview.intervieweeName}`}
+              className="absolute right-2 top-2 z-20 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50/95 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm backdrop-blur transition-all hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+            >
+              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+              </svg>
+              Restore
+            </button>
+          ) : onDismiss ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDismiss(interview.id);
+              }}
+              aria-label={`Dismiss ${interview.intervieweeName}`}
+              className="absolute right-2 top-2 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-white/60 bg-black/30 text-white/70 opacity-0 backdrop-blur-sm transition-all group-hover:opacity-100 hover:!bg-black/50 hover:!text-white hover:shadow-md focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+              title="Dismiss this card"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          ) : null}
 
           {/* Header with name */}
           <div className="flex items-start gap-4 p-5 pb-3">

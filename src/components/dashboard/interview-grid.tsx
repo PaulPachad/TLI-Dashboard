@@ -25,10 +25,12 @@ const STATUS_FILTERS = [
   { value: "email_sent", label: "Email Sent" },
   { value: "shared", label: "Shared" },
   { value: "leveraged", label: "Leveraged" },
+  { value: "dismissed", label: "Dismissed" },
 ];
 
 const QUIET_SCAN_LIMIT = 6;
 const PAGE_SIZE = 120;
+const DISMISSED_STORAGE_KEY = "tli-dismissed-interviews";
 
 type NoticeTone = "success" | "warning";
 
@@ -80,6 +82,46 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
     focus?: DetailFocusTarget;
   } | null>(null);
   const quietScanStarted = useRef(false);
+
+  // --- Dismissed cards state (localStorage) ---
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(DISMISSED_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as string[];
+        if (Array.isArray(parsed)) {
+          setDismissedIds(new Set(parsed));
+        }
+      }
+    } catch {
+      // Ignore malformed localStorage data
+    }
+  }, []);
+
+  const persistDismissed = useCallback((ids: Set<string>) => {
+    setDismissedIds(ids);
+    try {
+      localStorage.setItem(DISMISSED_STORAGE_KEY, JSON.stringify([...ids]));
+    } catch {
+      // localStorage full or unavailable — state still works in memory
+    }
+  }, []);
+
+  const dismissCard = useCallback((id: string) => {
+    persistDismissed(new Set([...dismissedIds, id]));
+  }, [dismissedIds, persistDismissed]);
+
+  const restoreCard = useCallback((id: string) => {
+    const next = new Set(dismissedIds);
+    next.delete(id);
+    persistDismissed(next);
+  }, [dismissedIds, persistDismissed]);
+
+  const restoreAll = useCallback(() => {
+    persistDismissed(new Set());
+  }, [persistDismissed]);
 
   const fetchInterviews = useCallback(async ({
     append = false,
@@ -221,19 +263,26 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
   };
 
   // Stats
+  const dismissedCount = interviews.filter((i) => dismissedIds.has(i.id)).length;
+  const nonDismissed = interviews.filter((i) => !dismissedIds.has(i.id));
   const stats = {
     total: pagination?.totalCount ?? interviews.length,
-    upcoming: interviews.filter(isUnpublished).length,
-    needsAction: interviews.filter((interview) => !isUnpublished(interview) && interview.currentStatus !== "leveraged").length,
-    leveraged: interviews.filter((interview) => interview.currentStatus === "leveraged").length,
-    needsContact: interviews.filter((interview) => interview.currentStatus === "needs_contact").length,
-    signalsFound: interviews.filter(
+    upcoming: nonDismissed.filter(isUnpublished).length,
+    needsAction: nonDismissed.filter((interview) => !isUnpublished(interview) && interview.currentStatus !== "leveraged").length,
+    leveraged: nonDismissed.filter((interview) => interview.currentStatus === "leveraged").length,
+    needsContact: nonDismissed.filter((interview) => interview.currentStatus === "needs_contact").length,
+    signalsFound: nonDismissed.filter(
       (interview) => interview.prominence?.hasAnySignals
     ).length,
   };
 
   // Sort interviews so that actionable ones are at the top, then upcoming, then leveraged.
-  const sortedInterviews = [...interviews].sort((a, b) => {
+  // Also apply dismissed filtering here.
+  const isDismissedView = statusFilter === "dismissed";
+  const filteredByDismissed = isDismissedView
+    ? [...interviews].filter((i) => dismissedIds.has(i.id))
+    : [...interviews].filter((i) => !dismissedIds.has(i.id));
+  const sortedInterviews = filteredByDismissed.sort((a, b) => {
     const getScore = (interview: InterviewView) => {
       if (interview.currentStatus === "leveraged") return 3; // Lowest priority
       if (isUnpublished(interview)) return 2; // Medium priority
@@ -285,6 +334,9 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
         <StatCard label="Fully Leveraged" value={stats.leveraged} color="emerald" />
         <StatCard label="Needs Contact" value={stats.needsContact} color="rose" />
         <StatCard label="Signals Found" value={stats.signalsFound} color="violet" />
+        {dismissedCount > 0 && (
+          <StatCard label="Dismissed" value={dismissedCount} color="slate" />
+        )}
       </div>
 
       {/* Search and filters */}
@@ -331,6 +383,25 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
           ))}
         </div>
       </div>
+
+      {/* Restore All button (visible only in Dismissed tab) */}
+      {isDismissedView && dismissedCount > 0 && (
+        <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3">
+          <p className="text-sm text-slate-600">
+            {dismissedCount} dismissed interview{dismissedCount !== 1 ? "s" : ""}
+          </p>
+          <button
+            type="button"
+            onClick={restoreAll}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 hover:border-emerald-300"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+            </svg>
+            Restore All
+          </button>
+        </div>
+      )}
 
       {/* Loading state */}
       {loading && (
@@ -411,6 +482,9 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
               }
               researchingProminence={researchingId === interview.id}
               autoScanQueued={shouldQuietScanProminence(interview)}
+              onDismiss={dismissCard}
+              onRestore={restoreCard}
+              showRestoreMode={isDismissedView}
             />
           ))}
         </div>
@@ -539,6 +613,7 @@ function StatCard({
     emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
     rose: "bg-rose-50 text-rose-700 border-rose-200",
     violet: "bg-violet-50 text-violet-700 border-violet-200",
+    slate: "bg-slate-50 text-slate-700 border-slate-200",
   };
 
   return (
