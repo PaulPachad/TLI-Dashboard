@@ -2,7 +2,19 @@
 
 ## June 22, 2026
 
+### Fixed Production React Email Template Rendering
+
+- **What Yitzi built or changed**:
+  - Modified `src/app/api/interviews/[id]/action/route.ts` to pre-render React email components (`LiveLinkEmail` and `ZoomInviteEmail`) using `renderToStaticMarkup` from `react-dom/server`.
+  - Passed the pre-rendered HTML strings to Resend's `html` field rather than passing raw React elements directly to the `react` parameter.
+- **Why it is useful or exciting**:
+  - Resolves an internal dependency issue in production where Resend throws a `Failed to render React component` error due to missing `@react-email/render` packages in dependencies.
+  - Ensures robust, zero-dependency HTML rendering of emails in both local and production environments using standard, pre-installed React libraries.
+- **Where the relevant files can be found**:
+  - [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority Mag SAAS/tli-leverage-dashboard/src/app/api/interviews/[id]/action/route.ts)
+
 ### Fallback JSON Parsing & UI Text Safety Hardening for Standout Signals
+
 
 - **What Yitzi built or changed**:
   - Updated `parseStoredStandoutSignals` in `src/lib/prominence/signals.ts` to extract and parse the JSON block directly from `prominenceNotes` if the structured `prominenceSignalsJson` column is null or empty.
