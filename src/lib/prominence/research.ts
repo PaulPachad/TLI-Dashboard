@@ -127,23 +127,30 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
     for (const model of modelsToTry) {
       try {
         const signal = AbortSignal.timeout(getGeminiRequestTimeoutMs());
+        try {
+          const generateContentData = await requestGeminiGenerateContent(
+            model,
+            query,
+            this.apiKey,
+            signal
+          );
+          return geminiResponseToSearchResults(generateContentData);
+        } catch (primaryError: unknown) {
+          if (primaryError instanceof GeminiQuotaExceededError) throw primaryError;
+          console.warn(
+            `Gemini generateContent search failed for model ${model}; trying Interactions fallback. Error:`,
+            primaryError instanceof Error ? primaryError.message : String(primaryError)
+          );
+        }
+
+        const interactionSignal = AbortSignal.timeout(getGeminiRequestTimeoutMs());
         let response;
         try {
-          response = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/interactions",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-goog-api-key": this.apiKey,
-              },
-              body: JSON.stringify({
-                model,
-                input: buildGroundedResearchPrompt(query),
-                tools: [{ type: "google_search" }],
-              }),
-              signal,
-            }
+          response = await requestGeminiInteraction(
+            model,
+            query,
+            this.apiKey,
+            interactionSignal
           );
         } catch (fetchErr: unknown) {
           if (isAbortError(fetchErr)) throw new GeminiResearchTimeoutError();
@@ -176,21 +183,11 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
               "⚠️ Node.js rejected the Gemini API certificate. Automatically bypassing TLS verification locally in development and retrying..."
             );
             process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-            response = await fetch(
-              "https://generativelanguage.googleapis.com/v1beta/interactions",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "x-goog-api-key": this.apiKey,
-                },
-                body: JSON.stringify({
-                  model,
-                  input: buildGroundedResearchPrompt(query),
-                  tools: [{ type: "google_search" }],
-                }),
-                signal,
-              }
+            response = await requestGeminiInteraction(
+              model,
+              query,
+              this.apiKey,
+              interactionSignal
             );
           } else {
             throw fetchErr;
@@ -208,17 +205,7 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
           ) {
             throw new GeminiQuotaExceededError(`Model ${model} rate/quota limit: ${message}`);
           }
-          console.warn(
-            `Gemini Interactions search failed for model ${model}; falling back to generateContent. Error:`,
-            message
-          );
-          const fallbackData = await requestGeminiGenerateContent(
-            model,
-            query,
-            this.apiKey,
-            signal
-          );
-          return geminiResponseToSearchResults(fallbackData);
+          throw new Error(`Model ${model} interactions failed: ${message}`);
         }
 
         return interactionResponseToSearchResults(data);
@@ -231,6 +218,27 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
 
     throw lastError || new Error("Gemini grounded search failed on all attempted models.");
   }
+}
+
+function requestGeminiInteraction(
+  model: string,
+  query: string,
+  apiKey: string,
+  signal: AbortSignal
+) {
+  return fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey,
+    },
+    body: JSON.stringify({
+      model,
+      input: buildGroundedResearchPrompt(query),
+      tools: [{ type: "google_search" }],
+    }),
+    signal,
+  });
 }
 
 function getGeminiRequestTimeoutMs(
