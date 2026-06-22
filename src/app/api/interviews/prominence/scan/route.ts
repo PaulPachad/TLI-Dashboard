@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
+import { safeApiErrorResponse } from "@/lib/api/safe-error";
+import { resolveRequestedClientId } from "@/lib/security/tenant-access";
+import { finishJob, tryStartJob } from "@/lib/jobs/idempotency";
 import { UserRole } from "@/types/db";
 import {
   buildBackgroundProminenceWhere,
@@ -32,6 +35,8 @@ const researchableInterviewSelect = {
 } satisfies Prisma.InterviewSelect;
 
 export async function POST(request: NextRequest) {
+  let jobKey: string | null = null;
+  let jobStarted = false;
   try {
     const user = await requireApiAuth();
     const body = (await request.json().catch(() => ({}))) as {
@@ -44,12 +49,7 @@ export async function POST(request: NextRequest) {
       MAX_SCAN_LIMIT
     );
 
-    let targetClientId: string | null = null;
-    if (user.role === UserRole.ADMIN && body.clientId) {
-      targetClientId = body.clientId;
-    } else if (user.clientId) {
-      targetClientId = user.clientId;
-    }
+    const targetClientId = resolveRequestedClientId(user, body.clientId);
 
     if (!targetClientId && user.role !== UserRole.ADMIN) {
       return NextResponse.json(
@@ -63,6 +63,18 @@ export async function POST(request: NextRequest) {
           .filter((id): id is string => typeof id === "string" && id.length > 0)
           .slice(0, limit)
       : [];
+
+    jobKey = `standout-quiet-scan:${targetClientId || "all-clients"}:${requestedInterviewIds.join(",") || "auto"}`;
+    jobStarted = tryStartJob(jobKey);
+    if (!jobStarted) {
+      return NextResponse.json(
+        {
+          error: "A quiet standout scan is already running for this scope.",
+          jobStatus: "running",
+        },
+        { status: 409 }
+      );
+    }
 
     const where: Prisma.InterviewWhereInput = {
       ...buildBackgroundProminenceWhere(),
@@ -99,6 +111,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      jobStatus: failed > 0 ? "failed" : "succeeded",
       scanned: candidates.length,
       updated,
       failed,
@@ -122,11 +135,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: err.message }, { status: err.status });
     }
 
-    console.error("Quiet standout scan failed:", error);
-    return NextResponse.json(
-      { error: "Could not run the quiet standout scan." },
-      { status: 500 }
-    );
+    return safeApiErrorResponse(error, {
+      fallbackMessage: "Could not run the quiet standout scan.",
+      logPrefix: "Quiet standout scan failed:",
+    });
+  } finally {
+    if (jobKey && jobStarted) finishJob(jobKey);
   }
 }
 

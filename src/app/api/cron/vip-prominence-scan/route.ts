@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { finishJob, tryStartJob } from "@/lib/jobs/idempotency";
 import {
   buildBackgroundProminenceWhere,
   buildLegacyBackgroundProminenceWhere,
@@ -33,6 +34,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  const jobKey = "standout-cron-scan";
+  const jobStarted = tryStartJob(jobKey);
+  if (!jobStarted) {
+    return NextResponse.json(
+      {
+        error: "Background standout research is already running.",
+        jobStatus: "running",
+      },
+      { status: 409 }
+    );
+  }
+
   try {
     const limit = getVipProminenceCronLimit();
     const candidates = await findCronProminenceCandidates(limit);
@@ -52,6 +65,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      jobStatus: failed > 0 ? "failed" : "succeeded",
       trigger: "CRON",
       scanned: candidates.length,
       updated,
@@ -76,6 +90,8 @@ export async function GET(request: NextRequest) {
       { error: "Could not run background standout research." },
       { status: 500 }
     );
+  } finally {
+    if (jobStarted) finishJob(jobKey);
   }
 }
 

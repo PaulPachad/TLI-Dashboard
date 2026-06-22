@@ -6,7 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
-import { UserRole } from "@/types/db";
+import { safeApiErrorResponse } from "@/lib/api/safe-error";
+import { canAccessClientResource } from "@/lib/security/tenant-access";
 import {
   parseGoogleSheetUrl,
   SheetUrlError,
@@ -48,19 +49,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (user.role !== UserRole.ADMIN) {
-      if (!user.clientId) {
-        return NextResponse.json(
-          { error: "No client is associated with this account." },
-          { status: 400 }
-        );
-      }
-      if (body.clientId !== user.clientId) {
-        return NextResponse.json(
-          { error: "You can only import interviews into your own account." },
-          { status: 403 }
-        );
-      }
+    if (!canAccessClientResource(user, body.clientId)) {
+      return NextResponse.json(
+        user.clientId
+          ? { error: "You can only import interviews into your own account." }
+          : { error: "No client is associated with this account." },
+        { status: user.clientId ? 403 : 400 }
+      );
     }
 
     if (!body.sheetUrl) {
@@ -536,15 +531,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error("Import error:", error);
-    return NextResponse.json(
-      {
-        error:
-          err.message ||
-          "An unexpected error occurred during import. Please try again.",
-      },
-      { status: 500 }
-    );
+    return safeApiErrorResponse(error, {
+      fallbackMessage:
+        "We could not complete the import. Please check sheet access and try again.",
+      logPrefix: "Import error:",
+    });
   }
 }
 

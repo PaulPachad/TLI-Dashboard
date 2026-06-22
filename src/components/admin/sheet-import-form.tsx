@@ -75,6 +75,7 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
   const importableTotal = (preview?.published ?? 0) + unpublishedTotal;
   const headerMappings = preview?.headerMappings ?? [];
   const unmappedHeaders = preview?.unmappedHeaders ?? [];
+  const errorGuidance = getImportRecoveryGuidance(error);
 
   async function handlePreview() {
     if (!sheetUrl.trim()) {
@@ -407,14 +408,32 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
 
       {/* Error */}
       {error && (
-        <div className="bg-rose-50 border border-rose-200 rounded-xl p-4">
+        <div
+          role="alert"
+          className="bg-rose-50 border border-rose-200 rounded-xl p-4"
+        >
           <p className="text-rose-700 text-sm font-medium">{error}</p>
+          {errorGuidance && (
+            <p className="mt-2 text-sm text-rose-600">{errorGuidance}</p>
+          )}
+          <button
+            type="button"
+            onClick={handlePreview}
+            disabled={loading || !sheetUrl.trim()}
+            className="mt-3 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Retry preview
+          </button>
         </div>
       )}
 
       {/* Warnings */}
       {warnings.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <div
+          role="status"
+          aria-live="polite"
+          className="bg-amber-50 border border-amber-200 rounded-xl p-4"
+        >
           <h4 className="text-amber-700 text-sm font-semibold mb-2">Warnings</h4>
           <ul className="space-y-1">
             {warnings.map((w, i) => (
@@ -645,4 +664,19 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
       )}
     </div>
   );
+}
+
+function getImportRecoveryGuidance(error: string | null): string | null {
+  if (!error) return null;
+  const normalized = error.toLowerCase();
+  if (normalized.includes("permission") || normalized.includes("share")) {
+    return "Make sure the sheet is shared with the service account email, then retry.";
+  }
+  if (normalized.includes("mapping") || normalized.includes("column")) {
+    return "Open the column mapping section, match the required columns, then preview again.";
+  }
+  if (normalized.includes("network") || normalized.includes("reach")) {
+    return "Check your connection and Google Sheets access. Your form values are preserved.";
+  }
+  return "Your sheet link and mappings are preserved. Fix the issue above, then retry.";
 }

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
+import { safeApiErrorResponse } from "@/lib/api/safe-error";
+import { finishJob, tryStartJob } from "@/lib/jobs/idempotency";
 import { UserRole } from "@/types/db";
 import {
   parseGoogleSheetUrl,
@@ -16,6 +18,8 @@ import {
 const SYNC_BATCH_SIZE = 250;
 
 export async function POST(request: NextRequest) {
+  let jobKey: string | null = null;
+  let jobStarted = false;
   try {
     // --- Auth check ---
     const user = await requireApiAuth();
@@ -23,6 +27,17 @@ export async function POST(request: NextRequest) {
     // --- Determine target sheet sources ---
     const searchParams = request.nextUrl.searchParams;
     const reqClientId = searchParams.get("clientId");
+    jobKey = `sheet-sync:${user.role === UserRole.ADMIN ? reqClientId || "all-clients" : user.clientId || "missing-client"}`;
+    jobStarted = tryStartJob(jobKey);
+    if (!jobStarted) {
+      return NextResponse.json(
+        {
+          error: "A sheet sync is already running for this scope.",
+          jobStatus: "running",
+        },
+        { status: 409 }
+      );
+    }
     let sheetSources;
 
     if (user.role === UserRole.ADMIN && reqClientId) {
@@ -374,6 +389,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      jobStatus: "succeeded",
       result: {
         created: totalCreated,
         updated: totalUpdated,
@@ -386,12 +402,13 @@ export async function POST(request: NextRequest) {
       message: `Sync complete. ${totalCreated} created, ${totalUpdated} updated, ${totalUnchanged} skipped unchanged across ${totalBatches} batch(es).`,
     });
   } catch (error: unknown) {
-    console.error("Sync API error:", error);
-    const err = error as { message?: string };
-    return NextResponse.json(
-      { error: err.message || "An unexpected error occurred during sync." },
-      { status: 500 }
-    );
+    return safeApiErrorResponse(error, {
+      fallbackMessage:
+        "We could not sync the sheet right now. Please check sheet access and try again.",
+      logPrefix: "Sync API error:",
+    });
+  } finally {
+    if (jobKey && jobStarted) finishJob(jobKey);
   }
 }
 

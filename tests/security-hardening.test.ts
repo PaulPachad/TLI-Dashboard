@@ -6,6 +6,19 @@ import {
   selectClientLoginUser,
 } from "../src/lib/clients/admin-update";
 import {
+  isInternalErrorMessage,
+  toUserSafeErrorMessage,
+} from "../src/lib/api/safe-error";
+import {
+  finishJob,
+  isJobRunning,
+  tryStartJob,
+} from "../src/lib/jobs/idempotency";
+import {
+  canAccessClientResource,
+  resolveRequestedClientId,
+} from "../src/lib/security/tenant-access";
+import {
   isPrivateIpAddress,
   parseRemoteImageUrl,
   remoteImageUrlToDataUrl,
@@ -110,6 +123,52 @@ test("client login selector prefers the account matching the client email", () =
   });
 
   assert.equal(selected?.id, "primary");
+});
+
+test("tenant access denies client users from other client resources", () => {
+  const clientUser = { role: "CLIENT", clientId: "client_a" };
+  const adminUser = { role: "ADMIN", clientId: null };
+
+  assert.equal(canAccessClientResource(clientUser, "client_a"), true);
+  assert.equal(canAccessClientResource(clientUser, "client_b"), false);
+  assert.equal(canAccessClientResource({ role: "CLIENT", clientId: null }, "client_a"), false);
+  assert.equal(canAccessClientResource(adminUser, "client_b"), true);
+
+  assert.equal(resolveRequestedClientId(clientUser, "client_b"), "client_a");
+  assert.equal(resolveRequestedClientId(adminUser, "client_b"), "client_b");
+  assert.equal(resolveRequestedClientId(adminUser, null), null);
+});
+
+test("safe API errors hide Prisma and database internals", () => {
+  const rawPrismaMessage =
+    "Invalid `prisma.interview.findUnique()` invocation: The column `Interview.prominenceSignalsJson` does not exist in the current database.";
+  const fallback = "The feature is not available yet. Please refresh after setup.";
+
+  assert.equal(isInternalErrorMessage(rawPrismaMessage), true);
+  assert.equal(
+    toUserSafeErrorMessage(new Error(rawPrismaMessage), fallback),
+    fallback
+  );
+  assert.equal(
+    toUserSafeErrorMessage({ message: "Access denied." }, fallback, {
+      allowClientMessage: true,
+    }),
+    "Access denied."
+  );
+});
+
+test("job idempotency prevents duplicate background runs in one runtime", () => {
+  const key = "test-job:security-hardening";
+  finishJob(key);
+
+  assert.equal(tryStartJob(key), true);
+  assert.equal(isJobRunning(key), true);
+  assert.equal(tryStartJob(key), false);
+
+  finishJob(key);
+  assert.equal(isJobRunning(key), false);
+  assert.equal(tryStartJob(key), true);
+  finishJob(key);
 });
 
 test("remote social image URLs reject unsafe forms and private addresses", async () => {

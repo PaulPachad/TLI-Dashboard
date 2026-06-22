@@ -144,6 +144,7 @@ export function AutomationCenter({ initialData }: AutomationCenterProps) {
       "Dear Authority Magazine Editors\n\nWhat is the name of the interview topic: 5 Things You Need To Know To Successfully Run A Live Virtual Event\nWhat is the best email to follow up with you: publicist@example.com",
   });
   const [testResult, setTestResult] = useState<Record<string, unknown> | null>(null);
+  const [confirmingRuleId, setConfirmingRuleId] = useState<string | null>(null);
 
   const profile = data.profile;
   const pitchMailbox = profile.mailboxes.find((mailbox) => mailbox.workflowType === "PITCH_RESPONDER");
@@ -316,6 +317,7 @@ export function AutomationCenter({ initialData }: AutomationCenterProps) {
         ...current,
         learnedRules: current.learnedRules.filter((rule) => rule.id !== id),
       }));
+      setConfirmingRuleId(null);
       setBanner({ type: "success", text: "Learned rule deleted." });
     } catch (error) {
       setBanner({ type: "error", text: error instanceof Error ? error.message : "Failed to delete rule." });
@@ -498,14 +500,35 @@ export function AutomationCenter({ initialData }: AutomationCenterProps) {
                     <p className="text-sm font-semibold text-slate-900">{rule.originalTopic}</p>
                     <p className="mt-1 text-sm text-slate-600">{rule.correctTopicName}</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => deleteLearnedRule(rule.id)}
-                    disabled={saving}
-                    className="self-start rounded-md border border-rose-200 px-3 py-1.5 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
-                  >
-                    Delete
-                  </button>
+                  {confirmingRuleId === rule.id ? (
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingRuleId(null)}
+                        disabled={saving}
+                        className="self-start rounded-md border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteLearnedRule(rule.id)}
+                        disabled={saving}
+                        className="self-start rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+                      >
+                        Confirm delete
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingRuleId(rule.id)}
+                      disabled={saving}
+                      className="self-start rounded-md border border-rose-200 px-3 py-1.5 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
               ))
             )}

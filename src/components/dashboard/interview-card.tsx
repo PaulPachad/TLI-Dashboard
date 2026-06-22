@@ -81,12 +81,11 @@ export function InterviewCard({
                      transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${cardBorderClasses}`}
         >
           {/* Interview image */}
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsFlipped(true);
-            }}
-            className="relative aspect-[16/8] overflow-hidden bg-gradient-to-br from-indigo-50 to-cyan-50 cursor-pointer"
+          <button
+            type="button"
+            onClick={() => setIsFlipped(true)}
+            aria-label={`Show standout and interview details for ${interview.intervieweeName}`}
+            className="relative block aspect-[16/8] w-full overflow-hidden bg-gradient-to-br from-indigo-50 to-cyan-50 text-left focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
           >
             {currentImage ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -132,16 +131,10 @@ export function InterviewCard({
                 {frontFlag.label}
               </div>
             )}
-          </div>
+          </button>
 
           {/* Header with name */}
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsFlipped(true);
-            }}
-            className="flex items-start gap-4 p-5 pb-3 cursor-pointer"
-          >
+          <div className="flex items-start gap-4 p-5 pb-3">
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-slate-900 truncate text-base">
                 {interview.intervieweeName}
@@ -175,7 +168,7 @@ export function InterviewCard({
                     if (onViewDetails) onViewDetails(interview.id);
                     else setIsFlipped(true);
                   }}
-                  className="text-xs font-medium text-slate-500 hover:text-indigo-700"
+                  className="rounded text-xs font-medium text-slate-500 hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                 >
                   Details
                 </button>
@@ -188,7 +181,8 @@ export function InterviewCard({
                   onResearchProminence?.(interview.id);
                 }}
                 disabled={researchingProminence}
-                className="mt-2 inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 hover:border-amber-300 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                aria-label={`Research standout signals for ${interview.intervieweeName}`}
+                className="mt-2 inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 hover:border-amber-300 hover:bg-amber-100 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {researchingProminence ? (
                   <span className="h-3 w-3 animate-spin rounded-full border-2 border-amber-700 border-t-transparent" />
@@ -363,7 +357,8 @@ export function InterviewCard({
                 e.stopPropagation();
                 setIsFlipped(false);
               }}
-              className="p-1 px-2 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors flex items-center gap-1 text-[11px] font-semibold bg-slate-100 border border-slate-200"
+              aria-label={`Back to front of ${interview.intervieweeName} card`}
+              className="p-1 px-2 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors flex items-center gap-1 text-[11px] font-semibold bg-slate-100 border border-slate-200 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
               title="Flip back to front"
             >
               <svg className="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -411,7 +406,7 @@ export function InterviewCard({
                       e.stopPropagation();
                       onViewDetails?.(interview.id, { focus: "sources" });
                     }}
-                    className="mt-1 text-left text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+                    className="mt-1 rounded text-left text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 hover:underline focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                   >
                     View sources
                   </button>

@@ -113,17 +113,39 @@ export function SyncButton() {
       </button>
 
       {error && (
-        <span className="text-xs text-rose-600 bg-rose-50 border border-rose-100 rounded-md px-2 py-1 max-w-[240px] text-right truncate">
-          {error}
-        </span>
+        <div
+          role="alert"
+          className="max-w-[300px] rounded-md border border-rose-100 bg-rose-50 px-2 py-1 text-right text-xs text-rose-700"
+        >
+          <p className="font-semibold">{error}</p>
+          <p className="mt-1 text-rose-600">
+            Check sheet sharing, column mapping, and network access, then try again.
+          </p>
+          <button
+            type="button"
+            onClick={handleSync}
+            disabled={syncing}
+            className="mt-2 rounded border border-rose-200 bg-white px-2 py-1 font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+          >
+            Retry sync
+          </button>
+        </div>
       )}
       {!error && syncing && (
-        <span className="max-w-[280px] rounded-md border border-indigo-100 bg-indigo-50 px-2 py-1 text-right text-xs text-indigo-600">
+        <span
+          role="status"
+          aria-live="polite"
+          className="max-w-[280px] rounded-md border border-indigo-100 bg-indigo-50 px-2 py-1 text-right text-xs text-indigo-600"
+        >
           Checking the sheet and only saving changed rows...
         </span>
       )}
       {!error && success && summary && (
-        <span className="max-w-[280px] rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-right text-xs text-emerald-700">
+        <span
+          role="status"
+          aria-live="polite"
+          className="max-w-[280px] rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-right text-xs text-emerald-700"
+        >
           {summary}
         </span>
       )}

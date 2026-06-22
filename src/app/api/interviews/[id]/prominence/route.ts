@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
+import { safeApiErrorResponse } from "@/lib/api/safe-error";
+import { canAccessClientResource } from "@/lib/security/tenant-access";
+import { finishJob, tryStartJob } from "@/lib/jobs/idempotency";
 import {
   GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
   GoogleSearchConfigError,
@@ -26,6 +29,8 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let jobKey: string | null = null;
+  let jobStarted = false;
   try {
     const user = await requireApiAuth();
     const { id } = await params;
@@ -42,8 +47,20 @@ export async function POST(
       );
     }
 
-    if (user.role !== "ADMIN" && user.clientId !== interview.clientId) {
+    if (!canAccessClientResource(user, interview.clientId)) {
       return NextResponse.json({ error: "Access denied." }, { status: 403 });
+    }
+
+    jobKey = `standout-research:${interview.id}`;
+    jobStarted = tryStartJob(jobKey);
+    if (!jobStarted) {
+      return NextResponse.json(
+        {
+          error: "Standout research is already running for this interview.",
+          jobStatus: "running",
+        },
+        { status: 409 }
+      );
     }
 
     const { result, updated } = await saveProminenceResearch(
@@ -54,6 +71,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
+      jobStatus: "succeeded",
       interview: updated,
       prominence: result.assessment,
       sourceCount: result.sourceResults.length,
@@ -81,14 +99,12 @@ export async function POST(
       return NextResponse.json({ error: err.message }, { status: err.status });
     }
 
-    console.error("Prominence research failed:", error);
-    return NextResponse.json(
-      {
-        error:
-          err.message ||
-          "Could not research standout signals. Check the search configuration and try again.",
-      },
-      { status: 500 }
-    );
+    return safeApiErrorResponse(error, {
+      fallbackMessage:
+        "Could not research standout signals. Check the search configuration and try again.",
+      logPrefix: "Prominence research failed:",
+    });
+  } finally {
+    if (jobKey && jobStarted) finishJob(jobKey);
   }
 }
