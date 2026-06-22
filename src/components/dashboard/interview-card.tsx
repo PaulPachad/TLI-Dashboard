@@ -208,7 +208,21 @@ export function InterviewCard({
                   </span>
                 )}
 
-                {alreadyResearched ? (
+                {hasSignals && !frontFlag ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsFlipped(true)}
+                    className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-xs font-medium text-sky-700 hover:border-sky-300 hover:bg-sky-100 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+                    title="Standout details are available on the back of this card"
+                    aria-label={`Show standout details for ${interview.intervieweeName}`}
+                  >
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25} aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 8l4 4-4 4" />
+                    </svg>
+                    Standout details
+                  </button>
+                ) : alreadyResearched ? (
                   !hasSignals && (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-slate-50 text-slate-500 border-slate-200" title="Standout research completed, no high-prominence signals found">
                       Researched (Standard)
