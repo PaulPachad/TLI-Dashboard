@@ -2,7 +2,20 @@
 
 ## June 22, 2026
 
+### Fallback JSON Parsing & UI Text Safety Hardening for Standout Signals
+
+- **What Yitzi built or changed**:
+  - Updated `parseStoredStandoutSignals` in `src/lib/prominence/signals.ts` to extract and parse the JSON block directly from `prominenceNotes` if the structured `prominenceSignalsJson` column is null or empty.
+  - Updated `assessInterviewProminence` to pass `input.prominenceNotes` to `parseStoredStandoutSignals` as a fallback source.
+  - Hardened `cleanProminenceText` in `src/lib/prominence/signals.ts` to aggressively strip out any markdown code blocks, JSON tags (e.g. ````json ... ````), and raw JSON brace structures (`{...}`) from user-visible summaries.
+- **Why it is useful or exciting**:
+  - Automatically backfills and correctly parses all standout leads that were researched prior to the database migration (when `prominenceSignalsJson` was missing) without needing to re-fetch rate-limited APIs.
+  - Guarantees that raw JSON text or markdown code formatting never leaks into card frontages or detail drawer panels, keeping the UI completely clean.
+- **Where the relevant files can be found**:
+  - [signals.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority Mag SAAS/tli-leverage-dashboard/src/lib/prominence/signals.ts)
+
 ### Production Database Schema Alignment and Local Sync TLS Fixes
+
 
 - **What Yitzi built or changed**:
   - Deployed pending Prisma schema migrations to the production Neon PostgreSQL database, adding the missing `prominenceSignalsJson` database column.

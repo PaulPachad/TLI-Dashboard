@@ -154,12 +154,22 @@ const STRUCTURED_FRONT_KINDS = new Set<StandoutSignalKind>([
 ]);
 
 export function parseStoredStandoutSignals(
-  value?: string | null
+  value?: string | null,
+  fallbackNotes?: string | null
 ): StoredStandoutSignals | null {
-  if (!value?.trim()) return null;
+  let jsonString = value?.trim() || "";
+
+  if (!jsonString && fallbackNotes) {
+    const jsonMatch = fallbackNotes.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonString = jsonMatch[0];
+    }
+  }
+
+  if (!jsonString) return null;
 
   try {
-    const raw = JSON.parse(value) as Partial<StoredStandoutSignals>;
+    const raw = JSON.parse(jsonString) as Partial<StoredStandoutSignals>;
     if (raw.version !== 1 || !Array.isArray(raw.signals)) return null;
 
     const signals = raw.signals
@@ -369,7 +379,10 @@ export function buildProminenceSignalsJson(input: {
 export function assessInterviewProminence(
   input: ProminenceInput
 ): ProminenceAssessment {
-  const storedSignals = parseStoredStandoutSignals(input.prominenceSignalsJson);
+  const storedSignals = parseStoredStandoutSignals(
+    input.prominenceSignalsJson,
+    input.prominenceNotes
+  );
   const hasStructuredPayload = Boolean(input.prominenceSignalsJson?.trim());
   const hasStructuredSignals = Boolean(storedSignals);
   const badges: ProminenceBadge[] = [];
@@ -1293,6 +1306,9 @@ function summarizeProminenceNotes(value?: string | null): string {
 
 function cleanProminenceText(value: string): string {
   return value
+    .replace(/Gemini grounded research:\s*```json[\s\S]*?```/gi, "")
+    .replace(/```json[\s\S]*?```/gi, "")
+    .replace(/\{[\s\S]*\}/g, "")
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
     .replace(/\((?:https?:\/\/|www\.)[^)]+\)/gi, "")
     .replace(/https?:\/\/\S+/gi, "")
