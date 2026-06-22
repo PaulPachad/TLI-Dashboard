@@ -6,6 +6,7 @@ import { canAccessClientResource } from "@/lib/security/tenant-access";
 import { finishJob, tryStartJob } from "@/lib/jobs/idempotency";
 import {
   GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
+  GeminiQuotaExceededError,
   GoogleSearchConfigError,
   getSearchDiagnostics,
 } from "@/lib/prominence/research";
@@ -69,7 +70,7 @@ export async function POST(
       { trigger: "MANUAL" }
     );
 
-    const isSimulated = (result as any).isSimulated || false;
+    const isSimulated = result.isSimulated || false;
     let note =
       result.assessment.tier === "standard"
         ? "Research complete. No strong standout found yet."
@@ -102,9 +103,30 @@ export async function POST(
       );
     }
 
+    if (error instanceof GeminiQuotaExceededError) {
+      return NextResponse.json(
+        {
+          error:
+            "Standout research hit the Gemini search quota or rate limit. Try again later, or upgrade/enable billing for the Gemini API project.",
+        },
+        { status: 429 }
+      );
+    }
+
     const err = error as { status?: number; message?: string };
     if (err.status) {
       return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+
+    const message = err.message || "";
+    if (/api key not valid|invalid api key|permission|billing|not enabled/i.test(message)) {
+      return NextResponse.json(
+        {
+          error:
+            "Standout research could not use the Gemini Search API. Check that the API key is valid, billing is enabled if required, and the Gemini API is enabled for this project.",
+        },
+        { status: 503 }
+      );
     }
 
     return safeApiErrorResponse(error, {

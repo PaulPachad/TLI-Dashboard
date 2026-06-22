@@ -23,6 +23,7 @@ import {
 import {
   buildProminenceQueries,
   geminiResponseToSearchResults,
+  interactionResponseToSearchResults,
   extractProminenceSignals,
   researchInterviewProminence,
   type SearchProvider,
@@ -384,7 +385,7 @@ test("structured standout signals keep useful role details off the front badge",
     [
       assessment.evidenceSummary,
       assessment.signalGroups.exceptional[0]?.detail,
-      (assessment.frontFlag as any)?.reason,
+      (assessment.frontFlag as { reason?: string } | null)?.reason,
     ]
       .filter(Boolean)
       .join(" "),
@@ -785,6 +786,37 @@ test("Gemini grounded response maps to prominence search results", () => {
   assert.equal(results.length, 1);
   assert.equal(results[0].title, "Acme profile");
   assert.equal(results[0].url, "https://example.com/acme");
+  assert.match(results[0].snippet, /125K followers/);
+});
+
+test("Gemini Interactions grounded response maps citations to search results", () => {
+  const results = interactionResponseToSearchResults({
+    output_text: "Taylor Chen has 125K followers and Acme has $150M revenue.",
+    steps: [
+      {
+        type: "model_output",
+        content: [
+          {
+            type: "text",
+            text: "Taylor Chen has 125K followers and Acme has $150M revenue.",
+            annotations: [
+              {
+                type: "url_citation",
+                title: "Acme executive profile",
+                url: "https://example.com/acme-executive",
+                start_index: 0,
+                end_index: 66,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].title, "Acme executive profile");
+  assert.equal(results[0].url, "https://example.com/acme-executive");
   assert.match(results[0].snippet, /125K followers/);
 });
 

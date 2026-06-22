@@ -122,7 +122,7 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
         let response;
         try {
           response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+            "https://generativelanguage.googleapis.com/v1beta/interactions",
             {
               method: "POST",
               headers: {
@@ -130,30 +130,31 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
                 "x-goog-api-key": this.apiKey,
               },
               body: JSON.stringify({
-                contents: [
-                  {
-                    parts: [
-                      {
-                        text:
-                          "Research this person or company for VIP/prospect prominence signals. " +
-                          "Return compact facts, not a memo or intro. Prefer JSON with: " +
-                          "standoutSummary and signals containing kind, label, value, detail, confidence, sourceTitle, sourceUrl, placement. " +
-                          "Look for employee count, annual revenue, social followers/subscribers, press, awards, author/speaker signals, " +
-                          `senior leadership, funding, acquisitions, or public-company status: ${query}`,
-                      },
-                    ],
-                  },
-                ],
-                tools: [{ google_search: {} }],
+                model,
+                input: buildGroundedResearchPrompt(query),
+                tools: [{ type: "google_search" }],
               }),
             }
           );
-        } catch (fetchErr: any) {
+        } catch (fetchErr: unknown) {
           // Check if it's a local SSL/TLS interception issue
+          const fetchError =
+            typeof fetchErr === "object" && fetchErr
+              ? (fetchErr as {
+                  cause?: { code?: unknown };
+                  message?: unknown;
+                })
+              : {};
+          const causeCode =
+            typeof fetchError.cause?.code === "string"
+              ? fetchError.cause.code
+              : "";
+          const fetchMessage =
+            typeof fetchError.message === "string" ? fetchError.message : "";
           const isSslErr =
-            fetchErr?.cause?.code === "UNABLE_TO_GET_ISSUER_CERT_LOCALLY" ||
-            fetchErr?.cause?.code === "DEPTH_ZERO_SELF_SIGNED_CERT" ||
-            fetchErr?.message?.includes("unable to get local issuer certificate");
+            causeCode === "UNABLE_TO_GET_ISSUER_CERT_LOCALLY" ||
+            causeCode === "DEPTH_ZERO_SELF_SIGNED_CERT" ||
+            fetchMessage.includes("unable to get local issuer certificate");
 
           if (
             isSslErr &&
@@ -166,7 +167,7 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
             );
             process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
             response = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+              "https://generativelanguage.googleapis.com/v1beta/interactions",
               {
                 method: "POST",
                 headers: {
@@ -174,21 +175,9 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
                   "x-goog-api-key": this.apiKey,
                 },
                 body: JSON.stringify({
-                  contents: [
-                    {
-                      parts: [
-                        {
-                          text:
-                            "Research this person or company for VIP/prospect prominence signals. " +
-                            "Return compact facts, not a memo or intro. Prefer JSON with: " +
-                            "standoutSummary and signals containing kind, label, value, detail, confidence, sourceTitle, sourceUrl, placement. " +
-                            "Look for employee count, annual revenue, social followers/subscribers, press, awards, author/speaker signals, " +
-                            `senior leadership, funding, acquisitions, or public-company status: ${query}`,
-                        },
-                      ],
-                    },
-                  ],
-                  tools: [{ google_search: {} }],
+                  model,
+                  input: buildGroundedResearchPrompt(query),
+                  tools: [{ type: "google_search" }],
                 }),
               }
             );
@@ -211,7 +200,7 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
           throw new Error(`Model ${model} failed: ${message}`);
         }
 
-        return geminiResponseToSearchResults(data);
+        return interactionResponseToSearchResults(data);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         lastError = err instanceof Error ? err : new Error(message);
@@ -221,6 +210,16 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
 
     throw lastError || new Error("Gemini grounded search failed on all attempted models.");
   }
+}
+
+function buildGroundedResearchPrompt(query: string): string {
+  return (
+    "Research this person or company for standout/prospect prominence signals. " +
+    "Return compact facts, not a memo or intro. Prefer JSON with: " +
+    "standoutSummary and signals containing kind, label, value, detail, confidence, sourceTitle, sourceUrl, placement. " +
+    "Look for employee count, annual revenue, social followers/subscribers, press, awards, author/speaker signals, " +
+    `senior leadership, funding, acquisitions, or public-company status: ${query}`
+  );
 }
 
 export class GoogleCustomSearchProvider implements SearchProvider {
@@ -379,7 +378,7 @@ export async function researchInterviewProminence(
       assessment,
       isSimulated: false,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // If in development mode (or local demo preview) and we hit a configuration, auth, network, or rate limit,
     // gracefully fall back to generating a simulated research result instead of crashing.
     const isLocalDev = process.env.NODE_ENV === "development" || !process.env.VERCEL;
@@ -387,7 +386,7 @@ export async function researchInterviewProminence(
     if (isLocalDev) {
       console.warn(
         "\x1b[33m%s\x1b[0m",
-        `⚠️ Prominence research failed due to: ${error.message || error}. Falling back to Simulated/Demo Mode research...`
+        `⚠️ Prominence research failed due to: ${getUnknownErrorMessage(error)}. Falling back to Simulated/Demo Mode research...`
       );
       return generateSimulatedResearchResult(interview);
     }
@@ -415,6 +414,12 @@ export function buildProminenceQueries(interview: ResearchInterview): string[] {
       .filter(Boolean)
       .join(" "),
   ];
+}
+
+function getUnknownErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return "Unknown error";
 }
 
 export function extractProminenceSignals(results: SearchResult[]): {
@@ -530,6 +535,64 @@ export function geminiResponseToSearchResults(data: {
       snippet: text,
     },
   ];
+}
+
+export function interactionResponseToSearchResults(data: {
+  output_text?: string;
+  outputText?: string;
+  steps?: Array<{
+    type?: string;
+    content?: Array<{
+      type?: string;
+      text?: string;
+      annotations?: Array<{
+        type?: string;
+        url?: string;
+        title?: string;
+        start_index?: number;
+        end_index?: number;
+        startIndex?: number;
+        endIndex?: number;
+      }>;
+    }>;
+  }>;
+}): SearchResult[] {
+  const outputText = data.output_text || data.outputText || "";
+  const results: SearchResult[] = [];
+
+  for (const step of data.steps || []) {
+    if (step.type !== "model_output") continue;
+    for (const block of step.content || []) {
+      if (block.type !== "text" || !block.text?.trim()) continue;
+      for (const annotation of block.annotations || []) {
+        if (annotation.type !== "url_citation" || !annotation.url) continue;
+        results.push({
+          title: annotation.title || getHostname(annotation.url),
+          url: annotation.url,
+          snippet: block.text,
+        });
+      }
+    }
+  }
+
+  if (results.length > 0) return dedupeResults(results);
+  if (!outputText.trim()) return [];
+
+  return [
+    {
+      title: "Gemini grounded research",
+      url: "https://ai.google.dev/gemini-api/docs/google-search",
+      snippet: outputText,
+    },
+  ];
+}
+
+function getHostname(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "Grounded source";
+  }
 }
 
 function maxMetric(current: number | null, next: number | null): number | null {
