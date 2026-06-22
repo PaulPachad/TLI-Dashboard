@@ -18,7 +18,13 @@ import {
 } from "@/lib/email/copy";
 import { Resend } from "resend";
 import { fetchArticleMetadata } from "@/lib/images/interview-image-server";
-import { renderToStaticMarkup } from "react-dom/server";
+import { ReactElement } from "react";
+
+// Helper function to render react email templates dynamically to avoid next.js build/bundler issues with react-dom/server
+async function renderEmail(element: ReactElement): Promise<string> {
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  return renderToStaticMarkup(element);
+}
 
 interface ActionData {
   intervieweeEmail?: string;
@@ -282,6 +288,7 @@ export async function POST(
           note = `Demo mode: simulated live-link email to ${recipient}. No email was delivered.`;
         } else {
           try {
+            const htmlContent = await renderEmail(LiveLinkEmail({ body: emailBody }));
             const sendResult = await resend.emails.send({
               from: emailFrom,
               to: recipient,
@@ -289,7 +296,7 @@ export async function POST(
               replyTo: interview.client.replyToEmail || undefined,
               subject: emailSubject,
               text: emailBody,
-              html: renderToStaticMarkup(LiveLinkEmail({ body: emailBody })),
+              html: htmlContent,
             });
 
             if (sendResult.error) {
@@ -550,6 +557,7 @@ export async function POST(
           note = `Demo mode: simulated Zoom invitation to ${recipient}. No email was delivered.`;
         } else {
           try {
+            const htmlContent = await renderEmail(ZoomInviteEmail({ body: emailBody }));
             const sendResult = await resend.emails.send({
               from: emailFrom,
               to: recipient,
@@ -557,7 +565,7 @@ export async function POST(
               replyTo: interview.client.replyToEmail || undefined,
               subject: emailSubject,
               text: emailBody,
-              html: renderToStaticMarkup(ZoomInviteEmail({ body: emailBody })),
+              html: htmlContent,
             });
 
             if (sendResult.error) {

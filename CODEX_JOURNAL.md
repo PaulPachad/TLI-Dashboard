@@ -2,6 +2,17 @@
 
 ## June 22, 2026
 
+### Bypassed Next.js Turbopack Compilation Error for React Email Rendering
+
+- **What Yitzi built or changed**:
+  - Replaced the static import of `react-dom/server` inside the API route handler `src/app/api/interviews/[id]/action/route.ts` with a dynamic `import("react-dom/server")` helper.
+  - Used this helper to compile email templates (`LiveLinkEmail` and `ZoomInviteEmail`) dynamically at runtime.
+- **Why it is useful or exciting**:
+  - Fixes a Next.js build failure where Turbopack flags static server-rendering imports (`react-dom/server`) as potential client component bundling issues.
+  - Unblocks the Vercel deployment while preserving the dynamic rendering fixes for Zoom and live email invitations.
+- **Where the relevant files can be found**:
+  - [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority Mag SAAS/tli-leverage-dashboard/src/app/api/interviews/[id]/action/route.ts)
+
 ### Fixed Production React Email Template Rendering
 
 - **What Yitzi built or changed**:
