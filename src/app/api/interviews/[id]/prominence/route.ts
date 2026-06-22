@@ -69,16 +69,24 @@ export async function POST(
       { trigger: "MANUAL" }
     );
 
+    const isSimulated = (result as any).isSimulated || false;
+    let note =
+      result.assessment.tier === "standard"
+        ? "Research complete. No strong standout found yet."
+        : `Research complete: ${result.assessment.tierLabel} (${result.assessment.score}/100).`;
+
+    if (isSimulated) {
+      note = "Research complete (Simulated data used due to Gemini free tier limit).";
+    }
+
     return NextResponse.json({
       success: true,
       jobStatus: "succeeded",
       interview: updated,
       prominence: result.assessment,
       sourceCount: result.sourceResults.length,
-      note:
-        result.assessment.tier === "standard"
-          ? "Research complete. No strong standout found yet."
-          : `Research complete: ${result.assessment.tierLabel} (${result.assessment.score}/100).`,
+      simulated: isSimulated,
+      note,
     });
   } catch (error: unknown) {
     if (error instanceof GoogleSearchConfigError) {

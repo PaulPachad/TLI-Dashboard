@@ -52,6 +52,7 @@ interface ProminenceResponse {
   error?: string;
   note?: string;
   diagnostics?: SearchDiagnostics;
+  simulated?: boolean;
 }
 
 interface InterviewPagination {
@@ -270,7 +271,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
       }
 
       setNotice({
-        tone: "success",
+        tone: data.simulated ? "warning" : "success",
         message: data.note || "Standout research complete.",
       });
       await fetchInterviews();
