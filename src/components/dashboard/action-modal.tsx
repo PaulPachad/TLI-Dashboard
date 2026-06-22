@@ -5,6 +5,7 @@
 // ==============================================================================
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   buildInterviewImageSources,
   extractArticleTitleFromUrl,
@@ -30,6 +31,7 @@ interface SocialImageInterview {
 }
 
 export function ActionModal({ interviewId, actionType, onClose, onSuccess }: ActionModalProps) {
+  const [mounted, setMounted] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [loading, setLoading] = useState(false);
@@ -178,6 +180,7 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
   }, [socialImagePreviewUrl]);
 
   useEffect(() => {
+    setMounted(true);
     const previouslyFocused = document.activeElement as HTMLElement | null;
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -776,7 +779,9 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
     }
   }
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto outline-none focus:outline-none">
       {/* Backdrop */}
       <div 
@@ -808,7 +813,8 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
           {renderContent()}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

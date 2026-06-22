@@ -2,6 +2,26 @@
 
 ## June 22, 2026
 
+### Fixed drawer layout and upgraded Standout Signals research UI and feedback loop
+
+- **What was changed**:
+  - Wrapped `InterviewDetailPanel`, `TopicDetailPanel`, and `ActionModal` inside React Portals (`createPortal` from `react-dom`) mounting to `document.body`. Added `mounted` client-side hydration guards.
+  - Replaced top-of-grid notice banners with a viewport-locked floating toast notification system at the bottom-right of the window. Added animated loading toasts that update to success/error states, and configured success toasts to auto-dismiss.
+  - Re-architected card action buttons: auto-scan is represented by a passive "Scheduled for auto-scan" badge, and manual research is triggered by active "Research Now" or "Refresh standout research" buttons.
+  - Added gray `Researched (Standard)` front status badges to cards scanned with standard results (no VIP signals), and pulsing blue `Research Pending` badges to unresearched cards.
+- **Why it is useful or exciting**:
+  - Solves the CSS containing-block bug where parent 3D transitions scroll or clip drawer and modal layouts.
+  - Guarantees notifications are always visible regardless of screen scroll depth.
+  - Provides clear status confirmation and visibility for standard scans, ensuring the user gets feedback rather than assuming nothing happened.
+- **Relevant files**:
+  - [interview-detail-panel.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/panels/interview-detail-panel.tsx)
+  - [topic-detail-panel.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/panels/topic-detail-panel.tsx)
+  - [action-modal.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/dashboard/action-modal.tsx)
+  - [interview-grid.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/dashboard/interview-grid.tsx)
+  - [interview-card.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/dashboard/interview-card.tsx)
+
+## June 22, 2026
+
 ### Hardened local TLS, verified Gemini models, added quiet scan logging, and fixed cron contradiction
 
 - **What was changed**:

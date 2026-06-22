@@ -4,7 +4,8 @@
 // Interview Detail Panel — Slide-out side panel with full interview details
 // ==============================================================================
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type {
   InterviewProminenceSignal,
   InterviewView,
@@ -29,6 +30,7 @@ export function InterviewDetailPanel({
   onClose,
   initialFocus,
 }: InterviewDetailPanelProps) {
+  const [mounted, setMounted] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const sourcesRef = useRef<HTMLDivElement>(null);
@@ -37,6 +39,7 @@ export function InterviewDetailPanel({
     interview.liveEmailStatusImported?.toUpperCase() !== "LIVE";
 
   useEffect(() => {
+    setMounted(true);
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const previousOverflow = document.documentElement.style.overflow;
     document.documentElement.style.overflow = "hidden";
@@ -79,7 +82,9 @@ export function InterviewDetailPanel({
     }, 0);
   }, [initialFocus]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -315,7 +320,8 @@ export function InterviewDetailPanel({
           </Section>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
 

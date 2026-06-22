@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Topic } from "@prisma/client";
 import { buildTopicInvitationEmailBody } from "@/lib/email/copy";
 
@@ -10,6 +11,7 @@ interface TopicDetailPanelProps {
 }
 
 export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
+  const [mounted, setMounted] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -32,6 +34,7 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
   }, [body]);
 
   useEffect(() => {
+    setMounted(true);
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const previousOverflow = document.documentElement.style.overflow;
     document.documentElement.style.overflow = "hidden";
@@ -96,7 +99,9 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
     }
   }
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -239,7 +244,8 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
           )}
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
 

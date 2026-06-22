@@ -32,7 +32,7 @@ const QUIET_SCAN_LIMIT = 6;
 const PAGE_SIZE = 120;
 const DISMISSED_STORAGE_KEY = "tli-dismissed-interviews";
 
-type NoticeTone = "success" | "warning";
+type NoticeTone = "success" | "warning" | "loading";
 
 interface DashboardNotice {
   message: string;
@@ -236,10 +236,21 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
+  // Auto-dismiss success notices
+  useEffect(() => {
+    if (!notice || notice.tone === "loading" || notice.tone === "warning") return;
+    const timer = setTimeout(() => setNotice(null), 6000);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
   const researchProminence = async (interviewId: string) => {
     try {
       setResearchingId(interviewId);
-      setNotice(null);
+      const name = interviews.find((i) => i.id === interviewId)?.intervieweeName || "this guest";
+      setNotice({
+        tone: "loading",
+        message: `Researching standout signals for ${name}...`,
+      });
       setError(null);
 
       const res = await fetch(`/api/interviews/${interviewId}/prominence`, {
@@ -317,27 +328,38 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
   return (
     <div className="space-y-6">
       {notice && (
-        <div
-          role="status"
-          className={`flex items-start justify-between gap-4 rounded-xl border px-4 py-3 text-sm ${
-            notice.tone === "warning"
-              ? "border-amber-200 bg-amber-50 text-amber-900"
-              : "border-emerald-200 bg-emerald-50 text-emerald-800"
-          }`}
-        >
-          <span>{notice.message}</span>
-          <button
-            type="button"
-            onClick={() => setNotice(null)}
-            className={`font-semibold ${
+        <div className="fixed bottom-6 right-6 z-50 animate-fade-in max-w-sm pointer-events-auto">
+          <div
+            role="status"
+            className={`flex items-start justify-between gap-4 rounded-xl border p-4 shadow-xl text-sm ${
               notice.tone === "warning"
-                ? "text-amber-800 hover:text-amber-950"
-                : "text-emerald-700 hover:text-emerald-900"
+                ? "border-amber-200 bg-amber-50 text-amber-900"
+                : notice.tone === "loading"
+                ? "border-indigo-200 bg-indigo-50 text-indigo-900 animate-pulse-subtle"
+                : "border-emerald-200 bg-emerald-50 text-emerald-800"
             }`}
-            aria-label="Dismiss notification"
           >
-            Close
-          </button>
+            <div className="flex-1">
+              {notice.tone === "loading" && (
+                <span className="inline-block mr-2 h-3.5 w-3.5 animate-spin rounded-full border-2 border-indigo-700 border-t-transparent vertical-align-middle align-middle" />
+              )}
+              <span>{notice.message}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setNotice(null)}
+              className={`font-semibold shrink-0 ${
+                notice.tone === "warning"
+                  ? "text-amber-800 hover:text-amber-950"
+                  : notice.tone === "loading"
+                  ? "text-indigo-800 hover:text-indigo-950"
+                  : "text-emerald-700 hover:text-emerald-900"
+              }`}
+              aria-label="Dismiss notification"
+            >
+              Close
+            </button>
+          </div>
         </div>
       )}
       {/* Stats bar */}
