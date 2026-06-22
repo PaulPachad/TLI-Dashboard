@@ -18,6 +18,7 @@ import {
 } from "@/lib/email/copy";
 import { Resend } from "resend";
 import { fetchArticleMetadata } from "@/lib/images/interview-image-server";
+import { renderToStaticMarkup } from "react-dom/server";
 
 interface ActionData {
   intervieweeEmail?: string;
@@ -288,7 +289,7 @@ export async function POST(
               replyTo: interview.client.replyToEmail || undefined,
               subject: emailSubject,
               text: emailBody,
-              react: LiveLinkEmail({ body: emailBody }),
+              html: renderToStaticMarkup(LiveLinkEmail({ body: emailBody })),
             });
 
             if (sendResult.error) {
@@ -556,7 +557,7 @@ export async function POST(
               replyTo: interview.client.replyToEmail || undefined,
               subject: emailSubject,
               text: emailBody,
-              react: ZoomInviteEmail({ body: emailBody }),
+              html: renderToStaticMarkup(ZoomInviteEmail({ body: emailBody })),
             });
 
             if (sendResult.error) {
