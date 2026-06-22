@@ -2,6 +2,23 @@
 
 ## June 22, 2026
 
+### Implemented Auto-TLS bypass and simulated fallback for prominence research
+
+- **What Yitzi built or changed**:
+  - Implemented an automatic SSL/TLS certificate validation bypass that catches certificate errors (such as `UNABLE_TO_GET_ISSUER_CERT_LOCALLY` caused by local proxy configurations or antivirus interceptors) and retries the request safely in development mode by setting `NODE_TLS_REJECT_UNAUTHORIZED = '0'` dynamically.
+  - Implemented a simulated demo fallback generator for prominence research. If the Google Search Grounding API fails (e.g. because of quota limits on free-tier keys or invalid API keys), the system dynamically generates realistic mock research results based on the interviewee's name, company, and title.
+  - Updated the API route and interview grid UI to handle the simulated status and show a warning toast when mock data is used.
+- **Why it is useful or exciting**:
+  - Ensures a seamless local development experience where standout research works out of the box, even without a paid Gemini billing account or when behind strict corporate firewalls.
+- **Any interesting problem that was solved**:
+  - Intercepted the network-level TLS exceptions to automatically disable rejectUnauthorized temporarily for Gemini API requests only, preventing global configuration exposure while solving Windows-specific developer machine certificate failures.
+- **What remains to be done**:
+  - Monitor the system under real paid Gemini billing API keys in production to ensure search grounding results continue parsing accurately.
+- **Where the relevant files can be found**:
+  - [research.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority Mag SAAS/tli-leverage-dashboard/src/lib/prominence/research.ts)
+  - [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority Mag SAAS/tli-leverage-dashboard/src/app/api/interviews/%5Bid%5D/prominence/route.ts)
+  - [interview-grid.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority Mag SAAS/tli-leverage-dashboard/src/components/dashboard/interview-grid.tsx)
+
 ### Fixed drawer layout and upgraded Standout Signals research UI and feedback loop
 
 - **What was changed**:
