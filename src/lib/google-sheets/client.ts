@@ -2,6 +2,22 @@
 // Google Sheets API Client — Service Account Authentication
 // ==============================================================================
 
+if (
+  process.env.NODE_ENV === "development" &&
+  !process.env.VERCEL &&
+  process.env.ALLOW_INSECURE_LOCAL_TLS_FOR_GEMINI === "true"
+) {
+  if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0") {
+    console.warn(
+      "\x1b[33m%s\x1b[0m",
+      "⚠️ WARNING: ALLOW_INSECURE_LOCAL_TLS_FOR_GEMINI is enabled. " +
+        "Globally disabling TLS/HTTPS certificate verification for Google Sheets. " +
+        "THIS IS NOT PRODUCTION SAFE."
+    );
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  }
+}
+
 import { google, sheets_v4 } from "googleapis";
 
 let sheetsClient: sheets_v4.Sheets | null = null;

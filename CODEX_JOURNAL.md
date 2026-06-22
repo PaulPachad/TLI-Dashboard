@@ -2,6 +2,16 @@
 
 ## June 22, 2026
 
+### Hardened local Google Sheets API sync against TLS certificate validation errors
+
+- **What Yitzi built or changed**:
+  - Added the automatic SSL/TLS certificate validation bypass block at the top of the Google Sheets API client (`src/lib/google-sheets/client.ts`).
+  - When running locally in development mode and `ALLOW_INSECURE_LOCAL_TLS_FOR_GEMINI=true` is enabled, the Google Sheets API client now automatically disables strict TLS validation (`NODE_TLS_REJECT_UNAUTHORIZED = '0'`), resolving network certificate validation errors on local machines.
+- **Why it is useful or exciting**:
+  - Fixes the local "We could not sync the sheet right now" error caused by security interceptors (e.g. Kaspersky/corporate proxy firewalls) rejecting OAuth2 token requests to `oauth2.googleapis.com`.
+- **Where the relevant files can be found**:
+  - [client.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority Mag SAAS/tli-leverage-dashboard/src/lib/google-sheets/client.ts)
+
 ### Fixed Gemini prominence research JSON parsing and signal discarding
 
 - **What Yitzi built or changed**:
