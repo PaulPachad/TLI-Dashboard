@@ -664,10 +664,10 @@ test("background VIP cron auth and limit helpers are strict", () => {
   assert.equal(isCronRequestAuthorized("Bearer wrong", "secret"), false);
   assert.equal(isCronRequestAuthorized("Bearer secret", "secret"), true);
   assert.equal(isCronRequestAuthorized("Bearer secret", ""), false);
-  assert.equal(getVipProminenceCronLimit(undefined), 6);
+  assert.equal(getVipProminenceCronLimit(undefined), 2);
   assert.equal(getVipProminenceCronLimit("0"), 1);
-  assert.equal(getVipProminenceCronLimit("10"), 10);
-  assert.equal(getVipProminenceCronLimit("99"), 12);
+  assert.equal(getVipProminenceCronLimit("10"), 6);
+  assert.equal(getVipProminenceCronLimit("99"), 6);
 });
 
 test("prominence reasons clean AI markdown and source prefixes", () => {

@@ -21,6 +21,7 @@ interface InterviewCardProps {
   ) => void;
   onResearchProminence?: (interviewId: string) => void;
   researchingProminence?: boolean;
+  researchDisabled?: boolean;
   autoScanQueued?: boolean;
   onDismiss?: (interviewId: string) => void;
   onRestore?: (interviewId: string) => void;
@@ -53,6 +54,7 @@ export function InterviewCard({
   onViewDetails,
   onResearchProminence,
   researchingProminence,
+  researchDisabled,
   autoScanQueued,
   onDismiss,
   onRestore,
@@ -252,7 +254,7 @@ export function InterviewCard({
                     e.stopPropagation();
                     onResearchProminence?.(interview.id);
                   }}
-                  disabled={researchingProminence}
+                  disabled={researchingProminence || researchDisabled}
                   aria-label={`Research standout signals for ${interview.intervieweeName}`}
                   className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 hover:border-amber-300 hover:bg-amber-100 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
                 >
@@ -265,19 +267,23 @@ export function InterviewCard({
                   )}
                   {researchingProminence
                     ? "Researching..."
+                    : researchDisabled
+                      ? "Research already running"
                     : autoScanQueued && !alreadyResearched
                       ? "Research Now"
                     : alreadyResearched
                       ? "Refresh standout research"
                       : "Research standout signals"}
                 </button>
-                {(researchingProminence || researchFeedback) && (
+                {(researchingProminence || researchDisabled || researchFeedback) && (
                   <p
                     role="status"
                     aria-live="polite"
                     className={`max-w-full text-[11px] ${
                       researchingProminence
                         ? "text-indigo-600"
+                        : researchDisabled
+                          ? "text-slate-500"
                         : researchFeedback?.tone === "warning"
                           ? "text-amber-700"
                           : "text-emerald-700"
@@ -285,6 +291,8 @@ export function InterviewCard({
                   >
                     {researchingProminence
                       ? "Checking Google-grounded sources..."
+                      : researchDisabled
+                        ? "Wait for the current Standout refresh to finish."
                       : researchFeedback?.message}
                   </p>
                 )}

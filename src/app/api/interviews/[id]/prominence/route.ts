@@ -7,6 +7,7 @@ import { finishJob, tryStartJob } from "@/lib/jobs/idempotency";
 import {
   GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
   GeminiQuotaExceededError,
+  GeminiResearchTimeoutError,
   GoogleSearchConfigError,
   getSearchDiagnostics,
 } from "@/lib/prominence/research";
@@ -110,6 +111,16 @@ export async function POST(
             "Standout research hit the Gemini search quota or rate limit. Try again later, or upgrade/enable billing for the Gemini API project.",
         },
         { status: 429 }
+      );
+    }
+
+    if (error instanceof GeminiResearchTimeoutError) {
+      return NextResponse.json(
+        {
+          error:
+            "Standout research took too long and was stopped to control cost. Try again later or use the automatic background scan.",
+        },
+        { status: 504 }
       );
     }
 

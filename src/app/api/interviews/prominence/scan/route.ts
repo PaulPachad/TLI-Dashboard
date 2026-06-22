@@ -18,8 +18,8 @@ import {
 } from "@/lib/prominence/research";
 import { saveProminenceResearch } from "@/lib/prominence/service";
 
-const DEFAULT_SCAN_LIMIT = 3;
-const MAX_SCAN_LIMIT = 6;
+const DEFAULT_SCAN_LIMIT = 1;
+const MAX_SCAN_LIMIT = 2;
 const researchableInterviewSelect = {
   id: true,
   clientId: true,

@@ -28,7 +28,7 @@ const STATUS_FILTERS = [
   { value: "dismissed", label: "Dismissed" },
 ];
 
-const QUIET_SCAN_LIMIT = 6;
+const QUIET_SCAN_LIMIT = 1;
 const PAGE_SIZE = 120;
 const DISMISSED_STORAGE_KEY = "tli-dismissed-interviews";
 
@@ -553,6 +553,9 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
                 })
               }
               researchingProminence={researchingId === interview.id}
+              researchDisabled={
+                researchingId !== null && researchingId !== interview.id
+              }
               researchFeedback={
                 researchFeedback?.interviewId === interview.id
                   ? {

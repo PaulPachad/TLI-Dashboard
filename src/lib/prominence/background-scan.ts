@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 
-export const DEFAULT_VIP_PROMINENCE_CRON_LIMIT = 6;
-export const MAX_VIP_PROMINENCE_CRON_LIMIT = 12;
+export const DEFAULT_VIP_PROMINENCE_CRON_LIMIT = 2;
+export const MAX_VIP_PROMINENCE_CRON_LIMIT = 6;
 
 interface ProminenceResearchStatus {
   companyEmployeeCount?: number | null;

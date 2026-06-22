@@ -89,6 +89,13 @@ export class GeminiQuotaExceededError extends Error {
   }
 }
 
+export class GeminiResearchTimeoutError extends Error {
+  constructor() {
+    super("Standout research took too long and was stopped before spending more API time.");
+    this.name = "GeminiResearchTimeoutError";
+  }
+}
+
 const PROMINENCE_SIGNAL_PATTERN =
   /\b(forbes|fortune|inc\.?|entrepreneur|fast company|nyt|new york times|wsj|wall street journal|bloomberg|cnbc|tedx?|keynote|speaker|author|bestseller|best-selling|award|winner|honoree|founder|ceo|president|wikipedia|verified|followers|subscribers|employees|revenue|funding|raised|acquired|public company|fortune 500)\b/i;
 
@@ -119,6 +126,7 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
 
     for (const model of modelsToTry) {
       try {
+        const signal = AbortSignal.timeout(getGeminiRequestTimeoutMs());
         let response;
         try {
           response = await fetch(
@@ -134,9 +142,11 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
                 input: buildGroundedResearchPrompt(query),
                 tools: [{ type: "google_search" }],
               }),
+              signal,
             }
           );
         } catch (fetchErr: unknown) {
+          if (isAbortError(fetchErr)) throw new GeminiResearchTimeoutError();
           // Check if it's a local SSL/TLS interception issue
           const fetchError =
             typeof fetchErr === "object" && fetchErr
@@ -179,6 +189,7 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
                   input: buildGroundedResearchPrompt(query),
                   tools: [{ type: "google_search" }],
                 }),
+                signal,
               }
             );
           } else {
@@ -204,7 +215,8 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
           const fallbackData = await requestGeminiGenerateContent(
             model,
             query,
-            this.apiKey
+            this.apiKey,
+            signal
           );
           return geminiResponseToSearchResults(fallbackData);
         }
@@ -221,6 +233,14 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
   }
 }
 
+function getGeminiRequestTimeoutMs(
+  rawValue = process.env.GEMINI_RESEARCH_TIMEOUT_MS
+): number {
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed)) return 25_000;
+  return Math.min(Math.max(Math.trunc(parsed), 5_000), 60_000);
+}
+
 function buildGroundedResearchPrompt(query: string): string {
   return (
     "Research this person or company for standout/prospect prominence signals. " +
@@ -234,7 +254,8 @@ function buildGroundedResearchPrompt(query: string): string {
 async function requestGeminiGenerateContent(
   model: string,
   query: string,
-  apiKey: string
+  apiKey: string,
+  signal: AbortSignal
 ) {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -256,6 +277,7 @@ async function requestGeminiGenerateContent(
         ],
         tools: [{ google_search: {} }],
       }),
+      signal,
     }
   );
   const data = await response.json();
@@ -274,6 +296,15 @@ async function requestGeminiGenerateContent(
     throw new Error(`Model ${model} generateContent failed: ${message}`);
   }
   return data;
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    error instanceof DOMException && error.name === "TimeoutError"
+  ) || (
+    error instanceof Error &&
+    (error.name === "AbortError" || error.name === "TimeoutError")
+  );
 }
 
 export class GoogleCustomSearchProvider implements SearchProvider {

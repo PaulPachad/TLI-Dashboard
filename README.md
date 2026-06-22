@@ -116,7 +116,7 @@ the action timeline.
 Background standout research runs through Vercel Cron once per day (configured at 4:00 AM UTC in `vercel.json` due to Vercel Hobby plan limitations) at
 `/api/cron/vip-prominence-scan`. Set `CRON_SECRET` in Vercel so the cron
 request is authorized, and optionally set `VIP_PROMINENCE_CRON_LIMIT` to tune
-the batch size. The default batch size is 6 and the app caps it at 12 to keep
+the batch size. The default batch size is 2 and the app caps it at 6 to keep
 search usage controlled.
 
 ## Production Database And Deployment
