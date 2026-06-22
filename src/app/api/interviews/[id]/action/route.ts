@@ -246,12 +246,22 @@ export async function POST(
 
       case "send_live_email": {
         const recipient = interview.intervieweeEmail || interview.publicistEmail;
-        const cc =
+        const ccEmails: string[] = [];
+        if (
           interview.intervieweeEmail &&
           interview.publicistEmail &&
           interview.publicistEmail !== interview.intervieweeEmail
-            ? interview.publicistEmail
-            : null;
+        ) {
+          ccEmails.push(interview.publicistEmail);
+        }
+        if (
+          interview.client.email &&
+          interview.client.email !== recipient &&
+          !ccEmails.includes(interview.client.email)
+        ) {
+          ccEmails.push(interview.client.email);
+        }
+        const cc = ccEmails.length > 0 ? ccEmails.join(", ") : null;
         if (!recipient) {
           return NextResponse.json(
             { error: "No recipient email address available. Please add contact info first." },
@@ -513,12 +523,22 @@ export async function POST(
 
       case "send_zoom_invite": {
         const recipient = interview.intervieweeEmail || interview.publicistEmail;
-        const cc =
+        const ccEmails: string[] = [];
+        if (
           interview.intervieweeEmail &&
           interview.publicistEmail &&
           interview.publicistEmail !== interview.intervieweeEmail
-            ? interview.publicistEmail
-            : null;
+        ) {
+          ccEmails.push(interview.publicistEmail);
+        }
+        if (
+          interview.client.email &&
+          interview.client.email !== recipient &&
+          !ccEmails.includes(interview.client.email)
+        ) {
+          ccEmails.push(interview.client.email);
+        }
+        const cc = ccEmails.length > 0 ? ccEmails.join(", ") : null;
         if (!recipient) {
           return NextResponse.json(
             { error: "No recipient email address available." },

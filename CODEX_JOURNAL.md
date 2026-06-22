@@ -2,6 +2,17 @@
 
 ## June 22, 2026
 
+### Added Automatic CC to Client Email for Sent Dashboard Emails
+
+- **What Yitzi built or changed**:
+  - Modified the API route handler `src/app/api/interviews/[id]/action/route.ts` inside `send_live_email` and `send_zoom_invite` cases.
+  - The CC field of the outgoing email now automatically appends the client account's primary email address (`interview.client.email`).
+- **Why it is useful or exciting**:
+  - Automatically sends a CC copy of every live link and Zoom invitation email dispatched from the dashboard to Yitzi's regular email inbox.
+  - Deduplicates CC addresses dynamically to prevent sending a duplicate to the sender if they happen to be the primary recipient.
+- **Where the relevant files can be found**:
+  - [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority Mag SAAS/tli-leverage-dashboard/src/app/api/interviews/[id]/action/route.ts)
+
 ### Bypassed Next.js Turbopack Compilation Error for React Email Rendering
 
 - **What Yitzi built or changed**:
