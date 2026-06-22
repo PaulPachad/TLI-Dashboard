@@ -187,7 +187,7 @@ export function InterviewCard({
                   {interview.intervieweeTitle}
                 </p>
               )}
-              <div className="mt-1.5 flex items-center justify-between gap-2">
+              <div className="mt-1.5">
                 {isUnpublished ? (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-amber-50 text-amber-700 border-amber-200">
                     Unpublished
@@ -199,17 +199,6 @@ export function InterviewCard({
                     {statusConfig.label}
                   </span>
                 )}
-                <button
-                  id={`view-details-${interview.id}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onViewDetails) onViewDetails(interview.id);
-                    else setIsFlipped(true);
-                  }}
-                  className="rounded text-xs font-medium text-slate-500 hover:text-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-                >
-                  Details
-                </button>
               </div>
               <button
                 id={`research-vip-${interview.id}`}
@@ -389,21 +378,37 @@ export function InterviewCard({
                 {interview.intervieweeCompany || "Details"}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsFlipped(false);
-              }}
-              aria-label={`Back to front of ${interview.intervieweeName} card`}
-              className="p-1 px-2 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors flex items-center gap-1 text-[11px] font-semibold bg-slate-100 border border-slate-200 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-              title="Flip back to front"
-            >
-              <svg className="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewDetails?.(interview.id);
+                }}
+                className="p-1 px-2 rounded hover:bg-slate-200 text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1 text-[11px] font-semibold bg-indigo-50 border border-indigo-100 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                title="Open full detail panel"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                </svg>
+                Full Details
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsFlipped(false);
+                }}
+                aria-label={`Back to front of ${interview.intervieweeName} card`}
+                className="p-1 px-2 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors flex items-center gap-1 text-[11px] font-semibold bg-slate-100 border border-slate-200 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                title="Flip back to front"
+              >
+                <svg className="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back
+              </button>
+            </div>
           </div>
 
           {/* Back Content - Scrollable */}
