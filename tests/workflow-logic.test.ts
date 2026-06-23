@@ -21,8 +21,14 @@ import {
   shouldResearchProminenceInBackground,
 } from "../src/lib/prominence/background-scan";
 import {
+  evaluateStandoutResearchCostGate,
+  getStandoutResearchCostConfig,
+} from "../src/lib/prominence/cost-control";
+import {
   buildProminenceQueries,
+  DEFAULT_GEMINI_SEARCH_MODEL,
   geminiResponseToSearchResults,
+  getGeminiSearchModelPlan,
   interactionResponseToSearchResults,
   extractProminenceSignals,
   researchInterviewProminence,
@@ -668,6 +674,142 @@ test("background VIP cron auth and limit helpers are strict", () => {
   assert.equal(getVipProminenceCronLimit("0"), 1);
   assert.equal(getVipProminenceCronLimit("10"), 6);
   assert.equal(getVipProminenceCronLimit("99"), 6);
+});
+
+test("Gemini grounded search defaults to cheap Flash with opt-in fallbacks", () => {
+  assert.equal(DEFAULT_GEMINI_SEARCH_MODEL, "gemini-2.5-flash");
+  assert.deepEqual(getGeminiSearchModelPlan({}), {
+    primaryModel: "gemini-2.5-flash",
+    fallbackModel: null,
+    interactionsFallbackEnabled: false,
+  });
+  assert.deepEqual(
+    getGeminiSearchModelPlan({
+      GEMINI_SEARCH_MODEL: "gemini-3.5-flash",
+      GEMINI_SEARCH_FALLBACK_MODEL: "gemini-2.5-flash",
+      GEMINI_SEARCH_ENABLE_INTERACTIONS_FALLBACK: "true",
+    }),
+    {
+      primaryModel: "gemini-3.5-flash",
+      fallbackModel: "gemini-2.5-flash",
+      interactionsFallbackEnabled: true,
+    }
+  );
+  assert.deepEqual(
+    getGeminiSearchModelPlan({
+      GEMINI_SEARCH_MODEL: "gemini-2.5-flash",
+      GEMINI_SEARCH_FALLBACK_MODEL: "gemini-2.5-flash",
+    }),
+    {
+      primaryModel: "gemini-2.5-flash",
+      fallbackModel: null,
+      interactionsFallbackEnabled: false,
+    }
+  );
+});
+
+test("Standout research cost gates pause and cap research safely", () => {
+  assert.deepEqual(getStandoutResearchCostConfig({}), {
+    enabled: true,
+    automaticEnabled: true,
+    dailyLimit: 25,
+    monthlyLimit: 250,
+  });
+
+  assert.deepEqual(
+    evaluateStandoutResearchCostGate({
+      trigger: "MANUAL",
+      dailyCount: 0,
+      monthlyCount: 0,
+      config: {
+        enabled: false,
+        automaticEnabled: true,
+        dailyLimit: 25,
+        monthlyLimit: 250,
+      },
+    }),
+    {
+      allowed: false,
+      code: "STANDOUT_RESEARCH_DISABLED",
+      message: "Standout research is paused to control cost.",
+      status: 503,
+    }
+  );
+
+  assert.deepEqual(
+    evaluateStandoutResearchCostGate({
+      trigger: "QUIET_SCAN",
+      dailyCount: 0,
+      monthlyCount: 0,
+      config: {
+        enabled: true,
+        automaticEnabled: false,
+        dailyLimit: 25,
+        monthlyLimit: 250,
+      },
+    }),
+    {
+      allowed: false,
+      code: "STANDOUT_AUTOMATIC_RESEARCH_DISABLED",
+      message: "Automatic Standout research is paused to control cost.",
+      status: 503,
+    }
+  );
+
+  assert.deepEqual(
+    evaluateStandoutResearchCostGate({
+      trigger: "MANUAL",
+      dailyCount: 25,
+      monthlyCount: 25,
+      config: {
+        enabled: true,
+        automaticEnabled: true,
+        dailyLimit: 25,
+        monthlyLimit: 250,
+      },
+    }),
+    {
+      allowed: false,
+      code: "STANDOUT_RESEARCH_DAILY_LIMIT",
+      message: "Today's Standout research limit has been reached.",
+      status: 429,
+    }
+  );
+
+  assert.deepEqual(
+    evaluateStandoutResearchCostGate({
+      trigger: "CRON",
+      dailyCount: 24,
+      monthlyCount: 250,
+      config: {
+        enabled: true,
+        automaticEnabled: true,
+        dailyLimit: 25,
+        monthlyLimit: 250,
+      },
+    }),
+    {
+      allowed: false,
+      code: "STANDOUT_RESEARCH_MONTHLY_LIMIT",
+      message: "This month's Standout research limit has been reached.",
+      status: 429,
+    }
+  );
+
+  assert.deepEqual(
+    evaluateStandoutResearchCostGate({
+      trigger: "MANUAL",
+      dailyCount: 3,
+      monthlyCount: 30,
+      config: {
+        enabled: true,
+        automaticEnabled: true,
+        dailyLimit: 25,
+        monthlyLimit: 250,
+      },
+    }),
+    { allowed: true }
+  );
 });
 
 test("prominence reasons clean AI markdown and source prefixes", () => {

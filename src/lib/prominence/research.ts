@@ -99,28 +99,59 @@ export class GeminiResearchTimeoutError extends Error {
 const PROMINENCE_SIGNAL_PATTERN =
   /\b(forbes|fortune|inc\.?|entrepreneur|fast company|nyt|new york times|wsj|wall street journal|bloomberg|cnbc|tedx?|keynote|speaker|author|bestseller|best-selling|award|winner|honoree|founder|ceo|president|wikipedia|verified|followers|subscribers|employees|revenue|funding|raised|acquired|public company|fortune 500)\b/i;
 
+export const DEFAULT_GEMINI_SEARCH_MODEL = "gemini-2.5-flash";
+
+export interface GeminiSearchModelPlan {
+  primaryModel: string;
+  fallbackModel: string | null;
+  interactionsFallbackEnabled: boolean;
+}
+
+export function getGeminiSearchModelPlan(
+  env: Record<string, string | undefined> = process.env
+): GeminiSearchModelPlan {
+  const primaryModel =
+    getFirstEnvValue(["GEMINI_SEARCH_MODEL"], env) || DEFAULT_GEMINI_SEARCH_MODEL;
+  const fallbackModel =
+    getFirstEnvValue(["GEMINI_SEARCH_FALLBACK_MODEL"], env) || null;
+
+  return {
+    primaryModel,
+    fallbackModel:
+      fallbackModel && fallbackModel !== primaryModel ? fallbackModel : null,
+    interactionsFallbackEnabled: parseEnvBoolean(
+      getFirstEnvValue(["GEMINI_SEARCH_ENABLE_INTERACTIONS_FALLBACK"], env),
+      false
+    ),
+  };
+}
+
 export class GeminiGroundedSearchProvider implements SearchProvider {
+  private readonly apiKey: string | undefined;
+  private readonly modelPlan: GeminiSearchModelPlan;
+
   constructor(
-    private readonly apiKey = getFirstEnvValue([
+    apiKey = getFirstEnvValue([
       "GEMINI_API_KEY",
       "GOOGLE_GEMINI_API_KEY",
       "GOOGLE_API_KEY",
       "NEXT_PUBLIC_GEMINI_API_KEY",
     ]),
-    private readonly model =
-      getFirstEnvValue(["GEMINI_SEARCH_MODEL"]) || "gemini-3.5-flash"
-  ) {}
+    modelPlan = getGeminiSearchModelPlan()
+  ) {
+    this.apiKey = apiKey;
+    this.modelPlan = modelPlan;
+  }
 
   async search(query: string): Promise<SearchResult[]> {
     if (!this.apiKey) {
       throw new GoogleSearchConfigError();
     }
 
-    // Attempt the primary model first, and dynamically fall back to gemini-2.5-flash
-    // (or gemini-3.5-flash if 2.5 was primary) if the request fails due to rate limits/quotas.
-    const primaryModel = this.model;
-    const fallbackModel = primaryModel === "gemini-3.5-flash" ? "gemini-2.5-flash" : "gemini-3.5-flash";
-    const modelsToTry = [primaryModel, fallbackModel];
+    const modelsToTry = [
+      this.modelPlan.primaryModel,
+      ...(this.modelPlan.fallbackModel ? [this.modelPlan.fallbackModel] : []),
+    ];
 
     let lastError: Error | null = null;
 
@@ -137,6 +168,8 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
           return geminiResponseToSearchResults(generateContentData);
         } catch (primaryError: unknown) {
           if (primaryError instanceof GeminiQuotaExceededError) throw primaryError;
+          if (isAbortError(primaryError)) throw new GeminiResearchTimeoutError();
+          if (!this.modelPlan.interactionsFallbackEnabled) throw primaryError;
           console.warn(
             `Gemini generateContent search failed for model ${model}; trying Interactions fallback. Error:`,
             primaryError instanceof Error ? primaryError.message : String(primaryError)
@@ -239,6 +272,11 @@ function requestGeminiInteraction(
     }),
     signal,
   });
+}
+
+function parseEnvBoolean(value: string | undefined, fallback: boolean): boolean {
+  if (value == null || value.trim() === "") return fallback;
+  return !/^(false|0|no|off)$/i.test(value.trim());
 }
 
 function getGeminiRequestTimeoutMs(
@@ -417,9 +455,12 @@ export function getSearchDiagnostics(): {
   };
 }
 
-function getFirstEnvValue(names: string[]): string | undefined {
+function getFirstEnvValue(
+  names: string[],
+  env: Record<string, string | undefined> = process.env
+): string | undefined {
   for (const name of names) {
-    const value = process.env[name]?.trim();
+    const value = env[name]?.trim();
     if (value) return value;
   }
   return undefined;

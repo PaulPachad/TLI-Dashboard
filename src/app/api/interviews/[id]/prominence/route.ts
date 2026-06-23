@@ -5,6 +5,10 @@ import { safeApiErrorResponse } from "@/lib/api/safe-error";
 import { canAccessClientResource } from "@/lib/security/tenant-access";
 import { finishJob, tryStartJob } from "@/lib/jobs/idempotency";
 import {
+  assertStandoutResearchAllowed,
+  StandoutResearchCostLimitError,
+} from "@/lib/prominence/cost-control";
+import {
   GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
   GeminiQuotaExceededError,
   GeminiResearchTimeoutError,
@@ -65,6 +69,8 @@ export async function POST(
       );
     }
 
+    await assertStandoutResearchAllowed("MANUAL");
+
     const { result, updated } = await saveProminenceResearch(
       interview,
       user.id,
@@ -121,6 +127,16 @@ export async function POST(
             "Standout research took too long and was stopped to control cost. Try again later or use the automatic background scan.",
         },
         { status: 504 }
+      );
+    }
+
+    if (error instanceof StandoutResearchCostLimitError) {
+      return NextResponse.json(
+        {
+          code: error.code,
+          error: error.message,
+        },
+        { status: error.status }
       );
     }
 

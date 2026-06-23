@@ -7,6 +7,10 @@ import { resolveRequestedClientId } from "@/lib/security/tenant-access";
 import { finishJob, tryStartJob } from "@/lib/jobs/idempotency";
 import { UserRole } from "@/types/db";
 import {
+  getStandoutResearchAllowance,
+  StandoutResearchCostLimitError,
+} from "@/lib/prominence/cost-control";
+import {
   buildBackgroundProminenceWhere,
   buildLegacyBackgroundProminenceWhere,
   isMissingProminenceSignalsColumnError,
@@ -76,6 +80,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const allowance = await getStandoutResearchAllowance("QUIET_SCAN");
+    const boundedLimit = Math.min(limit, allowance.remaining);
+
     const where: Prisma.InterviewWhereInput = {
       ...buildBackgroundProminenceWhere(),
       ...(targetClientId ? { clientId: targetClientId } : {}),
@@ -84,7 +91,7 @@ export async function POST(request: NextRequest) {
         : {}),
     };
 
-    const candidates = await findProminenceCandidates(where, limit);
+    const candidates = await findProminenceCandidates(where, boundedLimit);
     const candidateOrder = new Map(
       requestedInterviewIds.map((id, index) => [id, index])
     );
@@ -119,7 +126,7 @@ export async function POST(request: NextRequest) {
       scanned: candidates.length,
       updated,
       failed,
-      limit,
+      limit: boundedLimit,
     });
   } catch (error: unknown) {
     if (error instanceof GoogleSearchConfigError) {
@@ -132,6 +139,17 @@ export async function POST(request: NextRequest) {
           diagnostics: getSearchDiagnostics(),
         },
         { status: 503 }
+      );
+    }
+
+    if (error instanceof StandoutResearchCostLimitError) {
+      return NextResponse.json(
+        {
+          code: error.code,
+          error: error.message,
+          jobStatus: "skipped",
+        },
+        { status: error.status }
       );
     }
 

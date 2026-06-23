@@ -290,7 +290,7 @@ export function InterviewCard({
                     }`}
                   >
                     {researchingProminence
-                      ? "Checking Google-grounded sources..."
+                      ? "Checking Google-grounded sources with Gemini Flash..."
                       : researchDisabled
                         ? "Wait for the current Standout refresh to finish."
                       : researchFeedback?.message}

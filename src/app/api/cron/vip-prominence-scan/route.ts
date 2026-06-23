@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { finishJob, tryStartJob } from "@/lib/jobs/idempotency";
 import {
+  getStandoutResearchAllowance,
+  StandoutResearchCostLimitError,
+} from "@/lib/prominence/cost-control";
+import {
   buildBackgroundProminenceWhere,
   buildLegacyBackgroundProminenceWhere,
   getVipProminenceCronLimit,
@@ -48,7 +52,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const limit = getVipProminenceCronLimit();
-    const candidates = await findCronProminenceCandidates(limit);
+    const allowance = await getStandoutResearchAllowance("CRON");
+    const boundedLimit = Math.min(limit, allowance.remaining);
+    const candidates = await findCronProminenceCandidates(boundedLimit);
 
     let updated = 0;
     let failed = 0;
@@ -70,7 +76,7 @@ export async function GET(request: NextRequest) {
       scanned: candidates.length,
       updated,
       failed,
-      limit,
+      limit: boundedLimit,
     });
   } catch (error: unknown) {
     if (error instanceof GoogleSearchConfigError) {
@@ -82,6 +88,17 @@ export async function GET(request: NextRequest) {
           diagnostics: getSearchDiagnostics(),
         },
         { status: 503 }
+      );
+    }
+
+    if (error instanceof StandoutResearchCostLimitError) {
+      return NextResponse.json(
+        {
+          code: error.code,
+          error: error.message,
+          jobStatus: "skipped",
+        },
+        { status: error.status }
       );
     }
 

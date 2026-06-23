@@ -212,7 +212,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
         const data = (await res.json().catch(() => ({}))) as ProminenceResponse;
         console.error(`[Quiet VIP Scan Failure] HTTP ${res.status}: ${data.error || "Unknown error"}`);
         
-        if (res.status === 503) {
+        if (res.status === 503 || isStandoutCostControlCode(data.code)) {
           setNotice({
             tone: "warning",
             message: `Quiet Standout scan was skipped: ${data.error || "Search is not configured."}`,
@@ -283,6 +283,19 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
             interviewId,
             tone: "warning",
             message: "Search setup needs attention. See the notification for details.",
+          });
+          return;
+        }
+
+        if (isStandoutCostControlCode(data.code)) {
+          setNotice({
+            tone: "warning",
+            message: data.error || "Standout research is paused to control cost.",
+          });
+          setResearchFeedback({
+            interviewId,
+            tone: "warning",
+            message: "Research paused for cost control. Existing signals are still saved.",
           });
           return;
         }
@@ -637,6 +650,10 @@ function formatSearchConfigNotice(data: ProminenceResponse) {
   ].filter(Boolean);
 
   return `${base} Diagnostics: ${details.join("; ")}.`;
+}
+
+function isStandoutCostControlCode(code: string | undefined) {
+  return Boolean(code && code.startsWith("STANDOUT_"));
 }
 
 function shouldQuietScanProminence(interview: InterviewView) {

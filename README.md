@@ -100,7 +100,24 @@ Simplest setup:
 1. Create a Gemini API key in Google AI Studio.
 2. Set `GEMINI_API_KEY`.
 3. Optionally set `GEMINI_SEARCH_MODEL` to override the default
-   `gemini-3.5-flash`.
+   `gemini-2.5-flash`.
+
+Recommended low-cost production settings:
+
+```env
+GEMINI_SEARCH_MODEL=gemini-2.5-flash
+STANDOUT_RESEARCH_ENABLED=true
+STANDOUT_RESEARCH_AUTOMATIC_ENABLED=true
+STANDOUT_RESEARCH_DAILY_LIMIT=25
+STANDOUT_RESEARCH_MONTHLY_LIMIT=250
+```
+
+For the cheapest larger-batch mode, try `gemini-2.5-flash-lite` and check the
+quality before using it broadly. For higher-quality one-off checks, set
+`GEMINI_SEARCH_MODEL=gemini-3.5-flash`. A second Gemini request is not made by
+default; set `GEMINI_SEARCH_FALLBACK_MODEL` only if you explicitly want a model
+fallback, and set `GEMINI_SEARCH_ENABLE_INTERACTIONS_FALLBACK=true` only if you
+want the Interactions API tried after `generateContent` fails.
 
 Fallback setup:
 
