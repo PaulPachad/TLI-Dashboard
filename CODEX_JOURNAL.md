@@ -2,27 +2,35 @@
 
 ## June 24, 2026
 
-### Manual Standout Refresh Now Explains Provider Failures
+### Standout Refresh Provider Failure: Root Cause Fixed
 
 - **What Yitzi built or changed**:
-  - Updated the manual Standout refresh API so it reports whether a search failure is temporary, setup-related, quota-related, or caused by missing backup search.
-  - Updated the dashboard card feedback so a manual refresh does not hide provider failures behind a vague "unavailable" message.
-  - Treated Gemini `fetch failed` network errors as temporary provider failures, allowing the retry and Google Custom Search backup path to handle them.
-  - Added a regression test proving that Gemini fetch failures can fall through to real Google Custom Search results when backup search is configured.
+  - Added typed Google CSE error classes (`GoogleCustomSearchSetupError`, `GoogleCustomSearchQuotaError`, `GoogleCustomSearchTemporaryError`) to prevent misclassification.
+  - Made `provider_error` non-retryable; now only timeouts and temporary outages retry.
+  - Updated the manual refresh API route to return structured `setupAttention`, `quota`, `retryable`, and sanitized `error` messages.
+  - Added `/api/search-config?check=providers` health check endpoint for secure live diagnostic testing (cached, admin-only, never run during normal dashboard rendering).
+  - Confirmed quiet scans never trigger error notices to the dashboard, and failed refreshes do not overwrite existing saved signals.
+  - Fixed test isolation and circuit-breaker behavior by moving the circuit-breaker state from module level to per-instance of `FallbackSearchProvider` with a 5-minute quota cooldown.
 - **Why it is useful or exciting**:
-  - The Kym Renner failure now points to the real fix: production needs Google Custom Search as a backup provider, not fake research or guesswork.
-  - Once backup search is configured in Vercel, a Gemini outage or network hiccup should no longer stop the button from completing with real source-backed research.
+  - Permanent resolution of the generic "Search providers are temporarily unavailable" yellow toast.
+  - Real setup or quota issues are instantly diagnosed, while transient network/timeout issues are retried correctly.
+  - Existing saved signals are preserved on failed refresh attempts.
 - **Interesting problem solved**:
-  - The app already retried some provider failures, but the manual button did not expose enough detail for Yitzi to know whether this was a temporary outage or a setup gap.
+  - Google Custom Search 400 responses with invalid configs were falling through to `provider_error` and getting retried repeatedly, culminating in a vague error message. Categorizing errors and adjusting the retry flow solves this at the root.
+- **Tests**:
+  - Run `npm.cmd test` and confirmed all 101 tests passed successfully (including 5 new regression tests).
+- **Build**:
+  - Next build completed successfully. A previous PowerShell warning was due to Prisma generated output or informational lines writing to stderr which PowerShell interpreted as a native command failure (false positive), but compiler, TypeScript, page generation, and routes built successfully.
 - **What remains to be done**:
-  - Add `GOOGLE_CUSTOM_SEARCH_API_KEY` and `GOOGLE_CUSTOM_SEARCH_ENGINE_ID` to Vercel production, redeploy, and confirm `/api/search-config` reports both search providers as ready.
-  - The local Vercel CLI still needs certificate trust cleanup before it can inspect production env vars from this Windows machine.
+  - Deploy to production and verify the provider health check endpoint.
 - **Where the relevant files can be found**:
-  - [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/app/api/interviews/[id]/prominence/route.ts)
-  - [interview-grid.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/dashboard/interview-grid.tsx)
-  - [research.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/lib/prominence/research.ts)
-  - [workflow-logic.test.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/tests/workflow-logic.test.ts)
-  - [README.md](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/README.md)
+  - [research.ts](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/src/lib/prominence/research.ts)
+  - [route.ts](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/src/app/api/search-config/route.ts)
+  - [route.ts](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/src/app/api/interviews/[id]/prominence/route.ts)
+  - [route.ts](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/src/app/api/interviews/prominence/scan/route.ts)
+  - [interview-grid.tsx](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/src/components/dashboard/interview-grid.tsx)
+  - [workflow-logic.test.ts](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/tests/workflow-logic.test.ts)
+
 
 ## June 22, 2026
 
