@@ -17,7 +17,6 @@
 // ==============================================================================
 
 if (
-  process.env.NODE_ENV === "development" &&
   !process.env.VERCEL &&
   process.env.ALLOW_INSECURE_LOCAL_TLS_FOR_GEMINI === "true"
 ) {
@@ -305,7 +304,8 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
 
           if (
             isSslErr &&
-            process.env.NODE_ENV === "development" &&
+            !process.env.VERCEL &&
+            process.env.ALLOW_INSECURE_LOCAL_TLS_FOR_GEMINI === "true" &&
             process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0"
           ) {
             console.warn(
