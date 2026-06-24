@@ -51,8 +51,10 @@ Copy `.env.example` to `.env.local` and configure:
 - `ADMIN_EMAIL` and `ADMIN_PASSWORD`: initial admin login.
 - `GOOGLE_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`.
 - `GEMINI_API_KEY`: enables the card-level Standout Signals research button through
-  Gemini grounded search. Optional fallback: `GOOGLE_CUSTOM_SEARCH_API_KEY` and
-  `GOOGLE_CUSTOM_SEARCH_ENGINE_ID`.
+  Gemini grounded search.
+- `GOOGLE_CUSTOM_SEARCH_API_KEY` and `GOOGLE_CUSTOM_SEARCH_ENGINE_ID`: real
+  backup search provider used automatically if Gemini is throttled or
+  temporarily unavailable.
 - `RESEND_API_KEY` and `EMAIL_FROM`.
 - `DEMO_MODE`: keep `false` in production.
 - `NEXT_PUBLIC_DEMO_MODE`: keep `false` in production.
@@ -95,11 +97,15 @@ to find prominence signals such as large audiences, major company scale, senior
 leadership, press mentions, awards, author/speaker credentials, and public
 authority.
 
-Simplest setup:
+Required production setup:
 
 1. Create a Gemini API key in Google AI Studio.
 2. Set `GEMINI_API_KEY`.
-3. Optionally set `GEMINI_SEARCH_MODEL` to override the default
+3. Enable the Google Custom Search JSON API in Google Cloud.
+4. Create a Google Programmable Search Engine.
+5. Set `GOOGLE_CUSTOM_SEARCH_API_KEY`.
+6. Set `GOOGLE_CUSTOM_SEARCH_ENGINE_ID`.
+7. Optionally set `GEMINI_SEARCH_MODEL` to override the default
    `gemini-2.5-flash`.
 
 Recommended low-cost production settings:
@@ -119,12 +125,10 @@ default; set `GEMINI_SEARCH_FALLBACK_MODEL` only if you explicitly want a model
 fallback, and set `GEMINI_SEARCH_ENABLE_INTERACTIONS_FALLBACK=true` only if you
 want the Interactions API tried after `generateContent` fails.
 
-Fallback setup:
-
-1. Enable the Google Custom Search JSON API in Google Cloud.
-2. Create a Google Programmable Search Engine.
-3. Set `GOOGLE_CUSTOM_SEARCH_API_KEY`.
-4. Set `GOOGLE_CUSTOM_SEARCH_ENGINE_ID`.
+Gemini remains the first choice because it returns grounded AI research. Google
+Custom Search is the real backup path: if Gemini hits quota, rate limits,
+temporary provider errors, or a timeout, Standout research automatically tries
+Custom Search before showing a card-level failure.
 
 When configured, the "Research standout signals" button stores the discovered
 signals on the interview, updates the card badges, and records the research in

@@ -13,6 +13,7 @@ import {
   GeminiQuotaExceededError,
   GeminiResearchTimeoutError,
   GoogleSearchConfigError,
+  SearchProviderFallbackError,
   getSearchDiagnostics,
 } from "@/lib/prominence/research";
 import { saveProminenceResearch } from "@/lib/prominence/service";
@@ -29,6 +30,11 @@ const researchableInterviewSelect = {
   interviewDocUrl: true,
   linkedinUrl: true,
   twitterUrl: true,
+  companyEmployeeCount: true,
+  companyRevenueUsd: true,
+  largestSocialFollowerCount: true,
+  prominenceNotes: true,
+  prominenceSignalsJson: true,
 } as const;
 
 export async function POST(
@@ -37,6 +43,7 @@ export async function POST(
 ) {
   let jobKey: string | null = null;
   let jobStarted = false;
+  let hasSavedResearch = false;
   try {
     const user = await requireApiAuth();
     const { id } = await params;
@@ -52,6 +59,13 @@ export async function POST(
         { status: 404 }
       );
     }
+    hasSavedResearch = Boolean(
+      interview.prominenceSignalsJson?.trim() ||
+        interview.prominenceNotes?.trim() ||
+        interview.companyEmployeeCount != null ||
+        interview.companyRevenueUsd != null ||
+        interview.largestSocialFollowerCount != null
+    );
 
     if (!canAccessClientResource(user, interview.clientId)) {
       return NextResponse.json({ error: "Access denied." }, { status: 403 });
@@ -79,7 +93,9 @@ export async function POST(
 
     const isSimulated = result.isSimulated || false;
     let note =
-      result.assessment.tier === "standard"
+      result.fallbackUsed
+        ? "Research complete using backup search."
+        : result.assessment.tier === "standard"
         ? "Research complete. No strong standout found yet."
         : `Research complete: ${result.assessment.tierLabel} (${result.assessment.score}/100).`;
 
@@ -93,6 +109,9 @@ export async function POST(
       interview: updated,
       prominence: result.assessment,
       sourceCount: result.sourceResults.length,
+      provider: result.provider,
+      fallbackUsed: result.fallbackUsed,
+      providerErrors: result.providerErrors,
       simulated: isSimulated,
       note,
     });
@@ -127,6 +146,20 @@ export async function POST(
             "Standout research took too long and was stopped to control cost. Try again later or use the automatic background scan.",
         },
         { status: 504 }
+      );
+    }
+
+    if (error instanceof SearchProviderFallbackError) {
+      return NextResponse.json(
+        {
+          code: error.code,
+          error: hasSavedResearch
+            ? `${error.message} Existing saved signals are still visible on this card.`
+            : error.message,
+          hasSavedResearch,
+          providerErrors: error.providerErrors,
+        },
+        { status: 503 }
       );
     }
 

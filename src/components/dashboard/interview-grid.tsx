@@ -59,6 +59,8 @@ interface ProminenceResponse {
   note?: string;
   diagnostics?: SearchDiagnostics;
   simulated?: boolean;
+  fallbackUsed?: boolean;
+  hasSavedResearch?: boolean;
 }
 
 interface InterviewPagination {
@@ -296,6 +298,23 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
             interviewId,
             tone: "warning",
             message: "Research paused for cost control. Existing signals are still saved.",
+          });
+          return;
+        }
+
+        if (data.code === "SEARCH_PROVIDER_FALLBACK_FAILED") {
+          setNotice({
+            tone: "warning",
+            message:
+              data.error ||
+              "Standout research could not finish with the configured search providers.",
+          });
+          setResearchFeedback({
+            interviewId,
+            tone: "warning",
+            message: data.hasSavedResearch
+              ? "Refresh could not finish yet. Existing signals are still saved."
+              : "Backup search is not configured or is temporarily unavailable.",
           });
           return;
         }

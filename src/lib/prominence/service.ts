@@ -42,7 +42,9 @@ export async function saveProminenceResearch(
       actionType: "PROMINENCE_RESEARCHED",
       status: "SUCCESS",
       note:
-        result.assessment.tier === "standard"
+        result.fallbackUsed
+          ? "Researched standout signals using backup search."
+          : result.assessment.tier === "standard"
           ? "Researched standout signals. No strong standout found yet."
           : `Researched standout signals and flagged ${result.assessment.tierLabel}.`,
       metadataJson: JSON.stringify({
@@ -50,6 +52,9 @@ export async function saveProminenceResearch(
         tier: result.assessment.tier,
         confidence: result.assessment.confidence,
         sourceCount: result.sourceResults.length,
+        provider: result.provider,
+        fallbackUsed: result.fallbackUsed,
+        providerErrors: result.providerErrors,
         trigger,
       }),
       createdByUserId,

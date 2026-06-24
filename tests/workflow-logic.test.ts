@@ -27,11 +27,15 @@ import {
 import {
   buildProminenceQueries,
   DEFAULT_GEMINI_SEARCH_MODEL,
+  FallbackSearchProvider,
+  GeminiQuotaExceededError,
+  GeminiResearchTimeoutError,
   geminiResponseToSearchResults,
   getGeminiSearchModelPlan,
   interactionResponseToSearchResults,
   extractProminenceSignals,
   researchInterviewProminence,
+  SearchProviderFallbackError,
   type SearchProvider,
 } from "../src/lib/prominence/research";
 
@@ -812,6 +816,145 @@ test("Standout research cost gates pause and cap research safely", () => {
   );
 });
 
+test("standout research provider chain uses Gemini without fallback when available", async () => {
+  const provider = new FallbackSearchProvider([
+    {
+      label: "gemini_grounded_search",
+      provider: providerReturning([
+        {
+          title: "Taylor Chen featured in Forbes",
+          url: "https://example.com/gemini",
+          snippet: "Taylor Chen has 125K followers and is a keynote speaker.",
+        },
+      ]),
+    },
+    {
+      label: "google_custom_search",
+      provider: providerReturning([
+        {
+          title: "Backup result",
+          url: "https://example.com/backup",
+          snippet: "This should not be used.",
+        },
+      ]),
+    },
+  ]);
+
+  const result = await researchInterviewProminence(
+    { intervieweeName: "Taylor Chen" },
+    provider
+  );
+
+  assert.equal(result.provider, "gemini_grounded_search");
+  assert.equal(result.fallbackUsed, false);
+  assert.deepEqual(result.providerErrors, []);
+  assert.equal(result.sourceResults[0]?.url, "https://example.com/gemini");
+});
+
+test("standout research falls back to Google Custom Search after Gemini quota", async () => {
+  const provider = new FallbackSearchProvider([
+    {
+      label: "gemini_grounded_search",
+      provider: providerThrowing(
+        new GeminiQuotaExceededError("Model rate/quota limit")
+      ),
+    },
+    {
+      label: "google_custom_search",
+      provider: providerReturning([
+        {
+          title: "Backup profile",
+          url: "https://example.com/backup-profile",
+          snippet:
+            "Taylor Chen is a founder with 125K followers and $25M revenue.",
+        },
+      ]),
+    },
+  ]);
+
+  const result = await researchInterviewProminence(
+    { intervieweeName: "Taylor Chen" },
+    provider
+  );
+
+  assert.equal(result.provider, "google_custom_search");
+  assert.equal(result.fallbackUsed, true);
+  assert.deepEqual(result.providerErrors, [
+    { provider: "gemini_grounded_search", code: "quota_or_rate_limit" },
+  ]);
+  assert.equal(result.sourceResults[0]?.url, "https://example.com/backup-profile");
+});
+
+test("standout research falls back after a Gemini timeout", async () => {
+  const provider = new FallbackSearchProvider([
+    {
+      label: "gemini_grounded_search",
+      provider: providerThrowing(new GeminiResearchTimeoutError()),
+    },
+    {
+      label: "google_custom_search",
+      provider: providerReturning([
+        {
+          title: "Backup company profile",
+          url: "https://example.com/company",
+          snippet: "Acme Robotics has 2,500 employees.",
+        },
+      ]),
+    },
+  ]);
+
+  const result = await researchInterviewProminence(
+    {
+      intervieweeName: "Taylor Chen",
+      intervieweeCompany: "Acme Robotics",
+    },
+    provider
+  );
+
+  assert.equal(result.provider, "google_custom_search");
+  assert.equal(result.fallbackUsed, true);
+  assert.deepEqual(result.providerErrors, [
+    { provider: "gemini_grounded_search", code: "timeout" },
+  ]);
+});
+
+test("standout research reports missing backup search when Gemini fails in production", async () => {
+  await withProductionEnv(async () => {
+    const provider = new FallbackSearchProvider([
+      {
+        label: "gemini_grounded_search",
+        provider: providerThrowing(
+          new GeminiQuotaExceededError("Model rate/quota limit")
+        ),
+      },
+    ]);
+
+    await assert.rejects(
+      () => researchInterviewProminence({ intervieweeName: "Taylor Chen" }, provider),
+      (error: unknown) => {
+        assert.ok(error instanceof SearchProviderFallbackError);
+        assert.equal(error.hasBackupProvider, false);
+        assert.match(error.message, /backup Google Custom Search is not configured/i);
+        assert.deepEqual(error.providerErrors, [
+          { provider: "gemini_grounded_search", code: "quota_or_rate_limit" },
+        ]);
+        return true;
+      }
+    );
+  });
+});
+
+test("standout research does not return simulated results in production", async () => {
+  await withProductionEnv(async () => {
+    const provider = providerThrowing(new Error("temporary provider outage"));
+
+    await assert.rejects(
+      () => researchInterviewProminence({ intervieweeName: "Taylor Chen" }, provider),
+      /temporary provider outage/
+    );
+  });
+});
+
 test("prominence reasons clean AI markdown and source prefixes", () => {
   const assessment = assessInterviewProminence({
     intervieweeName: "Dion Clarke",
@@ -961,6 +1104,44 @@ test("Gemini Interactions grounded response maps citations to search results", (
   assert.equal(results[0].url, "https://example.com/acme-executive");
   assert.match(results[0].snippet, /125K followers/);
 });
+
+function providerReturning(results: Awaited<ReturnType<SearchProvider["search"]>>): SearchProvider {
+  return {
+    async search() {
+      return results;
+    },
+  };
+}
+
+function providerThrowing(error: Error): SearchProvider {
+  return {
+    async search() {
+      throw error;
+    },
+  };
+}
+
+async function withProductionEnv(callback: () => Promise<void>) {
+  const env = process.env as Record<string, string | undefined>;
+  const originalNodeEnv = env.NODE_ENV;
+  const originalVercel = env.VERCEL;
+  env.NODE_ENV = "production";
+  env.VERCEL = "1";
+  try {
+    await callback();
+  } finally {
+    if (originalNodeEnv === undefined) {
+      delete env.NODE_ENV;
+    } else {
+      env.NODE_ENV = originalNodeEnv;
+    }
+    if (originalVercel === undefined) {
+      delete env.VERCEL;
+    } else {
+      env.VERCEL = originalVercel;
+    }
+  }
+}
 
 function collectProminenceText(
   assessment: ReturnType<typeof assessInterviewProminence>

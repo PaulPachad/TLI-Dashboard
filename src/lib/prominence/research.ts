@@ -59,6 +59,17 @@ export interface SearchProvider {
   search(query: string): Promise<SearchResult[]>;
 }
 
+export interface SearchProviderFailure {
+  provider: string;
+  code: string;
+}
+
+export interface SearchProviderOutcome {
+  provider: string;
+  fallbackUsed: boolean;
+  providerErrors: SearchProviderFailure[];
+}
+
 export interface ProminenceResearchResult {
   companyEmployeeCount: number | null;
   companyRevenueUsd: number | null;
@@ -67,6 +78,9 @@ export interface ProminenceResearchResult {
   prominenceSignalsJson: string | null;
   sourceResults: SearchResult[];
   assessment: ReturnType<typeof assessInterviewProminence>;
+  provider: string;
+  fallbackUsed: boolean;
+  providerErrors: SearchProviderFailure[];
   isSimulated?: boolean;
 }
 
@@ -93,6 +107,18 @@ export class GeminiResearchTimeoutError extends Error {
   constructor() {
     super("Standout research took too long and was stopped before spending more API time.");
     this.name = "GeminiResearchTimeoutError";
+  }
+}
+
+export class SearchProviderFallbackError extends Error {
+  code = "SEARCH_PROVIDER_FALLBACK_FAILED";
+
+  constructor(
+    readonly providerErrors: SearchProviderFailure[],
+    readonly hasBackupProvider: boolean
+  ) {
+    super(buildSearchProviderFallbackMessage(providerErrors, hasBackupProvider));
+    this.name = "SearchProviderFallbackError";
   }
 }
 
@@ -390,7 +416,58 @@ export class GoogleCustomSearchProvider implements SearchProvider {
   }
 }
 
+interface SearchProviderEntry {
+  label: string;
+  provider: SearchProvider;
+}
+
+export class FallbackSearchProvider implements SearchProvider {
+  private lastOutcome: SearchProviderOutcome | null = null;
+
+  constructor(private readonly entries: SearchProviderEntry[]) {}
+
+  async search(query: string): Promise<SearchResult[]> {
+    this.lastOutcome = null;
+    if (this.entries.length === 0) {
+      throw new GoogleSearchConfigError();
+    }
+
+    const providerErrors: SearchProviderFailure[] = [];
+    for (let index = 0; index < this.entries.length; index += 1) {
+      const entry = this.entries[index];
+      try {
+        const results = await entry.provider.search(query);
+        this.lastOutcome = {
+          provider: entry.label,
+          fallbackUsed: providerErrors.length > 0,
+          providerErrors,
+        };
+        return results;
+      } catch (error) {
+        const failure = buildProviderFailure(entry.label, error);
+        providerErrors.push(failure);
+        if (index < this.entries.length - 1) {
+          console.warn(
+            `Standout research provider ${entry.label} failed with ${failure.code}; trying backup provider.`
+          );
+        }
+      }
+    }
+
+    throw new SearchProviderFallbackError(
+      providerErrors,
+      this.entries.some((entry) => entry.label === "google_custom_search")
+    );
+  }
+
+  getLastOutcome(): SearchProviderOutcome | null {
+    return this.lastOutcome;
+  }
+}
+
 export function createDefaultSearchProvider(): SearchProvider {
+  const entries: SearchProviderEntry[] = [];
+
   if (
     getFirstEnvValue([
       "GEMINI_API_KEY",
@@ -399,21 +476,23 @@ export function createDefaultSearchProvider(): SearchProvider {
       "NEXT_PUBLIC_GEMINI_API_KEY",
     ])
   ) {
-    return new GeminiGroundedSearchProvider();
+    entries.push({
+      label: "gemini_grounded_search",
+      provider: new GeminiGroundedSearchProvider(),
+    });
   }
 
   if (
     getFirstEnvValue(["GOOGLE_CUSTOM_SEARCH_API_KEY"]) &&
     getFirstEnvValue(["GOOGLE_CUSTOM_SEARCH_ENGINE_ID", "GOOGLE_CSE_ID"])
   ) {
-    return new GoogleCustomSearchProvider();
+    entries.push({
+      label: "google_custom_search",
+      provider: new GoogleCustomSearchProvider(),
+    });
   }
 
-  return {
-    async search() {
-      throw new GoogleSearchConfigError();
-    },
-  };
+  return new FallbackSearchProvider(entries);
 }
 
 export function getSearchConfigStatus(): {
@@ -488,6 +567,8 @@ export async function researchInterviewProminence(
         result.status === "fulfilled" ? result.value : []
       )
     ).slice(0, 12);
+    const providerOutcome = getSearchProviderOutcome(provider);
+    const providerLabel = providerOutcome?.provider || getProviderLabel(provider);
 
     const extracted = extractProminenceSignals(sourceResults);
     const prominenceNotes = buildProminenceNotes(sourceResults);
@@ -495,7 +576,7 @@ export async function researchInterviewProminence(
       ...interview,
       ...extracted,
       results: sourceResults,
-      provider: getProviderLabel(provider),
+      provider: providerLabel,
     });
     const assessment = assessInterviewProminence({
       ...interview,
@@ -510,6 +591,9 @@ export async function researchInterviewProminence(
       prominenceSignalsJson,
       sourceResults,
       assessment,
+      provider: providerLabel,
+      fallbackUsed: providerOutcome?.fallbackUsed || false,
+      providerErrors: providerOutcome?.providerErrors || [],
       isSimulated: false,
     };
   } catch (error: unknown) {
@@ -554,6 +638,52 @@ function getUnknownErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (typeof error === "string") return error;
   return "Unknown error";
+}
+
+function buildProviderFailure(
+  provider: string,
+  error: unknown
+): SearchProviderFailure {
+  const message = getUnknownErrorMessage(error);
+  return {
+    provider,
+    code: getProviderErrorCode(error, message),
+  };
+}
+
+function getProviderErrorCode(error: unknown, message: string): string {
+  if (error instanceof GoogleSearchConfigError) return "not_configured";
+  if (error instanceof GeminiQuotaExceededError) return "quota_or_rate_limit";
+  if (error instanceof GeminiResearchTimeoutError) return "timeout";
+  if (/quota|rate|limit|429|503|resource exhausted/i.test(message)) {
+    return "quota_or_rate_limit";
+  }
+  if (/api key not valid|invalid api key|permission|billing|not enabled|forbidden|unauthorized/i.test(message)) {
+    return "configuration_or_auth";
+  }
+  if (/timeout|timed out|abort/i.test(message)) return "timeout";
+  return "provider_error";
+}
+
+function buildSearchProviderFallbackMessage(
+  providerErrors: SearchProviderFailure[],
+  hasBackupProvider: boolean
+): string {
+  const geminiFailed = providerErrors.some(
+    (failure) => failure.provider === "gemini_grounded_search"
+  );
+  if (geminiFailed && !hasBackupProvider) {
+    return (
+      "Standout research could not finish because Gemini is temporarily limited or unavailable, " +
+      "and backup Google Custom Search is not configured. Add GOOGLE_CUSTOM_SEARCH_API_KEY " +
+      "and GOOGLE_CUSTOM_SEARCH_ENGINE_ID, then try again."
+    );
+  }
+
+  return (
+    "Standout research could not finish because the configured search providers are temporarily unavailable. " +
+    "Existing saved signals were kept; try again later."
+  );
 }
 
 export function extractProminenceSignals(results: SearchResult[]): {
@@ -736,9 +866,22 @@ function maxMetric(current: number | null, next: number | null): number | null {
 }
 
 function getProviderLabel(provider: SearchProvider): string {
+  const outcome = getSearchProviderOutcome(provider);
+  if (outcome) return outcome.provider;
   if (provider instanceof GeminiGroundedSearchProvider) return "gemini_grounded_search";
   if (provider instanceof GoogleCustomSearchProvider) return "google_custom_search";
   return "custom_search_provider";
+}
+
+function getSearchProviderOutcome(
+  provider: SearchProvider
+): SearchProviderOutcome | null {
+  if (
+    provider instanceof FallbackSearchProvider
+  ) {
+    return provider.getLastOutcome();
+  }
+  return null;
 }
 
 function quote(value: string): string {
@@ -847,6 +990,9 @@ function generateSimulatedResearchResult(
     prominenceSignalsJson,
     sourceResults,
     assessment,
+    provider: "simulated_search_provider",
+    fallbackUsed: false,
+    providerErrors: [],
     isSimulated: true,
   };
 }
