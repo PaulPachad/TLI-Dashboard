@@ -10,6 +10,7 @@ import type {
   InterviewProminenceSignal,
   InterviewView,
 } from "@/types/interview";
+import { formatActionLabel } from "@/lib/actions/labels";
 
 interface InterviewDetailPanelProps {
   interview: InterviewView;
@@ -284,10 +285,10 @@ export function InterviewDetailPanel({
                           ? "bg-rose-500"
                           : "bg-amber-500"
                       }`}
-                    />
+                      />
                     <div>
                       <p className="text-slate-700 font-medium">
-                        {formatActionType(action.actionType)}
+                        {formatActionLabel(action.actionType, action.status)}
                       </p>
                       {action.recipient && (
                         <p className="text-slate-500 text-xs">To: {action.recipient}</p>
@@ -452,23 +453,6 @@ function formatSocialHandle(value: string): string {
   } catch {
     return value;
   }
-}
-
-function formatActionType(type: string): string {
-  const labels: Record<string, string> = {
-    LIVE_EMAIL_GENERATED: "Live email generated",
-    LIVE_EMAIL_SENT: "Live email sent",
-    LINKEDIN_POST_GENERATED: "LinkedIn post generated",
-    LINKEDIN_POST_COPIED: "LinkedIn post copied",
-    MARKED_SHARED: "Marked as shared",
-    LINKEDIN_URL_ADDED: "LinkedIn post URL added",
-    ZOOM_INVITE_SENT: "Zoom invitation sent",
-    NOTE_ADDED: "Note added",
-    CONTACT_INFO_UPDATED: "Contact info updated",
-    IMPORT_CREATED: "Interview imported",
-    PROMINENCE_RESEARCHED: "Standout signals researched",
-  };
-  return labels[type] || type;
 }
 
 function capitalize(value: string): string {

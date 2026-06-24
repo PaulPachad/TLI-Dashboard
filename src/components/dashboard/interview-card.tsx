@@ -10,6 +10,7 @@ import type {
   InterviewProminenceSignal,
   InterviewView,
 } from "@/types/interview";
+import { formatActionLabel } from "@/lib/actions/labels";
 import { buildInterviewImageSources } from "@/lib/images/interview-image";
 
 interface InterviewCardProps {
@@ -620,10 +621,15 @@ export function InterviewCard({
                       />
                       <div>
                         <p className="text-slate-700 font-semibold leading-tight">
-                          {formatActionType(action.actionType)}
+                          {formatActionLabel(action.actionType, action.status)}
                         </p>
                         {action.recipient && (
                           <p className="text-slate-400 text-[9px] mt-0.5">To: {action.recipient}</p>
+                        )}
+                        {action.note && (
+                          <p className="mt-0.5 text-[9px] leading-relaxed text-slate-500">
+                            {action.note}
+                          </p>
                         )}
                         {action.linkedinPostUrl && (
                           <a
@@ -773,23 +779,6 @@ function BackRow({
       )}
     </div>
   );
-}
-
-function formatActionType(type: string): string {
-  const labels: Record<string, string> = {
-    LIVE_EMAIL_GENERATED: "Live email generated",
-    LIVE_EMAIL_SENT: "Live email sent",
-    LINKEDIN_POST_GENERATED: "LinkedIn post generated",
-    LINKEDIN_POST_COPIED: "LinkedIn post copied",
-    MARKED_SHARED: "Marked as shared",
-    LINKEDIN_URL_ADDED: "LinkedIn post URL added",
-    ZOOM_INVITE_SENT: "Zoom invitation sent",
-    NOTE_ADDED: "Note added",
-    CONTACT_INFO_UPDATED: "Contact info updated",
-    IMPORT_CREATED: "Interview imported",
-    PROMINENCE_RESEARCHED: "Standout signals researched",
-  };
-  return labels[type] || type;
 }
 
 function capitalize(value: string): string {

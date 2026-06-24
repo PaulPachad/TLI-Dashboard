@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { formatActionLabel } from "../src/lib/actions/labels";
 import { getInterviewProgress } from "../src/lib/actions/progress";
 import {
   generateLinkedInVariations,
@@ -107,6 +108,21 @@ test("failed actions do not advance interview progress", () => {
   });
   assert.equal(progress.nextAction, "send_live_email");
   assert.equal(progress.actionSummary.liveEmailSent, false);
+});
+
+test("failed action labels do not look completed", () => {
+  assert.equal(
+    formatActionLabel("LIVE_EMAIL_SENT", "FAILED"),
+    "Live email failed"
+  );
+  assert.equal(
+    formatActionLabel("LIVE_EMAIL_SENT", "SUCCESS"),
+    "Live email sent"
+  );
+  assert.equal(
+    formatActionLabel("PROMINENCE_RESEARCHED", "FAILED"),
+    "Standout research failed"
+  );
 });
 
 test("LinkedIn generator returns three complete variations", () => {
