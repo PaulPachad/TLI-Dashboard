@@ -19,6 +19,7 @@ import {
   GOOGLE_SEARCH_NOT_CONFIGURED_CODE,
   GoogleSearchConfigError,
   getSearchDiagnostics,
+  SearchProviderFallbackError,
 } from "@/lib/prominence/research";
 import { saveProminenceResearch } from "@/lib/prominence/service";
 
@@ -103,6 +104,9 @@ export async function POST(request: NextRequest) {
 
     let updated = 0;
     let failed = 0;
+    let retryable = false;
+    let setupAttention = false;
+    let lastFailureCode: string | null = null;
     for (const interview of candidates) {
       try {
         await saveProminenceResearch(interview, user.id, {
@@ -112,6 +116,18 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         if (error instanceof GoogleSearchConfigError) throw error;
         failed += 1;
+        if (error instanceof SearchProviderFallbackError) {
+          retryable ||= error.retryable;
+          setupAttention ||= error.providerErrors.some((failure) =>
+            ["not_configured", "configuration_or_auth"].includes(failure.code)
+          );
+          lastFailureCode =
+            error.providerErrors[error.providerErrors.length - 1]?.code ??
+            lastFailureCode;
+        } else {
+          retryable = true;
+          lastFailureCode = "provider_error";
+        }
         console.warn(`[Quiet VIP Scan Item Failed] Interview ${interview.id}:`, error);
       }
     }
@@ -127,6 +143,9 @@ export async function POST(request: NextRequest) {
       updated,
       failed,
       limit: boundedLimit,
+      retryable: failed > 0 && retryable && !setupAttention,
+      setupAttention,
+      failureCode: lastFailureCode,
     });
   } catch (error: unknown) {
     if (error instanceof GoogleSearchConfigError) {

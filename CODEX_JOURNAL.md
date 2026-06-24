@@ -1,5 +1,29 @@
 # Codex Journal
 
+## June 24, 2026
+
+### Manual Standout Refresh Now Explains Provider Failures
+
+- **What Yitzi built or changed**:
+  - Updated the manual Standout refresh API so it reports whether a search failure is temporary, setup-related, quota-related, or caused by missing backup search.
+  - Updated the dashboard card feedback so a manual refresh does not hide provider failures behind a vague "unavailable" message.
+  - Treated Gemini `fetch failed` network errors as temporary provider failures, allowing the retry and Google Custom Search backup path to handle them.
+  - Added a regression test proving that Gemini fetch failures can fall through to real Google Custom Search results when backup search is configured.
+- **Why it is useful or exciting**:
+  - The Kym Renner failure now points to the real fix: production needs Google Custom Search as a backup provider, not fake research or guesswork.
+  - Once backup search is configured in Vercel, a Gemini outage or network hiccup should no longer stop the button from completing with real source-backed research.
+- **Interesting problem solved**:
+  - The app already retried some provider failures, but the manual button did not expose enough detail for Yitzi to know whether this was a temporary outage or a setup gap.
+- **What remains to be done**:
+  - Add `GOOGLE_CUSTOM_SEARCH_API_KEY` and `GOOGLE_CUSTOM_SEARCH_ENGINE_ID` to Vercel production, redeploy, and confirm `/api/search-config` reports both search providers as ready.
+  - The local Vercel CLI still needs certificate trust cleanup before it can inspect production env vars from this Windows machine.
+- **Where the relevant files can be found**:
+  - [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/app/api/interviews/[id]/prominence/route.ts)
+  - [interview-grid.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/dashboard/interview-grid.tsx)
+  - [research.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/lib/prominence/research.ts)
+  - [workflow-logic.test.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/tests/workflow-logic.test.ts)
+  - [README.md](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/README.md)
+
 ## June 22, 2026
 
 ### Added Automatic CC to Client Email for Sent Dashboard Emails

@@ -110,12 +110,20 @@ export class GeminiResearchTimeoutError extends Error {
   }
 }
 
+export class GeminiTemporaryUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GeminiTemporaryUnavailableError";
+  }
+}
+
 export class SearchProviderFallbackError extends Error {
   code = "SEARCH_PROVIDER_FALLBACK_FAILED";
 
   constructor(
     readonly providerErrors: SearchProviderFailure[],
-    readonly hasBackupProvider: boolean
+    readonly hasBackupProvider: boolean,
+    readonly retryable = areProviderFailuresRetryable(providerErrors)
   ) {
     super(buildSearchProviderFallbackMessage(providerErrors, hasBackupProvider));
     this.name = "SearchProviderFallbackError";
@@ -258,11 +266,15 @@ export class GeminiGroundedSearchProvider implements SearchProvider {
           const message = data?.error?.message || "Gemini grounded search failed.";
           if (
             response.status === 429 ||
-            response.status === 503 ||
             message.includes("quota") ||
             message.includes("limit")
           ) {
             throw new GeminiQuotaExceededError(`Model ${model} rate/quota limit: ${message}`);
+          }
+          if (response.status === 503) {
+            throw new GeminiTemporaryUnavailableError(
+              `Model ${model} temporarily unavailable: ${message}`
+            );
           }
           throw new Error(`Model ${model} interactions failed: ${message}`);
         }
@@ -357,12 +369,16 @@ async function requestGeminiGenerateContent(
     const message = data?.error?.message || "Gemini grounded search failed.";
     if (
       response.status === 429 ||
-      response.status === 503 ||
       message.includes("quota") ||
       message.includes("limit")
     ) {
       throw new GeminiQuotaExceededError(
         `Model ${model} rate/quota limit: ${message}`
+      );
+    }
+    if (response.status === 503) {
+      throw new GeminiTemporaryUnavailableError(
+        `Model ${model} temporarily unavailable: ${message}`
       );
     }
     throw new Error(`Model ${model} generateContent failed: ${message}`);
@@ -399,12 +415,20 @@ export class GoogleCustomSearchProvider implements SearchProvider {
     url.searchParams.set("q", query);
     url.searchParams.set("num", "5");
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(getGoogleCustomSearchTimeoutMs()),
+    });
     const data = await response.json();
 
     if (!response.ok) {
       const message =
         data?.error?.message || "Google search request failed.";
+      if (response.status === 429) {
+        throw new Error(`Google Custom Search rate/quota limit: ${message}`);
+      }
+      if (response.status === 503) {
+        throw new Error(`Google Custom Search temporarily unavailable: ${message}`);
+      }
       throw new Error(message);
     }
 
@@ -435,20 +459,37 @@ export class FallbackSearchProvider implements SearchProvider {
     const providerErrors: SearchProviderFailure[] = [];
     for (let index = 0; index < this.entries.length; index += 1) {
       const entry = this.entries[index];
-      try {
-        const results = await entry.provider.search(query);
-        this.lastOutcome = {
-          provider: entry.label,
-          fallbackUsed: providerErrors.length > 0,
-          providerErrors,
-        };
-        return results;
-      } catch (error) {
-        const failure = buildProviderFailure(entry.label, error);
-        providerErrors.push(failure);
+      const maxAttempts = getSearchProviderAttemptLimit();
+      let finalFailure: SearchProviderFailure | null = null;
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+          const results = await entry.provider.search(query);
+          this.lastOutcome = {
+            provider: entry.label,
+            fallbackUsed: index > 0,
+            providerErrors,
+          };
+          return results;
+        } catch (error) {
+          const failure = buildProviderFailure(entry.label, error);
+          finalFailure = failure;
+          if (attempt < maxAttempts && shouldRetryProviderFailure(failure.code)) {
+            console.warn(
+              `Standout research provider ${entry.label} failed with ${failure.code}; retrying.`
+            );
+            await delay(getSearchProviderRetryDelayMs(attempt));
+            continue;
+          }
+          break;
+        }
+      }
+
+      if (finalFailure) {
+        providerErrors.push(finalFailure);
         if (index < this.entries.length - 1) {
           console.warn(
-            `Standout research provider ${entry.label} failed with ${failure.code}; trying backup provider.`
+            `Standout research provider ${entry.label} failed with ${finalFailure.code}; trying backup provider.`
           );
         }
       }
@@ -655,7 +696,17 @@ function getProviderErrorCode(error: unknown, message: string): string {
   if (error instanceof GoogleSearchConfigError) return "not_configured";
   if (error instanceof GeminiQuotaExceededError) return "quota_or_rate_limit";
   if (error instanceof GeminiResearchTimeoutError) return "timeout";
-  if (/quota|rate|limit|429|503|resource exhausted/i.test(message)) {
+  if (error instanceof GeminiTemporaryUnavailableError) {
+    return "temporary_unavailable";
+  }
+  if (
+    /503|temporarily unavailable|temporary|service unavailable|overloaded|backend error|try again|fetch failed|network error|ECONNRESET|ETIMEDOUT|ENOTFOUND/i.test(
+      message
+    )
+  ) {
+    return "temporary_unavailable";
+  }
+  if (/quota|rate|limit|429|resource exhausted/i.test(message)) {
     return "quota_or_rate_limit";
   }
   if (/api key not valid|invalid api key|permission|billing|not enabled|forbidden|unauthorized/i.test(message)) {
@@ -665,10 +716,70 @@ function getProviderErrorCode(error: unknown, message: string): string {
   return "provider_error";
 }
 
+export function shouldRetryProviderFailure(code: string): boolean {
+  return code === "timeout" || code === "temporary_unavailable" || code === "provider_error";
+}
+
+export function areProviderFailuresRetryable(
+  providerErrors: SearchProviderFailure[]
+): boolean {
+  return (
+    providerErrors.length > 0 &&
+    providerErrors.every((failure) => shouldRetryProviderFailure(failure.code))
+  );
+}
+
+function getSearchProviderAttemptLimit(
+  rawValue = process.env.PROMINENCE_SEARCH_PROVIDER_ATTEMPTS
+): number {
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed)) return 2;
+  return Math.min(Math.max(Math.trunc(parsed), 1), 3);
+}
+
+function getSearchProviderRetryDelayMs(
+  attempt: number,
+  rawValue = process.env.PROMINENCE_SEARCH_PROVIDER_RETRY_DELAY_MS
+): number {
+  const parsed = Number(rawValue);
+  const baseDelay = Number.isFinite(parsed)
+    ? Math.max(Math.trunc(parsed), 0)
+    : process.env.NODE_ENV === "production"
+    ? 750
+    : 0;
+  return baseDelay * attempt;
+}
+
+function getGoogleCustomSearchTimeoutMs(
+  rawValue = process.env.GOOGLE_CUSTOM_SEARCH_TIMEOUT_MS
+): number {
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed)) return 12_000;
+  return Math.min(Math.max(Math.trunc(parsed), 3_000), 30_000);
+}
+
+function delay(ms: number): Promise<void> {
+  if (ms <= 0) return Promise.resolve();
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function buildSearchProviderFallbackMessage(
   providerErrors: SearchProviderFailure[],
   hasBackupProvider: boolean
 ): string {
+  const setupFailed = providerErrors.some((failure) =>
+    ["not_configured", "configuration_or_auth"].includes(failure.code)
+  );
+  if (setupFailed) {
+    return (
+      "Standout research could not finish because one or more search providers need setup attention. " +
+      "Check Gemini and Google Custom Search credentials in the deployment environment."
+    );
+  }
+
+  const quotaFailed = providerErrors.some(
+    (failure) => failure.code === "quota_or_rate_limit"
+  );
   const geminiFailed = providerErrors.some(
     (failure) => failure.provider === "gemini_grounded_search"
   );
@@ -677,6 +788,13 @@ function buildSearchProviderFallbackMessage(
       "Standout research could not finish because Gemini is temporarily limited or unavailable, " +
       "and backup Google Custom Search is not configured. Add GOOGLE_CUSTOM_SEARCH_API_KEY " +
       "and GOOGLE_CUSTOM_SEARCH_ENGINE_ID, then try again."
+    );
+  }
+
+  if (quotaFailed) {
+    return (
+      "Standout research could not finish because the configured search providers hit quota or rate limits. " +
+      "Existing saved signals were kept; check provider quota and billing if this keeps happening."
     );
   }
 

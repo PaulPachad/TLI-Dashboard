@@ -55,6 +55,9 @@ Copy `.env.example` to `.env.local` and configure:
 - `GOOGLE_CUSTOM_SEARCH_API_KEY` and `GOOGLE_CUSTOM_SEARCH_ENGINE_ID`: real
   backup search provider used automatically if Gemini is throttled or
   temporarily unavailable.
+- `NEXT_PUBLIC_STANDOUT_AUTO_SCAN`: browser dashboard auto-scans are on by
+  default. Set to `false` only if you want research to run from explicit button
+  clicks or scheduled background jobs.
 - `RESEND_API_KEY` and `EMAIL_FROM`.
 - `DEMO_MODE`: keep `false` in production.
 - `NEXT_PUBLIC_DEMO_MODE`: keep `false` in production.
@@ -114,6 +117,7 @@ Recommended low-cost production settings:
 GEMINI_SEARCH_MODEL=gemini-2.5-flash
 STANDOUT_RESEARCH_ENABLED=true
 STANDOUT_RESEARCH_AUTOMATIC_ENABLED=true
+NEXT_PUBLIC_STANDOUT_AUTO_SCAN=true
 STANDOUT_RESEARCH_DAILY_LIMIT=25
 STANDOUT_RESEARCH_MONTHLY_LIMIT=250
 ```
@@ -130,9 +134,21 @@ Custom Search is the real backup path: if Gemini hits quota, rate limits,
 temporary provider errors, or a timeout, Standout research automatically tries
 Custom Search before showing a card-level failure.
 
+Production should have both providers. If Gemini is the only configured search
+provider, a temporary Gemini network or provider failure can still stop a
+manual refresh. After deploying env changes, sign in and open
+`/api/search-config`; it should report both `hasGeminiSearch` and
+`hasGoogleCustomSearch` as `true`.
+
 When configured, the "Research standout signals" button stores the discovered
 signals on the interview, updates the card badges, and records the research in
 the action timeline.
+
+By default, opening the dashboard starts a small browser-triggered auto-scan for
+pending cards. If a search provider is temporarily unavailable, the app retries
+quietly in the background instead of showing clients an operational warning.
+Set `NEXT_PUBLIC_STANDOUT_AUTO_SCAN=false` only if you want to disable that
+in-browser auto-scan.
 
 Background standout research runs through Vercel Cron once per day (configured at 4:00 AM UTC in `vercel.json` due to Vercel Hobby plan limitations) at
 `/api/cron/vip-prominence-scan`. Set `CRON_SECRET` in Vercel so the cron

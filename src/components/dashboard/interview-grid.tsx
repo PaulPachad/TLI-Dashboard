@@ -29,6 +29,10 @@ const STATUS_FILTERS = [
 ];
 
 const QUIET_SCAN_LIMIT = 1;
+const QUIET_SCAN_ENABLED =
+  process.env.NEXT_PUBLIC_STANDOUT_AUTO_SCAN !== "false";
+const QUIET_SCAN_MAX_ATTEMPTS = 3;
+const QUIET_SCAN_RETRY_DELAYS_MS = [30_000, 120_000];
 const PAGE_SIZE = 120;
 const DISMISSED_STORAGE_KEY = "tli-dismissed-interviews";
 
@@ -61,6 +65,11 @@ interface ProminenceResponse {
   simulated?: boolean;
   fallbackUsed?: boolean;
   hasSavedResearch?: boolean;
+  retryable?: boolean;
+  setupAttention?: boolean;
+  failureCode?: string | null;
+  hasBackupProvider?: boolean;
+  providerErrors?: Array<{ provider: string; code: string }>;
 }
 
 interface InterviewPagination {
@@ -88,11 +97,15 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
   const [researchFeedback, setResearchFeedback] =
     useState<ResearchFeedback | null>(null);
   const [notice, setNotice] = useState<DashboardNotice | null>(null);
+  const [quietScanRetryTick, setQuietScanRetryTick] = useState(0);
   const [activeDetail, setActiveDetail] = useState<{
     interviewId: string;
     focus?: DetailFocusTarget;
   } | null>(null);
-  const quietScanStarted = useRef(false);
+  const quietScanInFlight = useRef(false);
+  const quietScanAttempts = useRef(0);
+  const quietScanTargetKey = useRef("");
+  const quietScanRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // --- Dismissed cards state (localStorage) ---
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
@@ -184,9 +197,21 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
       .filter(shouldQuietScanProminence)
       .slice(0, QUIET_SCAN_LIMIT)
       .map((interview) => interview.id);
+    const queuedInterviewKey = queuedInterviewIds.join(",");
+
+    if (queuedInterviewKey !== quietScanTargetKey.current) {
+      quietScanTargetKey.current = queuedInterviewKey;
+      quietScanAttempts.current = 0;
+      if (quietScanRetryTimer.current) {
+        clearTimeout(quietScanRetryTimer.current);
+        quietScanRetryTimer.current = null;
+      }
+    }
 
     if (
-      quietScanStarted.current ||
+      !QUIET_SCAN_ENABLED ||
+      quietScanInFlight.current ||
+      quietScanAttempts.current >= QUIET_SCAN_MAX_ATTEMPTS ||
       loading ||
       error ||
       queuedInterviewIds.length === 0
@@ -194,8 +219,25 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
       return;
     }
 
-    quietScanStarted.current = true;
+    quietScanInFlight.current = true;
+    quietScanAttempts.current += 1;
     let cancelled = false;
+
+    const scheduleQuietScanRetry = () => {
+      if (cancelled || quietScanAttempts.current >= QUIET_SCAN_MAX_ATTEMPTS) {
+        return;
+      }
+      const retryDelay =
+        QUIET_SCAN_RETRY_DELAYS_MS[quietScanAttempts.current - 1] ??
+        QUIET_SCAN_RETRY_DELAYS_MS[QUIET_SCAN_RETRY_DELAYS_MS.length - 1];
+      if (quietScanRetryTimer.current) {
+        clearTimeout(quietScanRetryTimer.current);
+      }
+      quietScanRetryTimer.current = setTimeout(() => {
+        quietScanRetryTimer.current = null;
+        setQuietScanRetryTick((tick) => tick + 1);
+      }, retryDelay);
+    };
 
     void (async () => {
       const res = await fetch("/api/interviews/prominence/scan", {
@@ -213,32 +255,49 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as ProminenceResponse;
         console.error(`[Quiet VIP Scan Failure] HTTP ${res.status}: ${data.error || "Unknown error"}`);
-        
-        if (res.status === 503 || isStandoutCostControlCode(data.code)) {
-          setNotice({
-            tone: "warning",
-            message: `Quiet Standout scan was skipped: ${data.error || "Search is not configured."}`,
-          });
+        if (shouldRetryQuietScanFailure(data)) {
+          scheduleQuietScanRetry();
         }
         return;
       }
 
-      const data = (await res.json()) as { updated?: number; failed?: number; scanned?: number };
+      const data = (await res.json()) as {
+        updated?: number;
+        failed?: number;
+        scanned?: number;
+        retryable?: boolean;
+      };
       console.log(
         `[Quiet VIP Scan] Complete. Scanned: ${data.scanned || 0}, Updated: ${data.updated || 0}, Failed: ${data.failed || 0}`
       );
 
       if (data.updated && data.updated > 0) {
         await fetchInterviews();
+        return;
+      }
+
+      if (data.failed && data.failed > 0 && data.retryable !== false) {
+        scheduleQuietScanRetry();
       }
     })().catch((scanError) => {
       console.error("[Quiet VIP Scan Exception] Unexpected error:", scanError);
+      scheduleQuietScanRetry();
+    }).finally(() => {
+      quietScanInFlight.current = false;
     });
 
     return () => {
       cancelled = true;
     };
-  }, [clientId, error, fetchInterviews, interviews, loading]);
+  }, [clientId, error, fetchInterviews, interviews, loading, quietScanRetryTick]);
+
+  useEffect(() => {
+    return () => {
+      if (quietScanRetryTimer.current) {
+        clearTimeout(quietScanRetryTimer.current);
+      }
+    };
+  }, []);
 
   // Debounced search
   const [searchInput, setSearchInput] = useState("");
@@ -303,18 +362,15 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
         }
 
         if (data.code === "SEARCH_PROVIDER_FALLBACK_FAILED") {
+          const fallbackFeedback = formatSearchProviderFallbackFeedback(data);
           setNotice({
             tone: "warning",
-            message:
-              data.error ||
-              "Standout research could not finish with the configured search providers.",
+            message: fallbackFeedback.notice,
           });
           setResearchFeedback({
             interviewId,
             tone: "warning",
-            message: data.hasSavedResearch
-              ? "Refresh could not finish yet. Existing signals are still saved."
-              : "Backup search is not configured or is temporarily unavailable.",
+            message: fallbackFeedback.card,
           });
           return;
         }
@@ -596,7 +652,9 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
                     }
                   : undefined
               }
-              autoScanQueued={shouldQuietScanProminence(interview)}
+              autoScanQueued={
+                QUIET_SCAN_ENABLED && shouldQuietScanProminence(interview)
+              }
               onDismiss={dismissCard}
               onRestore={restoreCard}
               showRestoreMode={isDismissedView}
@@ -671,8 +729,69 @@ function formatSearchConfigNotice(data: ProminenceResponse) {
   return `${base} Diagnostics: ${details.join("; ")}.`;
 }
 
+function formatSearchProviderFallbackFeedback(data: ProminenceResponse) {
+  const existingSignalsSuffix = data.hasSavedResearch
+    ? " Existing signals remain."
+    : "";
+  const fallbackMissing =
+    data.hasBackupProvider === false ||
+    data.diagnostics?.hasGoogleCustomSearch === false;
+
+  if (fallbackMissing) {
+    return {
+      notice:
+        "Backup search needs setup before this refresh can finish. Add Google Custom Search in production so Gemini outages do not stop Standout research." +
+        existingSignalsSuffix,
+      card: "Backup search needs setup." + existingSignalsSuffix,
+    };
+  }
+
+  if (data.setupAttention) {
+    return {
+      notice:
+        "Standout research needs search setup attention. Check the Gemini and Google Custom Search credentials in production." +
+        existingSignalsSuffix,
+      card: "Search setup needs attention." + existingSignalsSuffix,
+    };
+  }
+
+  if (data.failureCode === "quota_or_rate_limit") {
+    return {
+      notice:
+        "Standout research hit a search quota or rate limit. Try again later after provider quota resets." +
+        existingSignalsSuffix,
+      card: "Search quota was reached." + existingSignalsSuffix,
+    };
+  }
+
+  if (data.retryable !== false) {
+    return {
+      notice:
+        "Search providers are temporarily unavailable. Try refresh again in a little while." +
+        existingSignalsSuffix,
+      card: "Research is temporarily unavailable." + existingSignalsSuffix,
+    };
+  }
+
+  return {
+    notice:
+      data.error ||
+      "Standout research could not finish with the configured search providers.",
+    card:
+      "Research could not finish with the configured search providers." +
+      existingSignalsSuffix,
+  };
+}
+
 function isStandoutCostControlCode(code: string | undefined) {
   return Boolean(code && code.startsWith("STANDOUT_"));
+}
+
+function shouldRetryQuietScanFailure(data: ProminenceResponse) {
+  if (data.retryable === false || data.setupAttention) return false;
+  if (data.code === "GOOGLE_SEARCH_NOT_CONFIGURED") return false;
+  if (isStandoutCostControlCode(data.code)) return false;
+  return true;
 }
 
 function shouldQuietScanProminence(interview: InterviewView) {

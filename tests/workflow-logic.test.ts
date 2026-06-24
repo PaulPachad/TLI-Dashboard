@@ -934,6 +934,108 @@ test("standout research falls back after a Gemini timeout", async () => {
   ]);
 });
 
+test("standout research treats Gemini fetch failures as temporary and uses backup search", async () => {
+  const provider = new FallbackSearchProvider([
+    {
+      label: "gemini_grounded_search",
+      provider: providerThrowing(new TypeError("fetch failed")),
+    },
+    {
+      label: "google_custom_search",
+      provider: providerReturning([
+        {
+          title: "Backup search profile",
+          url: "https://example.com/backup-fetch-failure",
+          snippet: "Taylor Chen is a founder with 125K followers.",
+        },
+      ]),
+    },
+  ]);
+
+  const result = await researchInterviewProminence(
+    { intervieweeName: "Taylor Chen" },
+    provider
+  );
+
+  assert.equal(result.provider, "google_custom_search");
+  assert.equal(result.fallbackUsed, true);
+  assert.deepEqual(result.providerErrors, [
+    { provider: "gemini_grounded_search", code: "temporary_unavailable" },
+  ]);
+  assert.equal(
+    result.sourceResults[0]?.url,
+    "https://example.com/backup-fetch-failure"
+  );
+});
+
+test("standout research retries a transient provider failure before fallback", async () => {
+  const provider = new FallbackSearchProvider([
+    {
+      label: "gemini_grounded_search",
+      provider: providerSequence([
+        new Error("temporary provider outage"),
+        [
+          {
+            title: "Recovered profile",
+            url: "https://example.com/recovered",
+            snippet: "Taylor Chen is a founder with 125K followers.",
+          },
+        ],
+      ]),
+    },
+    {
+      label: "google_custom_search",
+      provider: providerReturning([
+        {
+          title: "Backup result",
+          url: "https://example.com/backup",
+          snippet: "This should not be used after the retry succeeds.",
+        },
+      ]),
+    },
+  ]);
+
+  const result = await researchInterviewProminence(
+    { intervieweeName: "Taylor Chen" },
+    provider
+  );
+
+  assert.equal(result.provider, "gemini_grounded_search");
+  assert.equal(result.fallbackUsed, false);
+  assert.deepEqual(result.providerErrors, []);
+  assert.equal(result.sourceResults[0]?.url, "https://example.com/recovered");
+});
+
+test("standout research reports setup failures without calling them temporary", async () => {
+  await withProductionEnv(async () => {
+    const provider = new FallbackSearchProvider([
+      {
+        label: "gemini_grounded_search",
+        provider: providerThrowing(new Error("API key not valid")),
+      },
+      {
+        label: "google_custom_search",
+        provider: providerThrowing(new Error("forbidden")),
+      },
+    ]);
+
+    await assert.rejects(
+      () => researchInterviewProminence({ intervieweeName: "Taylor Chen" }, provider),
+      (error: unknown) => {
+        assert.ok(error instanceof SearchProviderFallbackError);
+        assert.equal(error.retryable, false);
+        assert.match(error.message, /setup attention/i);
+        assert.doesNotMatch(error.message, /temporarily unavailable/i);
+        assert.deepEqual(error.providerErrors, [
+          { provider: "gemini_grounded_search", code: "configuration_or_auth" },
+          { provider: "google_custom_search", code: "configuration_or_auth" },
+        ]);
+        return true;
+      }
+    );
+  });
+});
+
 test("standout research reports missing backup search when Gemini fails in production", async () => {
   await withProductionEnv(async () => {
     const provider = new FallbackSearchProvider([
@@ -1133,6 +1235,20 @@ function providerThrowing(error: Error): SearchProvider {
   return {
     async search() {
       throw error;
+    },
+  };
+}
+
+function providerSequence(
+  steps: Array<Error | Awaited<ReturnType<SearchProvider["search"]>>>
+): SearchProvider {
+  let index = 0;
+  return {
+    async search() {
+      const step = steps[Math.min(index, steps.length - 1)];
+      index += 1;
+      if (step instanceof Error) throw step;
+      return step;
     },
   };
 }
