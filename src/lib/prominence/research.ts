@@ -384,7 +384,7 @@ function getGeminiRequestTimeoutMs(
   rawValue = process.env.GEMINI_RESEARCH_TIMEOUT_MS
 ): number {
   const parsed = Number(rawValue);
-  if (!Number.isFinite(parsed)) return 25_000;
+  if (!Number.isFinite(parsed)) return 45_000;
   return Math.min(Math.max(Math.trunc(parsed), 5_000), 60_000);
 }
 
