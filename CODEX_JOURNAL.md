@@ -2,7 +2,32 @@
 
 ## June 24, 2026
 
+### Pre-Search Identity Anchors for Standout Research
+
+- **What Yitzi built or changed**:
+  - Created [context.ts](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/src/lib/prominence/context.ts) containing `buildProminenceIdentityContext` and `isProviderGeneratedNotes` to extract identity anchors from raw sheet/submission fields (name, company, title, topic, LinkedIn, websites, handles, books, podcasts, awards).
+  - Implemented strict filtering via `isProviderGeneratedNotes` to completely skip provider/research-generated summaries, avoiding feedback loop bias where old research influences new scans.
+  - Modified [research.ts](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/src/lib/prominence/research.ts) query construction to prioritize extracted anchors (capping search queries between 3 to 5) with a clean fallback.
+  - Replaced `scoreAndFilterSearchResults` with `scoreAndSortSearchResults` in [research.ts](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/src/lib/prominence/research.ts) to score, boost, and sort results. Matches on company, domain, LinkedIn, and social profiles are boosted, while neutral results are kept and conflicting company roles (evidence of a different person) are hard-rejected.
+  - Kept the anchor layer isolated within `context.ts` and `research.ts`, leaving `signals.ts` completely unmodified so that the scoring layer continues to award badges and scores only from verified search results.
+- **Why it is useful or exciting**:
+  - Improves search precision, lowers query volume, and prevents matching the wrong person for common names.
+  - Restricts the scoring layer to public source-backed search results, ignoring unverified self-reported bio claims.
+- **Interesting problem solved**:
+  - Resolved false-positive company role conflicts by skipping matches that align with the interviewee's own name (e.g. `CEO Taylor Chen`).
+- **Tests**:
+  - Added new unit and regression tests in [workflow-logic.test.ts](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/tests/workflow-logic.test.ts) proving: self-reported "bestselling author" does not create a badge by itself, anchors improve query specificity, missing anchors fall back to old query behavior, and `prominenceNotes` is ignored when provider-generated. All 107 tests pass.
+- **Build**:
+  - Next production build compiles successfully in Turbopack with TypeScript checks.
+- **What remains to be done**:
+  - Deploy to production.
+- **Where the relevant files can be found**:
+  - [context.ts](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/src/lib/prominence/context.ts)
+  - [research.ts](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/src/lib/prominence/research.ts)
+  - [workflow-logic.test.ts](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/tests/workflow-logic.test.ts)
+
 ### Standout Refresh Provider Failure: Root Cause Fixed
+
 
 - **What Yitzi built or changed**:
   - Added typed Google CSE error classes (`GoogleCustomSearchSetupError`, `GoogleCustomSearchQuotaError`, `GoogleCustomSearchTemporaryError`) to prevent misclassification.

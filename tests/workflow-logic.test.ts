@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { buildProminenceIdentityContext } from "../src/lib/prominence/context";
+
 import { formatActionLabel } from "../src/lib/actions/labels";
 import { getInterviewProgress } from "../src/lib/actions/progress";
 import {
@@ -1445,3 +1447,171 @@ function collectProminenceText(
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
+
+test("identity anchor extraction parses domains, handles, books, podcasts, and awards", () => {
+  const interview = {
+    intervieweeName: "John Smith",
+    intervieweeCompany: "Acme Corp",
+    intervieweeTitle: "CEO of Acme",
+    topic: "Building the Future of Robots",
+    prominenceNotes: "Check out john.smith@acme.com or author of \"Robot Scale\" and host of The Robot Podcast. Award winner of Emmy 2024. Featured in Forbes.",
+    linkedinUrl: "https://www.linkedin.com/in/johnsmithprofile",
+    twitterUrl: "@johnsmith_twitter",
+  };
+
+  const ctx = buildProminenceIdentityContext(interview);
+
+  assert.equal(ctx.name, "John Smith");
+  assert.equal(ctx.company, "Acme Corp");
+  assert.equal(ctx.title, "CEO of Acme");
+  assert.deepEqual(ctx.linkedinUrls, ["https://www.linkedin.com/in/johnsmithprofile"]);
+  assert.deepEqual(ctx.socialHandles, ["@johnsmith_twitter"]);
+  assert.deepEqual(ctx.bookTitles, ["Robot Scale"]);
+  assert.deepEqual(ctx.podcastNames, ["The Robot Podcast"]);
+  assert.ok(ctx.awardPhrases.some((a) => a.toLowerCase().includes("emmy")));
+  assert.ok(ctx.mediaMentionPhrases.some((m) => m.toLowerCase().includes("forbes")));
+  assert.ok(ctx.sourceQuality.hasExactCompany);
+  assert.ok(ctx.sourceQuality.hasLinkedIn);
+});
+
+test("self-reported 'bestselling author' does not create a badge by itself", () => {
+  const input = {
+    intervieweeName: "John Smith",
+    intervieweeCompany: "Acme Corp",
+    intervieweeTitle: "",
+    bioText: "John Smith is a bestselling author of 'Robot Scale'.",
+    results: [], // no search results verifying the claim
+  };
+
+  const signalsJson = buildProminenceSignalsJson(input);
+  // Without search results, signalsJson should be null or empty, resulting in no badges and 0 score
+  const assessment = assessInterviewProminence({
+    ...input,
+    prominenceSignalsJson: signalsJson,
+  });
+
+  assert.equal(assessment.badges.length, 0);
+  assert.equal(assessment.score, 0);
+  assert.equal(assessment.tier, "standard");
+});
+
+test("anchors improve query specificity", () => {
+  const interview = {
+    intervieweeName: "Jane Doe",
+    intervieweeCompany: "Acme Corp",
+    intervieweeTitle: "VP of Engineering",
+    linkedinUrl: "https://www.linkedin.com/in/janedoeacme",
+    twitterUrl: "@janedoe_tech",
+    bioText: "Website at https://acmeengineering.com",
+  };
+
+  const queries = buildProminenceQueries(interview);
+  assert.ok(queries.length > 0);
+  assert.ok(queries.length <= 5);
+
+  // Queries should contain domain/LinkedIn anchors
+  assert.ok(queries.some((q) => q.includes("linkedin.com/in")));
+  assert.ok(queries.some((q) => q.includes('"Acme Corp"') && q.includes('"VP of Engineering"')));
+  assert.ok(queries.some((q) => q.includes("acmeengineering.com")));
+});
+
+test("missing anchors fall back to old behavior", () => {
+  const interview = {
+    intervieweeName: "Plain Name",
+    intervieweeCompany: "",
+    intervieweeTitle: "",
+  };
+
+  const queries = buildProminenceQueries(interview);
+  assert.equal(queries.length, 1);
+  assert.match(queries[0], /VIP prominence signals/);
+  assert.match(queries[0], /CEO founder executive/);
+});
+
+test("prominenceNotes is not used as an anchor if it is provider-generated/research-generated rather than original bio text", () => {
+  const interview = {
+    intervieweeName: "Jordan Park",
+    prominenceNotes: "Forbes: Jordan Park is founder of Acme (https://example.com/forbes)\nEvidence Summary: here are prominence signals for Jordan Park.",
+  };
+
+  const ctx = buildProminenceIdentityContext(interview);
+  // It should detect it's provider-generated and not extract anchors from it
+  assert.equal(ctx.company, null);
+  assert.deepEqual(ctx.bookTitles, []);
+  assert.deepEqual(ctx.websites, []);
+});
+
+test("verified public sources increase prominence scores", () => {
+  const input = {
+    intervieweeName: "John Smith",
+    intervieweeCompany: "Acme Corp",
+    intervieweeTitle: "CEO",
+    // Simulate a search result that is parsed and returns a verified award (e.g. Nobel Prize)
+    results: [
+      {
+        title: "John Smith Wins Nobel Prize",
+        url: "https://www.nobelprize.org/john-smith",
+        snippet: "John Smith won the Nobel Prize in Physics for his work at Acme Corp.",
+      }
+    ],
+  };
+
+  const signalsJson = buildProminenceSignalsJson(input);
+  assert.ok(signalsJson);
+
+  const assessment = assessInterviewProminence({
+    ...input,
+    prominenceSignalsJson: signalsJson,
+  });
+
+  // Since Nobel Prize is a major award, score should increase and tier should be notable or higher
+  assert.ok(assessment.score > 0);
+  assert.equal(assessment.tier, "notable");
+  assert.ok(assessment.reasons.some((r) => r.toLowerCase().includes("nobel")));
+});
+
+test("scoreAndSortSearchResults prefers/boosts anchors, hard-rejects conflicts, and keeps neutral results", async () => {
+  const results = [
+    {
+      title: "John Smith at Acme Corp",
+      url: "https://acmerobots.com/about",
+      snippet: "John Smith is the CEO of Acme Corp and author of Robot Scale.",
+    },
+    {
+      title: "John Smith - LinkedIn",
+      url: "https://linkedin.com/in/johnsmithacme",
+      snippet: "John Smith's professional profile.",
+    },
+    {
+      title: "Robotics Industry News",
+      url: "https://robotics-journal.com/trends",
+      snippet: "Robotics is transforming the industry worldwide.", // Neutral
+    },
+    {
+      title: "John Smith is CEO of Beta Inc",
+      url: "https://beta-inc.com/team",
+      snippet: "John Smith serves as CEO of Beta Inc, leading software dev.", // Conflicting person (different company)
+    }
+  ];
+
+  const provider = {
+    async search() {
+      return results;
+    }
+  };
+
+  const res = await researchInterviewProminence({
+    intervieweeName: "John Smith",
+    intervieweeCompany: "Acme Corp",
+    intervieweeTitle: "CEO",
+    linkedinUrl: "https://linkedin.com/in/johnsmithacme",
+  }, provider);
+
+  const urls = res.sourceResults.map((r) => r.url);
+  assert.ok(urls.includes("https://acmerobots.com/about"), "Should include company page");
+  assert.ok(urls.includes("https://linkedin.com/in/johnsmithacme"), "Should include LinkedIn page");
+  assert.ok(urls.includes("https://robotics-journal.com/trends"), "Should keep neutral result");
+  assert.ok(!urls.includes("https://beta-inc.com/team"), "Should hard-reject conflicting person");
+});
+
+

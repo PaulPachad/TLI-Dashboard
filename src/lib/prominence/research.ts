@@ -36,8 +36,9 @@ import {
   parseCountMetric,
   parseMoneyMetric,
 } from "./signals";
+import { buildProminenceIdentityContext, getDomain } from "./context";
 
-interface ResearchInterview {
+export interface ResearchInterview {
   intervieweeName: string;
   intervieweeCompany?: string | null;
   intervieweeTitle?: string | null;
@@ -47,6 +48,8 @@ interface ResearchInterview {
   interviewDocUrl?: string | null;
   linkedinUrl?: string | null;
   twitterUrl?: string | null;
+  bioText?: string | null;
+  prominenceNotes?: string | null;
 }
 
 export interface SearchResult {
@@ -1002,6 +1005,117 @@ function getFirstEnvValue(
   return undefined;
 }
 
+function scoreAndSortSearchResults(
+  results: SearchResult[],
+  ctx: ReturnType<typeof buildProminenceIdentityContext>
+): SearchResult[] {
+  const companyLower = ctx.company?.toLowerCase() || null;
+  const titleWords = ctx.title
+    ?.toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 3) || [];
+
+  const scored = results.map((result) => {
+    const textRaw = `${result.title} ${result.snippet}`;
+    const textLower = textRaw.toLowerCase();
+    const urlLower = result.url.toLowerCase();
+
+    let score = 50; // Base score for any returned search result matching the name query
+
+    // Check company match
+    if (companyLower && textLower.includes(companyLower)) {
+      score += 30;
+    }
+
+    // Check company domain match
+    for (const site of ctx.websites) {
+      const dom = getDomain(site);
+      if (dom && urlLower.includes(dom)) {
+        score += 30;
+        break;
+      }
+    }
+
+    // Check LinkedIn URL match
+    for (const lUrl of ctx.linkedinUrls) {
+      try {
+        const lPath = new URL(lUrl).pathname.split("/").filter(Boolean)[1];
+        if (lPath && urlLower.includes(lPath)) {
+          score += 35;
+          break;
+        }
+      } catch {}
+    }
+
+    // Check title/role keyword match
+    if (titleWords.length > 0) {
+      const titleMatch = titleWords.some((word) => textLower.includes(word));
+      if (titleMatch) {
+        score += 15;
+      }
+    }
+
+    // Check books/podcasts/handles match
+    const matchesBook = ctx.bookTitles.some((book) => textLower.includes(book.toLowerCase()));
+    if (matchesBook) score += 25;
+
+    const matchesPodcast = ctx.podcastNames.some((pod) => textLower.includes(pod.toLowerCase()));
+    if (matchesPodcast) score += 25;
+
+    const matchesHandle = ctx.socialHandles.some((h) => textLower.includes(h.substring(1)));
+    if (matchesHandle) score += 25;
+
+    const matchesAward = ctx.awardPhrases.some((award) => textLower.includes(award.toLowerCase()));
+    if (matchesAward) score += 20;
+
+    const matchesMedia = ctx.mediaMentionPhrases.some((media) => textLower.includes(media.toLowerCase()));
+    if (matchesMedia) score += 20;
+
+    // Check for conflicting person evidence (different company role)
+    if (companyLower) {
+      // Find patterns like: "CEO of OtherCompany" or "founder at OtherCompany" or "VP of OtherCompany"
+      // we match common titles followed by of/at and then capitalized company name
+      const roleAtOtherPattern = /\b(ceo|founder|president|co-founder|director|vp|vice president|at)\s+(?:of\s+)?([A-Z][a-zA-Z0-9_]*(?:\s+[A-Z][a-zA-Z0-9_]*){0,3})\b/gi;
+      let match;
+      let hasConflictingRole = false;
+
+      while ((match = roleAtOtherPattern.exec(textRaw)) !== null) {
+        const matchedCompany = match[2].trim();
+        const matchedCompanyLower = matchedCompany.toLowerCase();
+        if (matchedCompanyLower.length < 3 || /^(the|his|her|their|our|this|that|a|an)$/.test(matchedCompanyLower)) {
+          continue;
+        }
+
+        const nameLower = ctx.name?.toLowerCase() || "";
+        if (nameLower && (matchedCompanyLower.includes(nameLower) || nameLower.includes(matchedCompanyLower))) {
+          continue;
+        }
+
+        const isMainCompanyMentioned = textLower.includes(companyLower);
+        const matchesOurCompany = matchedCompanyLower.includes(companyLower) || companyLower.includes(matchedCompanyLower);
+
+        if (!isMainCompanyMentioned && !matchesOurCompany) {
+          hasConflictingRole = true;
+          break;
+        }
+      }
+
+      if (hasConflictingRole) {
+        score -= 60;
+      }
+    }
+
+    return { result, score };
+  });
+
+  // Filter out results with score < 10 (hard rejection for conflicting persons)
+  // and sort by score descending
+  return scored
+    .filter((s) => s.score >= 10)
+    .sort((a, b) => b.score - a.score)
+    .map((s) => s.result);
+}
+
 export async function researchInterviewProminence(
   interview: ResearchInterview,
   provider: SearchProvider = createDefaultSearchProvider()
@@ -1019,11 +1133,16 @@ export async function researchInterviewProminence(
       throw firstFailure.reason;
     }
 
-    const sourceResults = dedupeResults(
+    const rawResults = dedupeResults(
       settled.flatMap((result) =>
         result.status === "fulfilled" ? result.value : []
       )
-    ).slice(0, 12);
+    );
+
+    const ctx = buildProminenceIdentityContext(interview);
+    const sortedResults = scoreAndSortSearchResults(rawResults, ctx);
+    const sourceResults = sortedResults.slice(0, 12);
+
     const providerOutcome = getSearchProviderOutcome(provider);
     const providerLabel = providerOutcome?.provider || getProviderLabel(provider);
 
@@ -1071,24 +1190,88 @@ export async function researchInterviewProminence(
 }
 
 export function buildProminenceQueries(interview: ResearchInterview): string[] {
+  const ctx = buildProminenceIdentityContext(interview);
   const name = quote(interview.intervieweeName);
-  const company = interview.intervieweeCompany
-    ? quote(interview.intervieweeCompany)
-    : "";
-  const identity = [name, company].filter(Boolean).join(" ");
+  
+  const hasAnchors = 
+    ctx.websites.length > 0 ||
+    ctx.linkedinUrls.length > 0 ||
+    ctx.bookTitles.length > 0 ||
+    ctx.podcastNames.length > 0 ||
+    ctx.socialHandles.length > 0 ||
+    (ctx.company && ctx.title);
 
-  return [
-    [
-      identity,
-      interview.intervieweeTitle || "",
-      "VIP prominence signals",
-      "CEO founder executive author speaker awards Forbes Fortune Inc",
-      "followers subscribers LinkedIn Instagram YouTube",
-      "employees revenue funding acquisition public company",
-    ]
-      .filter(Boolean)
-      .join(" "),
-  ];
+  if (!hasAnchors) {
+    const company = interview.intervieweeCompany
+      ? quote(interview.intervieweeCompany)
+      : "";
+    const identity = [name, company].filter(Boolean).join(" ");
+    return [
+      [
+        identity,
+        interview.intervieweeTitle || "",
+        "VIP prominence signals",
+        "CEO founder executive author speaker awards Forbes Fortune Inc",
+        "followers subscribers LinkedIn Instagram YouTube",
+        "employees revenue funding acquisition public company",
+      ]
+        .filter(Boolean)
+        .join(" "),
+    ];
+  }
+
+  const queries: string[] = [];
+
+  // Priority 1: Name + company + title
+  if (ctx.name && ctx.company && ctx.title) {
+    queries.push(`${quote(ctx.name)} "${ctx.company}" "${ctx.title}"`);
+  }
+
+  // Priority 2: Name + exact company domain or website
+  if (ctx.name && ctx.websites.length > 0) {
+    const websiteDomain = getDomain(ctx.websites[0]);
+    if (websiteDomain) {
+      queries.push(`${quote(ctx.name)} "${websiteDomain}"`);
+      queries.push(`site:${websiteDomain} "${ctx.name}"`);
+    }
+  }
+
+  // Priority 3: Name + LinkedIn/company
+  if (ctx.name && (ctx.linkedinUrls.length > 0 || ctx.company)) {
+    if (ctx.linkedinUrls.length > 0) {
+      queries.push(`${quote(ctx.name)} site:linkedin.com/in`);
+    } else if (ctx.company) {
+      queries.push(`${quote(ctx.name)} "${ctx.company}" LinkedIn`);
+    }
+  }
+
+  // Priority 4: Name + book title or podcast name
+  if (ctx.name && (ctx.bookTitles.length > 0 || ctx.podcastNames.length > 0)) {
+    if (ctx.bookTitles.length > 0) {
+      queries.push(`${quote(ctx.name)} "${ctx.bookTitles[0]}"`);
+    }
+    if (ctx.podcastNames.length > 0) {
+      queries.push(`${quote(ctx.name)} "${ctx.podcastNames[0]}"`);
+    }
+  }
+
+  // Priority 5: Name + topic/industry/award
+  if (ctx.name && (ctx.topic || ctx.awardPhrases.length > 0 || ctx.mediaMentionPhrases.length > 0)) {
+    const detail = ctx.awardPhrases[0] || ctx.mediaMentionPhrases[0] || ctx.topic || "";
+    if (detail) {
+      queries.push(`${quote(ctx.name)} "${detail}"`);
+    }
+  }
+
+  const uniqueQueries = Array.from(new Set(queries)).filter(Boolean);
+  
+  if (uniqueQueries.length === 0) {
+    const company = interview.intervieweeCompany ? quote(interview.intervieweeCompany) : "";
+    const identity = [name, company].filter(Boolean).join(" ");
+    return [`${identity} VIP prominence signals`];
+  }
+
+  return uniqueQueries.slice(0, 5);
 }
 
 function getUnknownErrorMessage(error: unknown): string {
