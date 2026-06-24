@@ -10,9 +10,11 @@
   - Modified [research.ts](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/src/lib/prominence/research.ts) query construction to prioritize extracted anchors (capping search queries between 3 to 5) with a clean fallback.
   - Replaced `scoreAndFilterSearchResults` with `scoreAndSortSearchResults` in [research.ts](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/src/lib/prominence/research.ts) to score, boost, and sort results. Matches on company, domain, LinkedIn, and social profiles are boosted, while neutral results are kept and conflicting company roles (evidence of a different person) are hard-rejected.
   - Kept the anchor layer isolated within `context.ts` and `research.ts`, leaving `signals.ts` completely unmodified so that the scoring layer continues to award badges and scores only from verified search results.
+  - Increased the default request timeout of the Gemini Search API from 25s to 45s inside [research.ts](file:///c:/dev/authority-mag-saas/tli-leverage-dashboard/src/lib/prominence/research.ts) to prevent false-positive timeouts on slow, non-anchored fallback queries (e.g. guest cards like Lesley Logan that lack explicit bios/companies/social links).
 - **Why it is useful or exciting**:
   - Improves search precision, lowers query volume, and prevents matching the wrong person for common names.
   - Restricts the scoring layer to public source-backed search results, ignoring unverified self-reported bio claims.
+  - Prevents transient search failures and "temporarily unavailable" errors on guest cards that have very broad search parameters.
 - **Interesting problem solved**:
   - Resolved false-positive company role conflicts by skipping matches that align with the interviewee's own name (e.g. `CEO Taylor Chen`).
 - **Tests**:
