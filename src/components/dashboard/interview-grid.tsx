@@ -67,8 +67,8 @@ interface ProminenceResponse {
   hasSavedResearch?: boolean;
   retryable?: boolean;
   setupAttention?: boolean;
+  quota?: boolean;
   failureCode?: string | null;
-  hasBackupProvider?: boolean;
   providerErrors?: Array<{ provider: string; code: string }>;
 }
 
@@ -362,16 +362,24 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
         }
 
         if (data.code === "SEARCH_PROVIDER_FALLBACK_FAILED") {
-          const fallbackFeedback = formatSearchProviderFallbackFeedback(data);
-          setNotice({
-            tone: "warning",
-            message: fallbackFeedback.notice,
-          });
+          setNotice(null);
           setResearchFeedback({
             interviewId,
             tone: "warning",
-            message: fallbackFeedback.card,
+            message: data.hasSavedResearch
+              ? "Research is unavailable right now. Existing signals remain."
+              : "Research is unavailable right now. Try again later.",
           });
+          // If the backend says setup attention is needed, don't show a generic retry-able toast.
+          // The user needs to fix config — retrying silently won't help.
+          if (data.setupAttention) {
+            setNotice({
+              tone: "warning",
+              message:
+                data.error ||
+                "Standout research setup needs attention. Check provider configuration.",
+            });
+          }
           return;
         }
 
@@ -729,66 +737,14 @@ function formatSearchConfigNotice(data: ProminenceResponse) {
   return `${base} Diagnostics: ${details.join("; ")}.`;
 }
 
-function formatSearchProviderFallbackFeedback(data: ProminenceResponse) {
-  const existingSignalsSuffix = data.hasSavedResearch
-    ? " Existing signals remain."
-    : "";
-  const fallbackMissing =
-    data.hasBackupProvider === false ||
-    data.diagnostics?.hasGoogleCustomSearch === false;
-
-  if (fallbackMissing) {
-    return {
-      notice:
-        "Backup search needs setup before this refresh can finish. Add Google Custom Search in production so Gemini outages do not stop Standout research." +
-        existingSignalsSuffix,
-      card: "Backup search needs setup." + existingSignalsSuffix,
-    };
-  }
-
-  if (data.setupAttention) {
-    return {
-      notice:
-        "Standout research needs search setup attention. Check the Gemini and Google Custom Search credentials in production." +
-        existingSignalsSuffix,
-      card: "Search setup needs attention." + existingSignalsSuffix,
-    };
-  }
-
-  if (data.failureCode === "quota_or_rate_limit") {
-    return {
-      notice:
-        "Standout research hit a search quota or rate limit. Try again later after provider quota resets." +
-        existingSignalsSuffix,
-      card: "Search quota was reached." + existingSignalsSuffix,
-    };
-  }
-
-  if (data.retryable !== false) {
-    return {
-      notice:
-        "Search providers are temporarily unavailable. Try refresh again in a little while." +
-        existingSignalsSuffix,
-      card: "Research is temporarily unavailable." + existingSignalsSuffix,
-    };
-  }
-
-  return {
-    notice:
-      data.error ||
-      "Standout research could not finish with the configured search providers.",
-    card:
-      "Research could not finish with the configured search providers." +
-      existingSignalsSuffix,
-  };
-}
-
 function isStandoutCostControlCode(code: string | undefined) {
   return Boolean(code && code.startsWith("STANDOUT_"));
 }
 
 function shouldRetryQuietScanFailure(data: ProminenceResponse) {
-  if (data.retryable === false || data.setupAttention) return false;
+  if (data.retryable === false) return false;
+  if (data.setupAttention) return false;
+  if (data.quota) return false;
   if (data.code === "GOOGLE_SEARCH_NOT_CONFIGURED") return false;
   if (isStandoutCostControlCode(data.code)) return false;
   return true;

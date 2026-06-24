@@ -96,6 +96,8 @@ export class GoogleSearchConfigError extends Error {
   }
 }
 
+// ---- Gemini error classes ----
+
 export class GeminiQuotaExceededError extends Error {
   constructor(message: string) {
     super(message);
@@ -116,6 +118,64 @@ export class GeminiTemporaryUnavailableError extends Error {
     this.name = "GeminiTemporaryUnavailableError";
   }
 }
+
+// ---- Google Custom Search typed error classes ----
+// These allow precise classification without relying on fragile message-string matching.
+
+/** Setup/config errors: invalid cx, disabled API, invalid/restricted key, billing, 400/401/403. Not retryable. */
+export class GoogleCustomSearchSetupError extends Error {
+  readonly httpStatus: number;
+  constructor(message: string, httpStatus: number) {
+    super(message);
+    this.name = "GoogleCustomSearchSetupError";
+    this.httpStatus = httpStatus;
+  }
+}
+
+/** Quota/rate-limit errors: 429 or dailyLimitExceeded. Not retryable in the same session. */
+export class GoogleCustomSearchQuotaError extends Error {
+  readonly httpStatus: number;
+  constructor(message: string, httpStatus: number) {
+    super(message);
+    this.name = "GoogleCustomSearchQuotaError";
+    this.httpStatus = httpStatus;
+  }
+}
+
+/** Temporary unavailability: 503, timeout, network failure. Retryable. */
+export class GoogleCustomSearchTemporaryError extends Error {
+  readonly httpStatus: number;
+  constructor(message: string, httpStatus: number) {
+    super(message);
+    this.name = "GoogleCustomSearchTemporaryError";
+    this.httpStatus = httpStatus;
+  }
+}
+
+// ---- Provider health status ----
+
+export type ProviderHealthCategory =
+  | "ready"
+  | "setup_attention"
+  | "quota"
+  | "temporary_unavailable"
+  | "unknown";
+
+export interface ProviderHealthStatus {
+  provider: "gemini" | "google_custom_search";
+  configured: boolean;
+  status: ProviderHealthCategory;
+  /** Safe for admin display — must not include secrets or raw API responses. */
+  diagnosticMessage: string;
+}
+
+// ---- Provider health check cache ----
+const HEALTH_CHECK_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
+interface HealthCheckCacheEntry {
+  result: ProviderHealthStatus;
+  cachedAt: number;
+}
+const healthCheckCache = new Map<string, HealthCheckCacheEntry>();
 
 export class SearchProviderFallbackError extends Error {
   code = "SEARCH_PROVIDER_FALLBACK_FAILED";
@@ -415,28 +475,309 @@ export class GoogleCustomSearchProvider implements SearchProvider {
     url.searchParams.set("q", query);
     url.searchParams.set("num", "5");
 
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(getGoogleCustomSearchTimeoutMs()),
-    });
-    const data = await response.json();
-
-    if (!response.ok) {
-      const message =
-        data?.error?.message || "Google search request failed.";
-      if (response.status === 429) {
-        throw new Error(`Google Custom Search rate/quota limit: ${message}`);
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        signal: AbortSignal.timeout(getGoogleCustomSearchTimeoutMs()),
+      });
+    } catch (fetchErr: unknown) {
+      if (isAbortError(fetchErr)) {
+        throw new GoogleCustomSearchTemporaryError(
+          "Google Custom Search request timed out.",
+          0
+        );
       }
-      if (response.status === 503) {
-        throw new Error(`Google Custom Search temporarily unavailable: ${message}`);
-      }
-      throw new Error(message);
+      // Network-level failure (DNS, connection refused, etc.) — temporary
+      throw new GoogleCustomSearchTemporaryError(
+        "Google Custom Search network failure.",
+        0
+      );
     }
 
-    return (data.items || []).map((item: Record<string, string>) => ({
+    let data: Record<string, unknown>;
+    try {
+      data = await response.json();
+    } catch {
+      // Could not parse response — treat as temporary if server-side error, setup otherwise
+      if (response.status >= 500) {
+        throw new GoogleCustomSearchTemporaryError(
+          `Google Custom Search returned an unparseable response (HTTP ${response.status}).`,
+          response.status
+        );
+      }
+      throw new GoogleCustomSearchSetupError(
+        `Google Custom Search returned an unparseable response (HTTP ${response.status}).`,
+        response.status
+      );
+    }
+
+    if (!response.ok) {
+      const rawMessage =
+        (data?.error as Record<string, unknown>)?.message ||
+        "Google Custom Search request failed.";
+      const message = typeof rawMessage === "string" ? rawMessage : "Google Custom Search request failed.";
+      const errorReason =
+        typeof (data?.error as Record<string, unknown>)?.errors === "object"
+          ? String(
+              ((data.error as Record<string, unknown>).errors as Array<Record<string, unknown>>)?.[0]?.reason || ""
+            )
+          : "";
+
+      // 429 — explicit quota or rate limit.
+      // Also catch quota reasons that Google returns with other status codes (e.g. 200 body errors).
+      if (
+        response.status === 429 ||
+        /dailylimitexceeded|ratelimitexceeded|userratelimitexceeded|quotaexceeded|resource.?exhausted/i.test(
+          message + errorReason
+        )
+      ) {
+        throw new GoogleCustomSearchQuotaError(
+          `Google Custom Search quota or rate limit reached.`,
+          response.status
+        );
+      }
+
+      // 503/504 — server-side temporary
+      if (response.status === 503 || response.status === 504) {
+        throw new GoogleCustomSearchTemporaryError(
+          `Google Custom Search is temporarily unavailable.`,
+          response.status
+        );
+      }
+
+      // 400 — almost always a setup problem: invalid cx, bad parameters, malformed request
+      // Google returns 400 for invalid engine ID (cx), missing parameters, bad API surface
+      if (response.status === 400) {
+        throw new GoogleCustomSearchSetupError(
+          `Google Custom Search setup needs attention: invalid request or engine ID configuration (HTTP 400).`,
+          response.status
+        );
+      }
+
+      // 401 — always auth/key problem (setup)
+      if (response.status === 401) {
+        throw new GoogleCustomSearchSetupError(
+          `Google Custom Search setup needs attention: API key or authentication problem (HTTP 401).`,
+          response.status
+        );
+      }
+
+      // 403 — check for quota-related reasons FIRST.
+      // Google returns 403 with reason=dailyLimitExceeded/rateLimitExceeded/userRateLimitExceeded
+      // for quota exhaustion, not just for auth problems.
+      if (response.status === 403) {
+        if (
+          /dailylimitexceeded|ratelimitexceeded|userratelimitexceeded|quotaexceeded/i.test(
+            errorReason + message
+          )
+        ) {
+          throw new GoogleCustomSearchQuotaError(
+            `Google Custom Search quota or rate limit reached.`,
+            response.status
+          );
+        }
+        throw new GoogleCustomSearchSetupError(
+          `Google Custom Search setup needs attention: API key, permissions, or billing problem (HTTP 403).`,
+          response.status
+        );
+      }
+
+      // Any other non-200 with a suspicious message — classify precisely
+      if (
+        /api.?key.?not.?valid|invalid.?api.?key|api.?key.?invalid/i.test(message)
+      ) {
+        throw new GoogleCustomSearchSetupError(
+          `Google Custom Search setup needs attention: API key is not valid.`,
+          response.status
+        );
+      }
+      if (
+        /disabled|not.?enabled|api.?access.?not.?configured|project.?not.?enabled/i.test(
+          message + errorReason
+        )
+      ) {
+        throw new GoogleCustomSearchSetupError(
+          `Google Custom Search setup needs attention: API is disabled or not enabled for this project.`,
+          response.status
+        );
+      }
+      if (
+        /billing|payment.?required/i.test(message)
+      ) {
+        throw new GoogleCustomSearchSetupError(
+          `Google Custom Search setup needs attention: billing issue detected.`,
+          response.status
+        );
+      }
+
+      // Unknown non-200 — not retryable by default (conservative)
+      throw new GoogleCustomSearchSetupError(
+        `Google Custom Search returned an unexpected error (HTTP ${response.status}).`,
+        response.status
+      );
+    }
+
+    const items = data.items;
+    if (!Array.isArray(items) || items.length === 0) {
+      // Empty result is valid — not an error
+      return [];
+    }
+
+    return items.map((item: Record<string, string>) => ({
       title: item.title || "Search result",
       url: item.link || "",
       snippet: item.snippet || "",
     }));
+  }
+
+  /**
+   * Run a minimal test query to check if the provider is correctly configured.
+   * Returns a safe ProviderHealthStatus — no secrets included.
+   */
+  async checkHealth(): Promise<ProviderHealthStatus> {
+    const cacheKey = `google_custom_search:health`;
+    const cached = healthCheckCache.get(cacheKey);
+    if (cached && Date.now() - cached.cachedAt < HEALTH_CHECK_CACHE_TTL_MS) {
+      return cached.result;
+    }
+
+    if (!this.apiKey || !this.searchEngineId) {
+      const result: ProviderHealthStatus = {
+        provider: "google_custom_search",
+        configured: false,
+        status: "setup_attention",
+        diagnosticMessage:
+          "Google Custom Search is not configured. Set GOOGLE_CUSTOM_SEARCH_API_KEY and GOOGLE_CUSTOM_SEARCH_ENGINE_ID.",
+      };
+      healthCheckCache.set(cacheKey, { result, cachedAt: Date.now() });
+      return result;
+    }
+
+    try {
+      // Minimal test query — short timeout, single result
+      const url = new URL("https://www.googleapis.com/customsearch/v1");
+      url.searchParams.set("key", this.apiKey);
+      url.searchParams.set("cx", this.searchEngineId);
+      url.searchParams.set("q", "test");
+      url.searchParams.set("num", "1");
+
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(8_000),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        const result: ProviderHealthStatus = {
+          provider: "google_custom_search",
+          configured: true,
+          status: "ready",
+          diagnosticMessage: "Google Custom Search is configured and responding.",
+        };
+        healthCheckCache.set(cacheKey, { result, cachedAt: Date.now() });
+        return result;
+      }
+
+      const rawMessage =
+        (data?.error as Record<string, unknown>)?.message || "";
+      const message = typeof rawMessage === "string" ? rawMessage : "";
+
+      // Classify the failure for the health report
+      if (response.status === 429) {
+        const result: ProviderHealthStatus = {
+          provider: "google_custom_search",
+          configured: true,
+          status: "quota",
+          diagnosticMessage: "Google Custom Search quota or rate limit reached.",
+        };
+        healthCheckCache.set(cacheKey, { result, cachedAt: Date.now() });
+        return result;
+      }
+      if (response.status === 503 || response.status === 504) {
+        const result: ProviderHealthStatus = {
+          provider: "google_custom_search",
+          configured: true,
+          status: "temporary_unavailable",
+          diagnosticMessage: "Google Custom Search is temporarily unavailable.",
+        };
+        healthCheckCache.set(cacheKey, { result, cachedAt: Date.now() });
+        return result;
+      }
+      if (
+        response.status === 400 ||
+        response.status === 401 ||
+        /api.?key|invalid|disabled|billing|permission|not.?enabled/i.test(message)
+      ) {
+        const result: ProviderHealthStatus = {
+          provider: "google_custom_search",
+          configured: false,
+          status: "setup_attention",
+          diagnosticMessage:
+            `Google Custom Search setup needs attention (HTTP ${response.status}). Check the API key, engine ID, and that the Custom Search API is enabled with correct billing.`,
+        };
+        healthCheckCache.set(cacheKey, { result, cachedAt: Date.now() });
+        return result;
+      }
+
+      // 403 in health check: quota reasons first, then setup
+      if (response.status === 403) {
+        const rawReason =
+          (data?.error as Record<string, unknown>)?.errors;
+        const reason403 = Array.isArray(rawReason)
+          ? String((rawReason as Array<Record<string, unknown>>)[0]?.reason || "")
+          : "";
+        if (
+          /dailylimitexceeded|ratelimitexceeded|userratelimitexceeded|quotaexceeded/i.test(
+            reason403 + message
+          )
+        ) {
+          const result: ProviderHealthStatus = {
+            provider: "google_custom_search",
+            configured: true,
+            status: "quota",
+            diagnosticMessage: "Google Custom Search quota or rate limit reached.",
+          };
+          healthCheckCache.set(cacheKey, { result, cachedAt: Date.now() });
+          return result;
+        }
+        const result: ProviderHealthStatus = {
+          provider: "google_custom_search",
+          configured: false,
+          status: "setup_attention",
+          diagnosticMessage:
+            `Google Custom Search setup needs attention (HTTP 403). Check the API key, engine ID, and that the Custom Search API is enabled with correct billing.`,
+        };
+        healthCheckCache.set(cacheKey, { result, cachedAt: Date.now() });
+        return result;
+      }
+
+      const result: ProviderHealthStatus = {
+        provider: "google_custom_search",
+        configured: true,
+        status: "unknown",
+        diagnosticMessage: `Google Custom Search returned an unexpected status (HTTP ${response.status}).`,
+      };
+      healthCheckCache.set(cacheKey, { result, cachedAt: Date.now() });
+      return result;
+    } catch (err: unknown) {
+      if (isAbortError(err)) {
+        const result: ProviderHealthStatus = {
+          provider: "google_custom_search",
+          configured: true,
+          status: "temporary_unavailable",
+          diagnosticMessage: "Google Custom Search health check timed out.",
+        };
+        healthCheckCache.set(cacheKey, { result, cachedAt: Date.now() });
+        return result;
+      }
+      const result: ProviderHealthStatus = {
+        provider: "google_custom_search",
+        configured: true,
+        status: "unknown",
+        diagnosticMessage: "Google Custom Search health check failed with a network error.",
+      };
+      healthCheckCache.set(cacheKey, { result, cachedAt: Date.now() });
+      return result;
+    }
   }
 }
 
@@ -447,8 +788,37 @@ interface SearchProviderEntry {
 
 export class FallbackSearchProvider implements SearchProvider {
   private lastOutcome: SearchProviderOutcome | null = null;
+  // ---- Instance-level circuit-breaker ----
+  // Kept per-instance so tests in the same process don't share breaker state,
+  // and so each request (which creates a new FallbackSearchProvider) starts fresh.
+  private readonly circuitBreakerState = new Map<string, { pausedUntil: number }>();
+
+  private static readonly CIRCUIT_COOLDOWN_TEMP_MS = 30_000;   // 30s for 503/timeout
+  private static readonly CIRCUIT_COOLDOWN_QUOTA_MS = 300_000; // 5 min for quota
 
   constructor(private readonly entries: SearchProviderEntry[]) {}
+
+  private isCircuitOpen(providerLabel: string): boolean {
+    const state = this.circuitBreakerState.get(providerLabel);
+    if (!state) return false;
+    if (Date.now() >= state.pausedUntil) {
+      this.circuitBreakerState.delete(providerLabel);
+      return false;
+    }
+    return true;
+  }
+
+  private tripCircuit(providerLabel: string, cooldownMs: number): void {
+    this.circuitBreakerState.set(providerLabel, { pausedUntil: Date.now() + cooldownMs });
+  }
+
+  private applyCircuitBreakerTrip(providerLabel: string, code: string): void {
+    if (code === "temporary_unavailable" || code === "timeout") {
+      this.tripCircuit(providerLabel, FallbackSearchProvider.CIRCUIT_COOLDOWN_TEMP_MS);
+    } else if (code === "quota_or_rate_limit") {
+      this.tripCircuit(providerLabel, FallbackSearchProvider.CIRCUIT_COOLDOWN_QUOTA_MS);
+    }
+  }
 
   async search(query: string): Promise<SearchResult[]> {
     this.lastOutcome = null;
@@ -459,6 +829,16 @@ export class FallbackSearchProvider implements SearchProvider {
     const providerErrors: SearchProviderFailure[] = [];
     for (let index = 0; index < this.entries.length; index += 1) {
       const entry = this.entries[index];
+
+      // Circuit-breaker: skip this provider if it's currently paused
+      if (this.isCircuitOpen(entry.label)) {
+        console.warn(
+          `Standout research provider ${entry.label} is circuit-breaker paused; skipping.`
+        );
+        providerErrors.push({ provider: entry.label, code: "circuit_open" });
+        continue;
+      }
+
       const maxAttempts = getSearchProviderAttemptLimit();
       let finalFailure: SearchProviderFailure | null = null;
 
@@ -474,6 +854,11 @@ export class FallbackSearchProvider implements SearchProvider {
         } catch (error) {
           const failure = buildProviderFailure(entry.label, error);
           finalFailure = failure;
+
+          // Trip circuit-breaker based on error type before deciding to retry
+          this.applyCircuitBreakerTrip(entry.label, failure.code);
+
+          // Only retry if the failure is explicitly retryable AND we have attempts remaining
           if (attempt < maxAttempts && shouldRetryProviderFailure(failure.code)) {
             console.warn(
               `Standout research provider ${entry.label} failed with ${failure.code}; retrying.`
@@ -572,6 +957,37 @@ export function getSearchDiagnostics(): {
     gitCommit:
       getFirstEnvValue(["VERCEL_GIT_COMMIT_SHA"])?.slice(0, 7) || null,
     deploymentUrl: getFirstEnvValue(["VERCEL_URL"]) || null,
+  };
+}
+
+/**
+ * Returns safe Gemini provider health status without running any live requests.
+ * Gemini liveness requires a real API call — this returns the configured/not-configured state
+ * based on env var presence, and reflects circuit-breaker state.
+ */
+export function getGeminiHealthStatus(): ProviderHealthStatus {
+  const hasKey = Boolean(
+    getFirstEnvValue([
+      "GEMINI_API_KEY",
+      "GOOGLE_GEMINI_API_KEY",
+      "GOOGLE_API_KEY",
+      "NEXT_PUBLIC_GEMINI_API_KEY",
+    ])
+  );
+  if (!hasKey) {
+    return {
+      provider: "gemini",
+      configured: false,
+      status: "setup_attention",
+      diagnosticMessage:
+        "Gemini is not configured. Set GEMINI_API_KEY in the deployment environment.",
+    };
+  }
+  return {
+    provider: "gemini",
+    configured: true,
+    status: "ready",
+    diagnosticMessage: "Gemini API key is configured.",
   };
 }
 
@@ -694,38 +1110,48 @@ function buildProviderFailure(
 
 function getProviderErrorCode(error: unknown, message: string): string {
   if (error instanceof GoogleSearchConfigError) return "not_configured";
+  // Typed Gemini errors
   if (error instanceof GeminiQuotaExceededError) return "quota_or_rate_limit";
   if (error instanceof GeminiResearchTimeoutError) return "timeout";
-  if (error instanceof GeminiTemporaryUnavailableError) {
+  if (error instanceof GeminiTemporaryUnavailableError) return "temporary_unavailable";
+  // Typed Google Custom Search errors — precise, no message guessing
+  if (error instanceof GoogleCustomSearchSetupError) return "setup_attention";
+  if (error instanceof GoogleCustomSearchQuotaError) return "quota_or_rate_limit";
+  if (error instanceof GoogleCustomSearchTemporaryError) return "temporary_unavailable";
+  // Fallback: classify by message content for untyped errors
+  if (/503|temporarily unavailable|service unavailable|overloaded|backend error/i.test(message)) {
     return "temporary_unavailable";
   }
-  if (
-    /503|temporarily unavailable|temporary|service unavailable|overloaded|backend error|try again|fetch failed|network error|ECONNRESET|ETIMEDOUT|ENOTFOUND/i.test(
-      message
-    )
-  ) {
-    return "temporary_unavailable";
-  }
-  if (/quota|rate|limit|429|resource exhausted/i.test(message)) {
+  if (/quota|rate.?limit|resource.?exhausted/i.test(message)) {
     return "quota_or_rate_limit";
   }
   if (/api key not valid|invalid api key|permission|billing|not enabled|forbidden|unauthorized/i.test(message)) {
     return "configuration_or_auth";
   }
   if (/timeout|timed out|abort/i.test(message)) return "timeout";
+  // Unknown response — conservatively NOT retryable.
+  // "provider_error" on an unknown response should not be retried blindly;
+  // it is likely a structural problem rather than a transient outage.
   return "provider_error";
 }
 
 export function shouldRetryProviderFailure(code: string): boolean {
-  return code === "timeout" || code === "temporary_unavailable" || code === "provider_error";
+  // Only retry confirmed transient failures. "provider_error" is unknown and NOT retried.
+  return code === "timeout" || code === "temporary_unavailable";
 }
 
+
 export function areProviderFailuresRetryable(
+
   providerErrors: SearchProviderFailure[]
 ): boolean {
   return (
     providerErrors.length > 0 &&
-    providerErrors.every((failure) => shouldRetryProviderFailure(failure.code))
+    providerErrors.every(
+      (failure) =>
+        // circuit_open means the underlying cause was temp/quota — retryable
+        shouldRetryProviderFailure(failure.code) || failure.code === "circuit_open"
+    )
   );
 }
 
@@ -767,20 +1193,42 @@ function buildSearchProviderFallbackMessage(
   providerErrors: SearchProviderFailure[],
   hasBackupProvider: boolean
 ): string {
-  const setupFailed = providerErrors.some((failure) =>
-    ["not_configured", "configuration_or_auth"].includes(failure.code)
+  const nonCircuitErrors = providerErrors.filter(
+    (failure) => failure.code !== "circuit_open"
   );
-  if (setupFailed) {
+
+  // Setup/config problems — precise, not "temporarily unavailable"
+  const googleSetupFailed = nonCircuitErrors.some(
+    (failure) =>
+      failure.provider === "google_custom_search" &&
+      failure.code === "setup_attention"
+  );
+  if (googleSetupFailed) {
     return (
-      "Standout research could not finish because one or more search providers need setup attention. " +
-      "Check Gemini and Google Custom Search credentials in the deployment environment."
+      "Google Custom Search setup needs attention. " +
+      "Check the API key, engine ID, and that the Custom Search API is enabled with correct billing. " +
+      "Existing saved signals were kept."
     );
   }
 
-  const quotaFailed = providerErrors.some(
+  const anySetupFailed = nonCircuitErrors.some((failure) =>
+    ["not_configured", "configuration_or_auth", "setup_attention"].includes(
+      failure.code
+    )
+  );
+  if (anySetupFailed) {
+    return (
+      "Standout research could not finish because one or more search providers need setup attention. " +
+      "Check Gemini and Google Custom Search credentials in the deployment environment. " +
+      "Existing saved signals were kept."
+    );
+  }
+
+  // Quota problems
+  const quotaFailed = nonCircuitErrors.some(
     (failure) => failure.code === "quota_or_rate_limit"
   );
-  const geminiFailed = providerErrors.some(
+  const geminiFailed = nonCircuitErrors.some(
     (failure) => failure.provider === "gemini_grounded_search"
   );
   if (geminiFailed && !hasBackupProvider) {
@@ -798,9 +1246,23 @@ function buildSearchProviderFallbackMessage(
     );
   }
 
+  // Only say "temporarily unavailable" when ALL errors are genuinely transient
+  const allTrulyTemporary = nonCircuitErrors.length > 0 &&
+    nonCircuitErrors.every(
+      (failure) =>
+        failure.code === "timeout" || failure.code === "temporary_unavailable"
+    );
+  if (allTrulyTemporary) {
+    return (
+      "Search providers are temporarily unavailable. " +
+      "Existing saved signals were kept; try again later."
+    );
+  }
+
+  // Mixed or unknown failures — don't call it temporary
   return (
-    "Standout research could not finish because the configured search providers are temporarily unavailable. " +
-    "Existing saved signals were kept; try again later."
+    "Standout research could not finish. " +
+    "Existing saved signals were kept. Check provider configuration and try again."
   );
 }
 

@@ -151,16 +151,13 @@ export async function POST(
 
     if (error instanceof SearchProviderFallbackError) {
       const setupAttention = error.providerErrors.some((failure) =>
-        ["not_configured", "configuration_or_auth"].includes(failure.code)
+        ["not_configured", "configuration_or_auth", "setup_attention"].includes(
+          failure.code
+        )
       );
-      const failureCode =
-        error.providerErrors[error.providerErrors.length - 1]?.code ?? null;
-      const quotaOnly =
-        error.providerErrors.length > 0 &&
-        error.providerErrors.every(
-          (failure) => failure.code === "quota_or_rate_limit"
-        );
-
+      const quotaHit = error.providerErrors.some(
+        (failure) => failure.code === "quota_or_rate_limit"
+      );
       return NextResponse.json(
         {
           code: error.code,
@@ -168,14 +165,12 @@ export async function POST(
             ? `${error.message} Existing saved signals are still visible on this card.`
             : error.message,
           hasSavedResearch,
-          providerErrors: error.providerErrors,
           retryable: error.retryable,
           setupAttention,
-          failureCode,
-          hasBackupProvider: error.hasBackupProvider,
-          diagnostics: getSearchDiagnostics(),
+          quota: quotaHit,
+          providerErrors: error.providerErrors,
         },
-        { status: quotaOnly ? 429 : 503 }
+        { status: 503 }
       );
     }
 

@@ -119,7 +119,11 @@ export async function POST(request: NextRequest) {
         if (error instanceof SearchProviderFallbackError) {
           retryable ||= error.retryable;
           setupAttention ||= error.providerErrors.some((failure) =>
-            ["not_configured", "configuration_or_auth"].includes(failure.code)
+            [
+              "not_configured",
+              "configuration_or_auth",
+              "setup_attention",
+            ].includes(failure.code)
           );
           lastFailureCode =
             error.providerErrors[error.providerErrors.length - 1]?.code ??
