@@ -5,6 +5,7 @@ import {
   normalizeAdminClientUpdate,
   selectClientLoginUser,
 } from "../src/lib/clients/admin-update";
+import { normalizeAuthorityColumnUrl } from "../src/lib/clients/authority-column";
 import {
   isInternalErrorMessage,
   toUserSafeErrorMessage,
@@ -83,6 +84,31 @@ test("admin client update rejects empty or invalid email changes", () => {
     () => normalizeAdminClientUpdate({}, existingClient),
     /No client changes/
   );
+});
+
+test("authority column URL accepts Medium and Authority Magazine links only", () => {
+  assert.equal(
+    normalizeAuthorityColumnUrl(" https://medium.com/@JimHamel "),
+    "https://medium.com/@JimHamel"
+  );
+  assert.equal(
+    normalizeAuthorityColumnUrl("https://authoritymagazine.com/author/jim-hamel"),
+    "https://authoritymagazine.com/author/jim-hamel"
+  );
+  assert.equal(normalizeAuthorityColumnUrl(""), null);
+  assert.throws(
+    () => normalizeAuthorityColumnUrl("https://example.com/@JimHamel"),
+    /Authority Magazine or Medium/
+  );
+});
+
+test("admin client update saves authority column URL", () => {
+  const update = normalizeAdminClientUpdate(
+    { authorityColumnUrl: "https://medium.com/@JimHamel" },
+    existingClient
+  );
+
+  assert.equal(update.data.authorityColumnUrl, "https://medium.com/@JimHamel");
 });
 
 test("admin client update accepts valid optional password changes", () => {

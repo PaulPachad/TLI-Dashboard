@@ -8,6 +8,7 @@ interface ClientProfileEditorProps {
   initialName: string;
   initialCompany: string | null;
   initialEmail: string;
+  initialAuthorityColumnUrl: string | null;
 }
 
 export function ClientProfileEditor({
@@ -15,11 +16,15 @@ export function ClientProfileEditor({
   initialName,
   initialCompany,
   initialEmail,
+  initialAuthorityColumnUrl,
 }: ClientProfileEditorProps) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
   const [company, setCompany] = useState(initialCompany || "");
   const [email, setEmail] = useState(initialEmail);
+  const [authorityColumnUrl, setAuthorityColumnUrl] = useState(
+    initialAuthorityColumnUrl || ""
+  );
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -39,6 +44,7 @@ export function ClientProfileEditor({
           name: name.trim(),
           company: company.trim(),
           email: email.trim(),
+          authorityColumnUrl: authorityColumnUrl.trim(),
           password,
         }),
       });
@@ -125,6 +131,24 @@ export function ClientProfileEditor({
             onChange={(event) => setEmail(event.target.value)}
             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
           />
+        </label>
+      </div>
+
+      <div className="mt-5">
+        <label className="block max-w-2xl">
+          <span className="mb-1 block text-xs font-semibold text-slate-500">
+            Authority / Medium Column URL
+          </span>
+          <input
+            type="url"
+            value={authorityColumnUrl}
+            onChange={(event) => setAuthorityColumnUrl(event.target.value)}
+            placeholder="https://medium.com/@JimHamel"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
+          />
+          <p className="mt-1 text-xs text-slate-400">
+            Shows a dashboard button that opens the client&apos;s main Authority Magazine or Medium column.
+          </p>
         </label>
       </div>
 

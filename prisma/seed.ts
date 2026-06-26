@@ -70,6 +70,7 @@ async function seedDemoWorkspace() {
       data: {
         name: "Demo TLI Client",
         company: "Authority Magazine Demo",
+        authorityColumnUrl: "https://medium.com/@AuthorityMagazine",
         schedulingLink: "https://calendly.com/demo-tli/follow-up",
         replyToEmail: demoEmail,
       },
@@ -80,6 +81,7 @@ async function seedDemoWorkspace() {
         name: "Demo TLI Client",
         company: "Authority Magazine Demo",
         email: demoEmail,
+        authorityColumnUrl: "https://medium.com/@AuthorityMagazine",
         schedulingLink: "https://calendly.com/demo-tli/follow-up",
         replyToEmail: demoEmail,
       },

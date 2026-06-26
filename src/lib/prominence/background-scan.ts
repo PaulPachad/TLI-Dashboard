@@ -1,4 +1,8 @@
 import type { Prisma } from "@prisma/client";
+import {
+  IMPORTED_INTERVIEW_STANDOUT_PROVIDER,
+  isImportedInterviewStandoutSignals,
+} from "@/lib/prominence/signals";
 
 export const DEFAULT_VIP_PROMINENCE_CRON_LIMIT = 2;
 export const MAX_VIP_PROMINENCE_CRON_LIMIT = 6;
@@ -39,6 +43,9 @@ export function shouldResearchProminenceInBackground(
   const alreadyResearched = interview.actions?.some(
     (action) => action.actionType === "PROMINENCE_RESEARCHED"
   );
+  if (!alreadyResearched && isImportedInterviewStandoutSignals(interview.prominenceSignalsJson)) {
+    return true;
+  }
 
   return (
     !alreadyResearched &&
@@ -53,6 +60,14 @@ export function buildBackgroundProminenceWhere(): Prisma.InterviewWhereInput {
   return {
     OR: [
       { prominenceSignalsJson: null },
+      {
+        prominenceSignalsJson: {
+          contains: IMPORTED_INTERVIEW_STANDOUT_PROVIDER,
+        },
+        actions: {
+          none: { actionType: "PROMINENCE_RESEARCHED" },
+        },
+      },
       buildLegacyBackgroundProminenceWhere(),
     ],
   };

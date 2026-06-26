@@ -7,7 +7,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
-  buildInterviewImageSources,
+  buildBrowserSocialImageSources,
   extractArticleTitleFromUrl,
 } from "@/lib/images/interview-image";
 
@@ -180,6 +180,8 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
   }, [socialImagePreviewUrl]);
 
   useEffect(() => {
+    // The modal is portal-mounted after hydration so it can safely access document.body.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     const previouslyFocused = document.activeElement as HTMLElement | null;
 
@@ -842,9 +844,7 @@ async function generateBrowserSocialImage(
 
   drawBaseBackground(ctx, canvas.width, canvas.height);
 
-  const imageSources = buildInterviewImageSources(interview).filter((source) =>
-    source.startsWith("http")
-  );
+  const imageSources = buildBrowserSocialImageSources(interview);
   const featureImage = await firstLoadedImage(imageSources);
   if (featureImage) {
     drawCoverImage(ctx, featureImage, 0, 0, canvas.width, canvas.height);

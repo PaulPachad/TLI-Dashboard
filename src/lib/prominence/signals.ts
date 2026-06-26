@@ -67,6 +67,8 @@ export interface StoredStandoutSignals {
   provider: string;
 }
 
+export const IMPORTED_INTERVIEW_STANDOUT_PROVIDER = "imported_interview";
+
 export interface ProminenceAssessment {
   score: number;
   tier: ProminenceTier;
@@ -238,7 +240,7 @@ export function buildProminenceSignalsJson(input: {
           parsedFromJson = true;
           break;
         }
-      } catch (e) {
+      } catch {
         // Fall back
       }
     }
@@ -374,6 +376,181 @@ export function buildProminenceSignalsJson(input: {
   };
 
   return JSON.stringify(payload);
+}
+
+export function buildImportedInterviewStandoutSignals(input: {
+  intervieweeName?: string | null;
+  intervieweeCompany?: string | null;
+  intervieweeTitle?: string | null;
+  topic?: string | null;
+  articleUrl?: string | null;
+  linkedinUrl?: string | null;
+  twitterUrl?: string | null;
+  companyEmployeeCount?: number | null;
+  companyRevenueUsd?: number | null;
+  largestSocialFollowerCount?: number | null;
+  prominenceNotes?: string | null;
+  researchedAt?: Date;
+}): string | null {
+  const sourceTitle = "Imported Authority Magazine interview";
+  const sourceUrl = isSafeHttpUrl(input.articleUrl) ? input.articleUrl || null : null;
+  const signals: StoredStandoutSignal[] = [];
+
+  if (input.intervieweeTitle) {
+    const isSenior = SENIOR_TITLE_PATTERN.test(input.intervieweeTitle);
+    const isLeader = LEADER_TITLE_PATTERN.test(input.intervieweeTitle);
+    signals.push({
+      kind: "role",
+      label: isSenior
+        ? "Senior Leadership"
+        : isLeader
+        ? "Leadership Role"
+        : "Interview Role",
+      value: input.intervieweeTitle,
+      detail: compactRoleDetail(input),
+      confidence: sourceUrl ? "medium" : "low",
+      sourceTitle,
+      sourceUrl,
+      placement: "back",
+    });
+  }
+
+  if (input.companyEmployeeCount != null) {
+    signals.push({
+      kind: "company",
+      label: "Company Size",
+      value: formatCount(input.companyEmployeeCount),
+      detail: `${formatCount(input.companyEmployeeCount)} employees`,
+      confidence: "medium",
+      sourceTitle,
+      sourceUrl,
+      placement: "back",
+    });
+  }
+
+  if (input.companyRevenueUsd != null) {
+    signals.push({
+      kind: "revenue",
+      label: "Revenue",
+      value: formatMoney(input.companyRevenueUsd),
+      detail: `${formatMoney(input.companyRevenueUsd)} annual revenue`,
+      confidence: "medium",
+      sourceTitle,
+      sourceUrl,
+      placement: "back",
+    });
+  }
+
+  if (input.largestSocialFollowerCount != null) {
+    signals.push({
+      kind: "audience",
+      label: "Audience",
+      value: formatCount(input.largestSocialFollowerCount),
+      detail: `${formatCount(input.largestSocialFollowerCount)} followers or subscribers`,
+      confidence: "medium",
+      sourceTitle,
+      sourceUrl,
+      placement: input.largestSocialFollowerCount >= 1_000_000 ? "front" : "back",
+    });
+  }
+
+  const importedText = [input.prominenceNotes, input.topic]
+    .filter(Boolean)
+    .join(" ");
+  if (importedText) {
+    const importedSource = {
+      title: sourceTitle,
+      url: sourceUrl || "",
+      snippet: importedText,
+    };
+    addPatternSignal(signals, [importedSource], "wikipedia", "Wikipedia", WIKIPEDIA_PATTERN);
+    addPatternSignal(
+      signals,
+      [importedSource],
+      "speaking",
+      "Major Conference",
+      MAJOR_CONFERENCE_SPEAKER_PATTERN
+    );
+    addPatternSignal(
+      signals,
+      [importedSource],
+      "unicorn",
+      "Unicorn Founder",
+      UNICORN_FOUNDER_PATTERN
+    );
+    if (
+      MAJOR_AWARD_PATTERN.test(importedText) &&
+      AWARD_RECOGNITION_PATTERN.test(importedText)
+    ) {
+      addPatternSignal(signals, [importedSource], "award", "Major Award", MAJOR_AWARD_PATTERN);
+    }
+  }
+
+  const topicDetail = buildImportedTopicDetail(input);
+  if (topicDetail) {
+    signals.push({
+      kind: "context",
+      label: "Interview Focus",
+      detail: topicDetail,
+      confidence: sourceUrl ? "medium" : "low",
+      sourceTitle,
+      sourceUrl,
+      placement: "evidence",
+    });
+  }
+
+  if (!input.intervieweeTitle && input.intervieweeCompany) {
+    signals.push({
+      kind: "context",
+      label: "Company Context",
+      detail: `${input.intervieweeName || "The interviewee"} is connected to ${input.intervieweeCompany}.`,
+      confidence: sourceUrl ? "medium" : "low",
+      sourceTitle,
+      sourceUrl,
+      placement: "evidence",
+    });
+  }
+
+  if (!topicDetail && !input.intervieweeTitle && (input.linkedinUrl || input.twitterUrl)) {
+    signals.push({
+      kind: "context",
+      label: "Profile Links",
+      detail: "The imported interview includes social profile links for later outreach and research.",
+      confidence: "low",
+      sourceTitle,
+      sourceUrl,
+      placement: "evidence",
+    });
+  }
+
+  const cleanSignals = uniqueStoredSignals(
+    signals
+      .map(normalizeStoredStandoutSignal)
+      .filter((signal): signal is StoredStandoutSignal => signal !== null)
+  ).slice(0, 8);
+
+  if (cleanSignals.length === 0) return null;
+
+  const payload: StoredStandoutSignals = {
+    version: 1,
+    standoutSummary: summarizeStoredSignals(cleanSignals),
+    signals: cleanSignals,
+    sourceCount: sourceUrl ? 1 : 0,
+    researchedAt: (input.researchedAt || new Date()).toISOString(),
+    provider: IMPORTED_INTERVIEW_STANDOUT_PROVIDER,
+  };
+
+  return JSON.stringify(payload);
+}
+
+export function isImportedInterviewStandoutSignals(value?: string | null): boolean {
+  if (!value?.trim()) return false;
+  try {
+    const parsed = JSON.parse(value) as Partial<StoredStandoutSignals>;
+    return parsed.provider === IMPORTED_INTERVIEW_STANDOUT_PROVIDER;
+  } catch {
+    return false;
+  }
 }
 
 export function assessInterviewProminence(
@@ -1289,6 +1466,16 @@ function buildStandoutSummary(
     return truncateSummary(`${name}${company}: ${primary.label} (${primary.value}).`, 180);
   }
   return truncateSummary(`${name}${company}: ${primary.detail}`, 180);
+}
+
+function buildImportedTopicDetail(input: {
+  intervieweeName?: string | null;
+  topic?: string | null;
+}): string | null {
+  const topic = cleanSignalText(input.topic || null, 130);
+  if (!topic) return null;
+  const name = input.intervieweeName || "The interviewee";
+  return truncateSummary(`${name}'s interview focuses on ${topic}.`, 160);
 }
 
 function summarizeProminenceNotes(value?: string | null): string {

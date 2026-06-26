@@ -20,6 +20,7 @@ export function ClientForm() {
     title: "",
     password: "",
     linkedinUrl: "",
+    authorityColumnUrl: "",
     schedulingLink: "",
   });
 
@@ -188,6 +189,22 @@ export function ClientForm() {
             placeholder="https://linkedin.com/in/..."
             className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
+        </div>
+        <div>
+          <label htmlFor="client-authority-column" className="block text-sm font-medium text-slate-700 mb-1">
+            Authority / Medium Column URL
+          </label>
+          <input
+            id="client-authority-column"
+            type="url"
+            value={form.authorityColumnUrl}
+            onChange={(e) => updateField("authorityColumnUrl", e.target.value)}
+            placeholder="https://medium.com/@JimHamel"
+            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          />
+          <p className="text-xs text-slate-400 mt-1">
+            Adds a dashboard button to the client&apos;s main Authority column.
+          </p>
         </div>
       </div>
 

@@ -23,6 +23,10 @@ import {
   SheetsConfigError,
   appendSheetUrlParams,
 } from "@/lib/google-sheets";
+import {
+  buildImportedInterviewStandoutSignals,
+  isImportedInterviewStandoutSignals,
+} from "@/lib/prominence/signals";
 
 interface ImportRequest {
   clientId: string;
@@ -399,6 +403,10 @@ export async function POST(request: NextRequest) {
               companyRevenueUsd: record.companyRevenueUsd,
               largestSocialFollowerCount: record.largestSocialFollowerCount,
               prominenceNotes: record.prominenceNotes,
+              prominenceSignalsJson: getImportedProminenceSignals(
+                record,
+                existing.prominenceSignalsJson
+              ),
               intervieweeEmail:
                 existing.intervieweeEmail || record.intervieweeEmail,
               publicistName: record.publicistName,
@@ -448,6 +456,7 @@ export async function POST(request: NextRequest) {
             companyRevenueUsd: record.companyRevenueUsd,
             largestSocialFollowerCount: record.largestSocialFollowerCount,
             prominenceNotes: record.prominenceNotes,
+            prominenceSignalsJson: getImportedProminenceSignals(record),
             publicistName: record.publicistName,
             publicistEmail: record.publicistEmail,
             topic: record.topic,
@@ -563,4 +572,27 @@ async function clearRowNumberConflict(
     },
     data: { sourceRowNumber: null },
   });
+}
+
+function getImportedProminenceSignals(
+  record: {
+    intervieweeName: string;
+    intervieweeCompany: string | null;
+    intervieweeTitle: string | null;
+    topic: string | null;
+    articleUrl: string;
+    linkedinUrl: string | null;
+    twitterUrl: string | null;
+    companyEmployeeCount: number | null;
+    companyRevenueUsd: number | null;
+    largestSocialFollowerCount: number | null;
+    prominenceNotes: string | null;
+  },
+  existingValue?: string | null
+): string | null {
+  if (existingValue?.trim() && !isImportedInterviewStandoutSignals(existingValue)) {
+    return existingValue;
+  }
+
+  return buildImportedInterviewStandoutSignals(record);
 }

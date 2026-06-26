@@ -1,3 +1,5 @@
+import { normalizeAuthorityColumnUrl } from "@/lib/clients/authority-column";
+
 interface ClientLoginUser {
   id: string;
   email: string;
@@ -19,6 +21,7 @@ export interface NormalizedAdminClientUpdate {
     email?: string;
     replyToEmail?: string | null;
     topicsSheetUrl?: string | null;
+    authorityColumnUrl?: string | null;
   };
   normalizedEmail: string | null;
   newPassword: string | null;
@@ -44,6 +47,20 @@ export function normalizeAdminClientUpdate(
 
   if ("topicsSheetUrl" in body) {
     data.topicsSheetUrl = String(body.topicsSheetUrl || "").trim() || null;
+  }
+
+  if ("authorityColumnUrl" in body) {
+    try {
+      data.authorityColumnUrl = normalizeAuthorityColumnUrl(
+        body.authorityColumnUrl
+      );
+    } catch (error) {
+      throw new AdminClientUpdateError(
+        error instanceof Error
+          ? error.message
+          : "Enter a valid Authority Magazine or Medium column URL."
+      );
+    }
   }
 
   let normalizedEmail: string | null = null;

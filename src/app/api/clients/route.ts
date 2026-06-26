@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { requireApiAdmin } from "@/lib/auth-helpers";
 import { hash } from "bcryptjs";
 import { randomInt } from "crypto";
+import { normalizeAuthorityColumnUrl } from "@/lib/clients/authority-column";
 
 // GET — List all clients
 export async function GET() {
@@ -67,6 +68,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let authorityColumnUrl: string | null = null;
+    try {
+      authorityColumnUrl = normalizeAuthorityColumnUrl(body.authorityColumnUrl);
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : "Enter a valid Authority Magazine or Medium column URL.",
+        },
+        { status: 400 }
+      );
+    }
+
     // Check if email already exists as a user
     const existingUser = await db.user.findUnique({
       where: { email: body.email.toLowerCase().trim() },
@@ -89,6 +105,7 @@ export async function POST(request: NextRequest) {
           title: body.title || null,
           signature: body.signature || null,
           linkedinUrl: body.linkedinUrl || null,
+          authorityColumnUrl,
           schedulingLink: body.schedulingLink || null,
           defaultHashtags:
             body.defaultHashtags ||

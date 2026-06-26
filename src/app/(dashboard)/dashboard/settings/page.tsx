@@ -25,6 +25,7 @@ export default function SettingsPage() {
     defaultSignoff: "",
     replyToEmail: "",
     topicsSheetUrl: "",
+    authorityColumnUrl: "",
   });
 
   const userRole = (session?.user as { role?: string })?.role;
@@ -48,6 +49,7 @@ export default function SettingsPage() {
           defaultSignoff: data.client.defaultSignoff || "",
           replyToEmail: data.client.replyToEmail || "",
           topicsSheetUrl: data.client.topicsSheetUrl || "",
+          authorityColumnUrl: data.client.authorityColumnUrl || "",
         });
       }
     } catch (err) {
@@ -263,6 +265,24 @@ export default function SettingsPage() {
                       className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
                     />
                   </div>
+                  {/* Topics Sheet URL */}
+                  <div className="sm:col-span-2">
+                    <label htmlFor="authorityColumnUrl" className="block text-sm font-medium text-slate-700 mb-1">
+                      Authority / Medium Column URL
+                    </label>
+                    <input
+                      type="url"
+                      id="authorityColumnUrl"
+                      value={form.authorityColumnUrl}
+                      onChange={(e) => setForm({ ...form, authorityColumnUrl: e.target.value })}
+                      placeholder="e.g. https://medium.com/@JimHamel"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                    />
+                    <p className="text-xs text-slate-400 mt-1">
+                      Adds a top dashboard button to your main Authority Magazine or Medium column.
+                    </p>
+                  </div>
+
                   {/* Topics Sheet URL */}
                   <div className="sm:col-span-2">
                     <label htmlFor="topicsSheetUrl" className="block text-sm font-medium text-slate-700 mb-1">

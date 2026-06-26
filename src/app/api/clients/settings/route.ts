@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
+import { normalizeAuthorityColumnUrl } from "@/lib/clients/authority-column";
 
 // GET — Fetch current client settings
 export async function GET() {
@@ -55,6 +56,7 @@ export async function PUT(request: NextRequest) {
       defaultSignoff,
       replyToEmail,
       topicsSheetUrl,
+      authorityColumnUrl,
     } = body;
     const normalizedName = String(name || "").trim();
     const normalizedEmail = String(email || "").trim().toLowerCase();
@@ -78,6 +80,23 @@ export async function PUT(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Enter a valid reply-to email address." },
+        { status: 400 }
+      );
+    }
+
+    let normalizedAuthorityColumnUrl: string | null = null;
+    try {
+      normalizedAuthorityColumnUrl = normalizeAuthorityColumnUrl(
+        authorityColumnUrl
+      );
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : "Enter a valid Authority Magazine or Medium column URL.",
+        },
         { status: 400 }
       );
     }
@@ -107,6 +126,7 @@ export async function PUT(request: NextRequest) {
         defaultSignoff: String(defaultSignoff || "").trim() || "Warmly",
         replyToEmail: normalizedReplyTo || null,
         topicsSheetUrl: String(topicsSheetUrl || "").trim() || null,
+        authorityColumnUrl: normalizedAuthorityColumnUrl,
       },
     });
 

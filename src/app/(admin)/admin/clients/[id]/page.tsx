@@ -88,6 +88,7 @@ export default async function ClientDetailPage({ params }: Props) {
         initialName={client.name}
         initialCompany={client.company}
         initialEmail={client.email}
+        initialAuthorityColumnUrl={client.authorityColumnUrl}
       />
 
       {/* Sheet import */}

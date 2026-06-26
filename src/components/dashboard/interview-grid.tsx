@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { InterviewCard } from "./interview-card";
 import { ActionModal } from "./action-modal";
 import { InterviewDetailPanel } from "@/components/panels/interview-detail-panel";
+import { isImportedInterviewStandoutSignals } from "@/lib/prominence/signals";
 import type {
   InterviewActionType,
   InterviewView,
@@ -111,17 +112,11 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(DISMISSED_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as string[];
-        if (Array.isArray(parsed)) {
-          setDismissedIds(new Set(parsed));
-        }
-      }
-    } catch {
-      // Ignore malformed localStorage data
-    }
+    const timer = window.setTimeout(() => {
+      setDismissedIds(readDismissedIds());
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   const persistDismissed = useCallback((ids: Set<string>) => {
@@ -767,6 +762,12 @@ function shouldQuietScanProminence(interview: InterviewView) {
   );
 
   if (!hasStructuredSignals) return true;
+  if (
+    !alreadyResearched &&
+    isImportedInterviewStandoutSignals(interview.prominenceSignalsJson)
+  ) {
+    return true;
+  }
 
   return (
     !alreadyResearched &&
@@ -789,6 +790,24 @@ function getProminenceSortScore(interview: InterviewView) {
   }
   if (prominence.hasAnySignals) return 1;
   return 0;
+}
+
+function readDismissedIds(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+
+  try {
+    const stored = window.localStorage.getItem(DISMISSED_STORAGE_KEY);
+    if (!stored) return new Set();
+
+    const parsed = JSON.parse(stored) as unknown;
+    if (!Array.isArray(parsed)) return new Set();
+
+    return new Set(
+      parsed.filter((value): value is string => typeof value === "string")
+    );
+  } catch {
+    return new Set();
+  }
 }
 
 function StatCard({

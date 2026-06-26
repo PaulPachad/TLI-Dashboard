@@ -29,6 +29,7 @@ model Client {
   title           String?
   signature       String?
   linkedinUrl     String?
+  authorityColumnUrl String?
   schedulingLink  String?
   defaultHashtags String? @default("#AuthorityMagazine #ThoughtLeadership #Leadership #Interview")
   defaultSignoff  String? @default("Warmly")

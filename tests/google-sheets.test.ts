@@ -17,6 +17,7 @@ import {
 } from "../src/lib/google-sheets/row-normalizer";
 import {
   buildInterviewImageSources,
+  buildBrowserSocialImageSources,
   extractArticleImage,
   extractArticleMetadata,
   extractArticleTitle,
@@ -338,6 +339,17 @@ test("interview cards use normalized image fields before article fallback", () =
       "https://example.com/image-two.jpg",
       "/api/interviews/interview_1/article-image",
     ]
+  );
+});
+
+test("browser social image sources keep same-origin article fallback", () => {
+  assert.deepEqual(
+    buildBrowserSocialImageSources({
+      id: "interview_1",
+      image1Url: null,
+      image2Url: null,
+    }),
+    ["/api/interviews/interview_1/article-image"]
   );
 });
 

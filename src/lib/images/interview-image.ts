@@ -13,6 +13,19 @@ export function buildInterviewImageSources(interview: {
   return [...new Set(sources)];
 }
 
+export function buildBrowserSocialImageSources(interview: {
+  id: string;
+  image1Url?: string | null;
+  image2Url?: string | null;
+}): string[] {
+  return buildInterviewImageSources(interview).filter(
+    (source) =>
+      source.startsWith("http://") ||
+      source.startsWith("https://") ||
+      source.startsWith("/")
+  );
+}
+
 export function normalizeSheetImageUrl(value?: string | null): string | null {
   if (!value) return null;
 
@@ -161,5 +174,4 @@ function cleanArticleTitle(value: string): string | null {
 
   return decoded || null;
 }
-
 

@@ -10,7 +10,9 @@ import {
 } from "../src/lib/linkedin/generator";
 import {
   assessInterviewProminence,
+  buildImportedInterviewStandoutSignals,
   buildProminenceSignalsJson,
+  IMPORTED_INTERVIEW_STANDOUT_PROVIDER,
   parseCountMetric,
   parseMoneyMetric,
   parseProminenceEvidenceSources,
@@ -484,6 +486,39 @@ test("structured signal builder extracts Kym Renner style leadership detail", ()
   assert.doesNotMatch(stored.standoutSummary || "", /Here are|prominence signals/i);
 });
 
+test("imported interviews get basic standout context before web research", () => {
+  const json = buildImportedInterviewStandoutSignals({
+    intervieweeName: "Danielle Rosse",
+    intervieweeCompany: "The Break House Kitchen + Beach Bar",
+    intervieweeTitle: "Owner/Founder",
+    topic:
+      "Founders and CEOs: How My Career Journey Has Shaped How I Lead Today",
+    articleUrl: "https://medium.com/authority-magazine/danielle-rosse",
+    researchedAt: new Date("2026-06-26T00:00:00.000Z"),
+  });
+
+  assert.ok(json);
+  const stored = parseStoredStandoutSignals(json);
+  assert.ok(stored);
+  assert.equal(stored.provider, IMPORTED_INTERVIEW_STANDOUT_PROVIDER);
+  assert.ok(stored.signals.some((signal) => signal.kind === "role"));
+  assert.ok(stored.signals.some((signal) => signal.label === "Interview Focus"));
+
+  const assessment = assessInterviewProminence({
+    intervieweeName: "Danielle Rosse",
+    intervieweeCompany: "The Break House Kitchen + Beach Bar",
+    intervieweeTitle: "Owner/Founder",
+    topic:
+      "Founders and CEOs: How My Career Journey Has Shaped How I Lead Today",
+    articleUrl: "https://medium.com/authority-magazine/danielle-rosse",
+    prominenceSignalsJson: json,
+  });
+
+  assert.equal(assessment.hasAnySignals, true);
+  assert.match(assessment.evidenceSummary || "", /Owner\/Founder|Founders and CEOs/i);
+  assert.equal(assessment.frontFlag, null);
+});
+
 test("structured standout validator rejects AI boilerplate phrases", () => {
   const prominenceSignalsJson = JSON.stringify({
     version: 1,
@@ -627,6 +662,16 @@ test("structured million-plus public audience can create a rare front flag", () 
 });
 
 test("background standout scanner targets never-scanned and legacy unstructured interviews", () => {
+  const importedSignalsJson = buildImportedInterviewStandoutSignals({
+    intervieweeName: "Hays and Leah Westbrook",
+    intervieweeCompany: "Cloudfit",
+    topic:
+      "Why Prioritizing Self-Care Is No Longer Optional for High-Performing Leaders",
+    articleUrl: "https://medium.com/authority-magazine/hays-and-leah-westbrook",
+    researchedAt: new Date("2026-06-26T00:00:00.000Z"),
+  });
+  assert.ok(importedSignalsJson);
+
   assert.equal(
     shouldResearchProminenceInBackground({
       companyEmployeeCount: null,
@@ -634,6 +679,17 @@ test("background standout scanner targets never-scanned and legacy unstructured 
       largestSocialFollowerCount: null,
       prominenceNotes: null,
       prominenceSignalsJson: '{"version":1,"signals":[]}',
+      actions: [],
+    }),
+    true
+  );
+  assert.equal(
+    shouldResearchProminenceInBackground({
+      companyEmployeeCount: 10_000,
+      companyRevenueUsd: null,
+      largestSocialFollowerCount: null,
+      prominenceNotes: "Imported sheet note.",
+      prominenceSignalsJson: importedSignalsJson,
       actions: [],
     }),
     true
@@ -680,6 +736,14 @@ test("background standout scanner targets never-scanned and legacy unstructured 
   assert.deepEqual(buildBackgroundProminenceWhere(), {
     OR: [
       { prominenceSignalsJson: null },
+      {
+        prominenceSignalsJson: {
+          contains: IMPORTED_INTERVIEW_STANDOUT_PROVIDER,
+        },
+        actions: {
+          none: { actionType: "PROMINENCE_RESEARCHED" },
+        },
+      },
       {
         companyEmployeeCount: null,
         companyRevenueUsd: null,
