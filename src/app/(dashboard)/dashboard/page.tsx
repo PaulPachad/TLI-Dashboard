@@ -14,11 +14,7 @@ export default async function DashboardHomePage() {
   let authorityColumnUrl: string | null = null;
   
   if (user.clientId) {
-    const client = await db.client.findUnique({
-      where: { id: user.clientId },
-      select: { authorityColumnUrl: true },
-    });
-    authorityColumnUrl = client?.authorityColumnUrl || null;
+    authorityColumnUrl = await getClientAuthorityColumnUrl(user.clientId);
     topics = await db.topic.findMany({
       where: { clientId: user.clientId },
       orderBy: { createdAt: "desc" },
@@ -79,5 +75,31 @@ export default async function DashboardHomePage() {
 
       <DashboardPanels topics={topics} events={events} />
     </div>
+  );
+}
+
+async function getClientAuthorityColumnUrl(
+  clientId: string
+): Promise<string | null> {
+  try {
+    const client = await db.client.findUnique({
+      where: { id: clientId },
+      select: { authorityColumnUrl: true },
+    });
+    return client?.authorityColumnUrl || null;
+  } catch (error) {
+    if (isMissingAuthorityColumnUrlColumnError(error)) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+function isMissingAuthorityColumnUrlColumnError(error: unknown): boolean {
+  const message =
+    error instanceof Error ? error.message : JSON.stringify(error);
+  return (
+    /authorityColumnUrl/.test(message) &&
+    /does not exist|no such column|unknown column|invalid/i.test(message)
   );
 }
