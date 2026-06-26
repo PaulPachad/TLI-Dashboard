@@ -21,7 +21,11 @@ export async function POST(
     const { id } = await params;
     const topic = await db.topic.findUnique({
       where: { id },
-      include: { client: true },
+      include: {
+        client: {
+          select: { replyToEmail: true },
+        },
+      },
     });
 
     if (!topic) {

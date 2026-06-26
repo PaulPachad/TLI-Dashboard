@@ -21,7 +21,11 @@ export async function POST(
     const { id } = await params;
     const event = await db.event.findUnique({
       where: { id },
-      include: { client: true },
+      include: {
+        client: {
+          select: { replyToEmail: true },
+        },
+      },
     });
 
     if (!event) {
