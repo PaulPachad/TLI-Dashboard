@@ -42,7 +42,10 @@ export async function POST(request: NextRequest) {
 
     if (user.role === UserRole.ADMIN && reqClientId) {
       // Admin syncing specific client
-      const client = await db.client.findUnique({ where: { id: reqClientId } });
+      const client = await db.client.findUnique({
+        where: { id: reqClientId },
+        select: { id: true },
+      });
       if (!client) {
         return NextResponse.json({ error: "Client not found." }, { status: 404 });
       }
@@ -52,7 +55,10 @@ export async function POST(request: NextRequest) {
       sheetSources = await db.sheetSource.findMany();
     } else if (user.clientId) {
       // Client syncing their own sheets
-      const client = await db.client.findUnique({ where: { id: user.clientId } });
+      const client = await db.client.findUnique({
+        where: { id: user.clientId },
+        select: { id: true },
+      });
       if (!client) {
         return NextResponse.json({ error: "Client not found." }, { status: 404 });
       }

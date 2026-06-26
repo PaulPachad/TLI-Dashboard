@@ -33,7 +33,10 @@ export async function POST(request: NextRequest) {
     if (user.role === UserRole.ADMIN && reqClientId) {
       clientIdsToSync.push(reqClientId);
     } else if (user.role === UserRole.ADMIN && !reqClientId) {
-      const clients = await db.client.findMany({ where: { topicsSheetUrl: { not: null } } });
+      const clients = await db.client.findMany({
+        where: { topicsSheetUrl: { not: null } },
+        select: { id: true },
+      });
       clientIdsToSync.push(...clients.map(c => c.id));
     } else if (user.clientId) {
       clientIdsToSync.push(user.clientId);
@@ -55,7 +58,10 @@ export async function POST(request: NextRequest) {
     let eventsSynced = 0;
 
     for (const cid of clientIdsToSync) {
-      const client = await db.client.findUnique({ where: { id: cid } });
+      const client = await db.client.findUnique({
+        where: { id: cid },
+        select: { id: true, topicsSheetUrl: true },
+      });
       if (!client?.topicsSheetUrl) {
         if (clientIdsToSync.length === 1) {
           return NextResponse.json({
