@@ -29,7 +29,7 @@ const STATUS_FILTERS = [
   { value: "dismissed", label: "Dismissed" },
 ];
 
-const QUIET_SCAN_LIMIT = 1;
+const QUIET_SCAN_LIMIT = 2;
 const QUIET_SCAN_ENABLED =
   process.env.NEXT_PUBLIC_STANDOUT_AUTO_SCAN !== "false";
 const QUIET_SCAN_MAX_ATTEMPTS = 3;
@@ -90,6 +90,8 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [topicFilter, setTopicFilter] = useState("");
+  const [topicOptions, setTopicOptions] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
   const [activeAction, setActiveAction] =
     useState<InterviewActionType | null>(null);
@@ -157,6 +159,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
       const params = new URLSearchParams();
       if (clientId) params.set("clientId", clientId);
       if (search) params.set("search", search);
+      if (topicFilter) params.set("topic", topicFilter);
       if (statusFilter !== "all") params.set("status", statusFilter);
       params.set("limit", String(PAGE_SIZE));
       params.set("offset", String(offset));
@@ -169,6 +172,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
 
       const data = await res.json();
       const nextInterviews = data.interviews || [];
+      setTopicOptions(Array.isArray(data.topicOptions) ? data.topicOptions : []);
       setInterviews((current) =>
         append ? [...current, ...nextInterviews] : nextInterviews
       );
@@ -179,7 +183,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [clientId, search, statusFilter]);
+  }, [clientId, search, statusFilter, topicFilter]);
 
   useEffect(() => {
     // Fetching is the external synchronization performed by this effect.
@@ -503,7 +507,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
       </div>
 
       {/* Search and filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="space-y-3">
         <div className="relative flex-1">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
@@ -528,22 +532,46 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
 
         <div
           data-tour="interview-filters"
-          className="flex gap-1.5 overflow-x-auto pb-1"
+          className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"
         >
-          {STATUS_FILTERS.map((filter) => (
-            <button
-              key={filter.value}
-              id={`filter-${filter.value}`}
-              onClick={() => setStatusFilter(filter.value)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                statusFilter === filter.value
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-              }`}
+          <div className="relative w-full lg:max-w-sm">
+            <label htmlFor="interview-topic-filter" className="sr-only">
+              Topic
+            </label>
+            <select
+              id="interview-topic-filter"
+              value={topicFilter}
+              onChange={(event) => setTopicFilter(event.target.value)}
+              disabled={topicOptions.length === 0}
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 shadow-sm
+                         focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                         disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
             >
-              {filter.label}
-            </button>
-          ))}
+              <option value="">All topics</option>
+              {topicOptions.map((topic) => (
+                <option key={topic} value={topic}>
+                  {topic}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
+            {STATUS_FILTERS.map((filter) => (
+              <button
+                key={filter.value}
+                id={`filter-${filter.value}`}
+                onClick={() => setStatusFilter(filter.value)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  statusFilter === filter.value
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -618,8 +646,8 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
           </div>
           <h3 className="text-lg font-semibold text-slate-900 mb-2">No interviews yet</h3>
           <p className="text-slate-500 max-w-sm mx-auto">
-            {search
-              ? "No interviews match your search. Try different keywords."
+            {search || topicFilter
+              ? "No interviews match the selected filters. Try a different search or topic."
               : "No interviews have been imported yet. Use the Google Sheet importer above to add them."}
           </p>
         </div>

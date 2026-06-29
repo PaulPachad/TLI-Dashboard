@@ -40,13 +40,13 @@ const TOUR_STEPS: TourStep[] = [
     panel: "interviews",
     selector: "#interview-search",
     title: "Search",
-    body: "Find a person, topic, company, or PR contact quickly.",
+    body: "Find a person, company, or PR contact quickly, or use the topic dropdown below it.",
   },
   {
     panel: "interviews",
     selector: '[data-tour="interview-filters"]',
     title: "Filters",
-    body: "Jump to upcoming interviews, new live articles, contacts needed, shared articles, or fully leveraged items.",
+    body: "Choose a topic, then jump to upcoming interviews, new live articles, contacts needed, shared articles, or fully leveraged items.",
   },
   {
     panel: "interviews",

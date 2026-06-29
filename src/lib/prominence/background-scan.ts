@@ -4,7 +4,7 @@ import {
   isImportedInterviewStandoutSignals,
 } from "@/lib/prominence/signals";
 
-export const DEFAULT_VIP_PROMINENCE_CRON_LIMIT = 2;
+export const DEFAULT_VIP_PROMINENCE_CRON_LIMIT = 6;
 export const MAX_VIP_PROMINENCE_CRON_LIMIT = 6;
 
 interface ProminenceResearchStatus {

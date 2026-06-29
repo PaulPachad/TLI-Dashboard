@@ -120,6 +120,7 @@ STANDOUT_RESEARCH_AUTOMATIC_ENABLED=true
 NEXT_PUBLIC_STANDOUT_AUTO_SCAN=true
 STANDOUT_RESEARCH_DAILY_LIMIT=25
 STANDOUT_RESEARCH_MONTHLY_LIMIT=250
+VIP_PROMINENCE_CRON_LIMIT=6
 ```
 
 For the cheapest larger-batch mode, try `gemini-2.5-flash-lite` and check the
@@ -145,16 +146,17 @@ signals on the interview, updates the card badges, and records the research in
 the action timeline.
 
 By default, opening the dashboard starts a small browser-triggered auto-scan for
-pending cards. If a search provider is temporarily unavailable, the app retries
-quietly in the background instead of showing clients an operational warning.
-Set `NEXT_PUBLIC_STANDOUT_AUTO_SCAN=false` only if you want to disable that
-in-browser auto-scan.
+up to 2 pending cards at a time. If a search provider is temporarily
+unavailable, the app retries quietly in the background instead of showing
+clients an operational warning. Set `NEXT_PUBLIC_STANDOUT_AUTO_SCAN=false` only
+if you want to disable that in-browser auto-scan.
 
 Background standout research runs through Vercel Cron once per day (configured at 4:00 AM UTC in `vercel.json` due to Vercel Hobby plan limitations) at
 `/api/cron/vip-prominence-scan`. Set `CRON_SECRET` in Vercel so the cron
 request is authorized, and optionally set `VIP_PROMINENCE_CRON_LIMIT` to tune
-the batch size. The default batch size is 2 and the app caps it at 6 to keep
-search usage controlled.
+the batch size. The default batch size is 6, which is also the app's current
+cap for the once-daily cron run, to use the scheduled free-plan cadence without
+opening the search budget too wide.
 
 ## Production Database And Deployment
 

@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const clientId = searchParams.get("clientId");
     const search = searchParams.get("search");
+    const topic = searchParams.get("topic");
     const status = searchParams.get("status"); // "new" | "email_sent" | "shared" | "needs_contact" | "all"
     const limit = clampPositiveInteger(
       searchParams.get("limit"),
@@ -85,14 +86,18 @@ export async function GET(request: NextRequest) {
       targetClientId = user.clientId;
     } else if (user.role === UserRole.ADMIN) {
       // Admin without specific client — return all
-      const totalCount = await db.interview.count();
+      const topicOptions = await listInterviewTopicOptions();
+      const where = buildInterviewWhere({ search, topic });
+      const totalCount = await db.interview.count({ where });
       const interviews = await findInterviews({
+        where,
         orderBy: { createdAt: "desc" },
         skip: offset,
         take: limit,
       });
       return NextResponse.json({
         interviews: interviews.map(enrichInterview),
+        topicOptions,
         pagination: {
           totalCount,
           offset,
@@ -109,17 +114,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause
-    const where: Prisma.InterviewWhereInput = { clientId: targetClientId };
-
-    // Search filter
-    if (search) {
-      where.OR = [
-        { intervieweeName: { contains: search } },
-        { topic: { contains: search } },
-        { intervieweeCompany: { contains: search } },
-        { publicistName: { contains: search } },
-      ];
-    }
+    const topicOptions = await listInterviewTopicOptions(targetClientId);
+    const where = buildInterviewWhere({ clientId: targetClientId, search, topic });
 
     // Status filter
     if (status === "needs_contact") {
@@ -154,6 +150,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       interviews: enriched,
+      topicOptions,
       pagination: {
         totalCount,
         offset,
@@ -173,6 +170,58 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+function buildInterviewWhere({
+  clientId,
+  search,
+  topic,
+}: {
+  clientId?: string;
+  search?: string | null;
+  topic?: string | null;
+}): Prisma.InterviewWhereInput {
+  const where: Prisma.InterviewWhereInput = {};
+  if (clientId) where.clientId = clientId;
+
+  const trimmedTopic = topic?.trim();
+  if (trimmedTopic) {
+    where.topic = { equals: trimmedTopic };
+  }
+
+  const trimmedSearch = search?.trim();
+  if (trimmedSearch) {
+    where.OR = [
+      { intervieweeName: { contains: trimmedSearch } },
+      { topic: { contains: trimmedSearch } },
+      { intervieweeCompany: { contains: trimmedSearch } },
+      { publicistName: { contains: trimmedSearch } },
+    ];
+  }
+
+  return where;
+}
+
+async function listInterviewTopicOptions(clientId?: string): Promise<string[]> {
+  const rows = await db.interview.findMany({
+    where: {
+      ...(clientId ? { clientId } : {}),
+      topic: { not: null },
+    },
+    select: { topic: true },
+    orderBy: { topic: "asc" },
+  });
+
+  const seen = new Set<string>();
+  const topics: string[] = [];
+  for (const row of rows) {
+    const topic = row.topic?.trim();
+    if (!topic || seen.has(topic)) continue;
+    seen.add(topic);
+    topics.push(topic);
+  }
+
+  return topics;
 }
 
 // --- Interview enrichment: compute status and next action ---
