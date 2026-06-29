@@ -300,6 +300,37 @@ test("treats Estimated Publishing Date LIVE as the live status even when Emailed
   assert.equal(isImportedRecordLive(record), true);
 });
 
+test("accepts Medium post edit links and stores the public post URL", () => {
+  const rows = [
+    ["Estimated Publishing Date", "Authority Magazine Link", "Interviewee Name"],
+    ["LIVE", "https://medium.com/p/f8fe988f25b3/edit", "Jude Odu"],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const result = normalizeRows(rows, mappings, 0, "test-spreadsheet-id");
+  const record = result.published[0];
+
+  assert.equal(record.articleUrl, "https://medium.com/p/f8fe988f25b3");
+  assert.equal(getImportedPublishStatus(record), "LIVE");
+  assert.equal(isImportedRecordLive(record), true);
+  assert.equal(result.skippedInvalidArticle, 0);
+});
+
+test("accepts Medium Authority Magazine profile article links", () => {
+  const rows = [
+    ["Estimated Publishing Date", "Authority Magazine Link", "Interviewee Name"],
+    [
+      "LIVE",
+      "https://medium.com/@authoritymagazine/founders-and-ceos-jim-hamel-123",
+      "Jim Hamel",
+    ],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const result = normalizeRows(rows, mappings, 0, "test-spreadsheet-id");
+
+  assert.equal(result.published[0].intervieweeName, "Jim Hamel");
+  assert.equal(result.skippedInvalidArticle, 0);
+});
+
 test("keeps rows with a future publish date unpublished even when Emailed says Yes", () => {
   const rows = [
     ["Estimated Publishing Date", "Authority Magazine Link", "Emailed"],

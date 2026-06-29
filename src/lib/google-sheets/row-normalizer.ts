@@ -222,6 +222,8 @@ export function normalizeRows(
       isUnpublished = true;
       unpublishedReason = "Authority Magazine Link is not valid";
       skippedInvalidArticle++;
+    } else {
+      articleUrl = normalizeImportedArticleUrl(articleUrl);
     }
 
     if (isUnpublished) {
@@ -401,10 +403,35 @@ export function isAuthorityMagazineUrl(value: string): boolean {
     return (
       hostname === "authoritymagazine.com" ||
       hostname.endsWith(".authoritymagazine.com") ||
-      (hostname === "medium.com" && path.includes("authority-magazine"))
+      (hostname === "medium.com" &&
+        (path.includes("authority-magazine") ||
+          path.startsWith("/@authoritymagazine") ||
+          /^\/p\/[a-f0-9]+(?:\/edit)?\/?$/.test(path)))
     );
   } catch {
     return false;
+  }
+}
+
+function normalizeImportedArticleUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+    const path = url.pathname.toLowerCase();
+
+    if (
+      hostname === "medium.com" &&
+      /^\/p\/[a-f0-9]+\/edit\/?$/.test(path)
+    ) {
+      url.pathname = url.pathname.replace(/\/edit\/?$/i, "");
+      url.search = "";
+      url.hash = "";
+      return url.toString();
+    }
+
+    return value;
+  } catch {
+    return value;
   }
 }
 
