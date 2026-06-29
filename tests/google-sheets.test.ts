@@ -331,6 +331,19 @@ test("accepts Medium Authority Magazine profile article links", () => {
   assert.equal(result.skippedInvalidArticle, 0);
 });
 
+test("accepts Medium client profile post-id links", () => {
+  const rows = [
+    ["Estimated Publishing Date", "Authority Magazine Link", "Interviewee Name"],
+    ["LIVE", "https://medium.com/@JimHamel/d476dd479915", "Dylan Jahraus"],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const result = normalizeRows(rows, mappings, 0, "test-spreadsheet-id");
+
+  assert.equal(result.published[0].articleUrl, "https://medium.com/@JimHamel/d476dd479915");
+  assert.equal(result.published[0].intervieweeName, "Dylan Jahraus");
+  assert.equal(result.skippedInvalidArticle, 0);
+});
+
 test("keeps rows with a future publish date unpublished even when Emailed says Yes", () => {
   const rows = [
     ["Estimated Publishing Date", "Authority Magazine Link", "Emailed"],

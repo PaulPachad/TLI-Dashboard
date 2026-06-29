@@ -406,6 +406,7 @@ export function isAuthorityMagazineUrl(value: string): boolean {
       (hostname === "medium.com" &&
         (path.includes("authority-magazine") ||
           path.startsWith("/@authoritymagazine") ||
+          /^\/@[^/]+\/[a-f0-9]+\/?$/.test(path) ||
           /^\/p\/[a-f0-9]+(?:\/edit)?\/?$/.test(path)))
     );
   } catch {
