@@ -33,6 +33,7 @@ export async function DELETE(
     // 2. Check if client exists
     const client = await db.client.findUnique({
       where: { id },
+      select: { id: true, name: true },
     });
 
     if (!client) {
@@ -88,10 +89,15 @@ export async function PUT(
 
     const body = (await request.json()) as Record<string, unknown>;
 
+    let pendingAuthorityColumnUrl: string | null | undefined;
+
     const result = await db.$transaction(async (tx) => {
       const existingClient = await tx.client.findUnique({
         where: { id },
-        include: {
+        select: {
+          id: true,
+          email: true,
+          replyToEmail: true,
           users: {
             select: {
               id: true,
@@ -112,6 +118,9 @@ export async function PUT(
         body,
         existingClient
       );
+      pendingAuthorityColumnUrl = data.authorityColumnUrl;
+      const safeClientData = { ...data };
+      delete safeClientData.authorityColumnUrl;
       let loginEmail: string | null = null;
       const emailChanged =
         Boolean(normalizedEmail) &&
@@ -143,7 +152,15 @@ export async function PUT(
 
       const client = await tx.client.update({
         where: { id },
-        data,
+        data: safeClientData,
+        select: {
+          id: true,
+          name: true,
+          company: true,
+          email: true,
+          topicsSheetUrl: true,
+          replyToEmail: true,
+        },
       });
 
       if ((normalizedEmail || newPassword) && loginUserId) {
@@ -202,6 +219,20 @@ export async function PUT(
       return { client, loginEmail, emailChanged, passwordUpdated };
     });
 
+    if (pendingAuthorityColumnUrl !== undefined) {
+      await db.client
+        .update({
+          where: { id },
+          data: { authorityColumnUrl: pendingAuthorityColumnUrl },
+          select: { id: true },
+        })
+        .catch((error) => {
+          if (!isMissingAuthorityColumnUrlColumnError(error)) {
+            throw error;
+          }
+        });
+    }
+
     return NextResponse.json({ success: true, ...result });
   } catch (error: unknown) {
     const err = error as { status?: number; message?: string };
@@ -231,5 +262,14 @@ function isMissingMigrationError(error: unknown): boolean {
     error instanceof Error ? error.message : String(error || "");
   return /AdminAuditLog|sessionVersion|column .* does not exist|table .* does not exist/i.test(
     message
+  );
+}
+
+function isMissingAuthorityColumnUrlColumnError(error: unknown): boolean {
+  const message =
+    error instanceof Error ? error.message : JSON.stringify(error);
+  return (
+    /authorityColumnUrl/.test(message) &&
+    /does not exist|no such column|unknown column|invalid/i.test(message)
   );
 }

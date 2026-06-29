@@ -17,7 +17,12 @@ export default async function ClientDetailPage({ params }: Props) {
 
   const client = await db.client.findUnique({
     where: { id },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      company: true,
+      email: true,
+      topicsSheetUrl: true,
       _count: { select: { interviews: true } },
       sheetSources: {
         select: {
@@ -88,7 +93,7 @@ export default async function ClientDetailPage({ params }: Props) {
         initialName={client.name}
         initialCompany={client.company}
         initialEmail={client.email}
-        initialAuthorityColumnUrl={client.authorityColumnUrl}
+        initialAuthorityColumnUrl={null}
       />
 
       {/* Sheet import */}

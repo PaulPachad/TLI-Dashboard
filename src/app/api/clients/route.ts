@@ -15,7 +15,12 @@ export async function GET() {
     await requireApiAdmin();
 
     const clients = await db.client.findMany({
-      include: {
+      select: {
+        id: true,
+        name: true,
+        company: true,
+        email: true,
+        createdAt: true,
         _count: {
           select: {
             interviews: true,
@@ -97,20 +102,27 @@ export async function POST(request: NextRequest) {
 
     // Create client and user in a transaction
     const result = await db.$transaction(async (tx) => {
+      const clientData = {
+        name: body.name,
+        company: body.company || null,
+        email: body.email.toLowerCase().trim(),
+        title: body.title || null,
+        signature: body.signature || null,
+        linkedinUrl: body.linkedinUrl || null,
+        schedulingLink: body.schedulingLink || null,
+        defaultHashtags:
+          body.defaultHashtags ||
+          "#AuthorityMagazine #ThoughtLeadership #Leadership #Interview",
+        replyToEmail: body.email.toLowerCase().trim(),
+      };
       const client = await tx.client.create({
-        data: {
-          name: body.name,
-          company: body.company || null,
-          email: body.email.toLowerCase().trim(),
-          title: body.title || null,
-          signature: body.signature || null,
-          linkedinUrl: body.linkedinUrl || null,
-          authorityColumnUrl,
-          schedulingLink: body.schedulingLink || null,
-          defaultHashtags:
-            body.defaultHashtags ||
-            "#AuthorityMagazine #ThoughtLeadership #Leadership #Interview",
-          replyToEmail: body.email.toLowerCase().trim(),
+        data: clientData,
+        select: {
+          id: true,
+          name: true,
+          company: true,
+          email: true,
+          createdAt: true,
         },
       });
 
@@ -130,6 +142,20 @@ export async function POST(request: NextRequest) {
 
       return { client, user, tempPassword: body.password ? undefined : password };
     });
+
+    if (authorityColumnUrl) {
+      await db.client
+        .update({
+          where: { id: result.client.id },
+          data: { authorityColumnUrl },
+          select: { id: true },
+        })
+        .catch((error) => {
+          if (!isMissingAuthorityColumnUrlColumnError(error)) {
+            throw error;
+          }
+        });
+    }
 
     return NextResponse.json({
       client: result.client,
@@ -162,4 +188,13 @@ function generateTempPassword(): string {
     password += chars.charAt(randomInt(chars.length));
   }
   return password;
+}
+
+function isMissingAuthorityColumnUrlColumnError(error: unknown): boolean {
+  const message =
+    error instanceof Error ? error.message : JSON.stringify(error);
+  return (
+    /authorityColumnUrl/.test(message) &&
+    /does not exist|no such column|unknown column|invalid/i.test(message)
+  );
 }
