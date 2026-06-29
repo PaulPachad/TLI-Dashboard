@@ -137,6 +137,28 @@ test("maps common Authority Magazine sheet headers", () => {
   );
 });
 
+test("maps full Google Form topic question headers", () => {
+  const rows = [
+    [
+      "Name",
+      "What is the name of the interview topic?",
+      "Authority Magazine Link",
+    ],
+    [
+      "Topic Guest",
+      "5 Things You Need To Know To Successfully Run A Live Virtual Event",
+      "https://medium.com/authority-magazine/topic-guest",
+    ],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const result = normalizeRows(rows, mappings, 0, "test-spreadsheet-id");
+
+  assert.equal(
+    result.published[0].topic,
+    "5 Things You Need To Know To Successfully Run A Live Virtual Event"
+  );
+});
+
 test("maps Google Form upload columns to interview document and sheet images", () => {
   const rows = [
     [
