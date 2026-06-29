@@ -8,11 +8,12 @@ import { UserRole } from "@/types/db";
 import {
   parseGoogleSheetUrl,
   resolveTabTitle,
-  readSheetData,
+  readSheetDataWithLinks,
   mapHeaders,
   normalizeRows,
   getImportedPublishStatus,
   deduplicateInterviewRecords,
+  applyMappedHyperlinks,
 } from "@/lib/google-sheets";
 
 const SYNC_BATCH_SIZE = 250;
@@ -97,10 +98,13 @@ export async function POST(request: NextRequest) {
       );
 
       // Read sheet data
-      const rawData = await readSheetData(
+      const rawDataWithLinks = await readSheetDataWithLinks(
         parsedUrl.spreadsheetId,
         tabTitle,
         parsedUrl.gid
+      );
+      const rawData = rawDataWithLinks.map((row) =>
+        row.map((cell) => cell.text)
       );
 
       if (rawData.length === 0) {
@@ -121,8 +125,13 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      const totalDataRows = rawData.length - 1;
-      let finalRawData = rawData;
+      const linkAwareRawData = applyMappedHyperlinks(
+        rawData,
+        rawDataWithLinks,
+        headerResult.mappings
+      );
+      const totalDataRows = linkAwareRawData.length - 1;
+      let finalRawData = linkAwareRawData;
       let rowOffset = 0;
       const importAll = !!parsedUrl.importAll;
       const wasLimited = !importAll && totalDataRows > 200;
@@ -130,8 +139,8 @@ export async function POST(request: NextRequest) {
       if (wasLimited) {
         const targetLimit = 100;
         const skippedCount = totalDataRows - targetLimit;
-        const dataRows = rawData.slice(1);
-        finalRawData = [rawData[0], ...dataRows.slice(-targetLimit)];
+        const dataRows = linkAwareRawData.slice(1);
+        finalRawData = [linkAwareRawData[0], ...dataRows.slice(-targetLimit)];
         rowOffset = skippedCount;
         warnings.push(
           `[${tabTitle}] Large sheet (${totalDataRows} rows) is limited to syncing the last 100 rows. ` +

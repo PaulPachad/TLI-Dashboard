@@ -155,6 +155,14 @@ const FIELD_ALIASES: Record<string, string[]> = {
     "if you would like us to tag you on social media when we share it please list your profiles",
   ],
   estimatedPublishDate: [
+    "live",
+    "live?",
+    "is live",
+    "published",
+    "published?",
+    "publish status",
+    "published status",
+    "status",
     "estimated publishing date",
     "publish date",
     "publishing date",
@@ -174,7 +182,6 @@ const FIELD_ALIASES: Record<string, string[]> = {
     "live email sent date",
     "live email status",
     "email sent",
-    "send press email",
   ],
   pressFollowupStatusImported: [
     "press follow-up status",

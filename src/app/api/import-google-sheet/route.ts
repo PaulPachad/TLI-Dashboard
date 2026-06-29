@@ -12,7 +12,7 @@ import {
   parseGoogleSheetUrl,
   SheetUrlError,
   resolveTabTitle,
-  readSheetData,
+  readSheetDataWithLinks,
   mapHeaders,
   normalizeRows,
   takeLastUsableRows,
@@ -22,6 +22,7 @@ import {
   isDemoMode,
   SheetsConfigError,
   appendSheetUrlParams,
+  applyMappedHyperlinks,
 } from "@/lib/google-sheets";
 import {
   buildImportedInterviewStandoutSignals,
@@ -99,10 +100,13 @@ export async function POST(request: NextRequest) {
     );
 
     // --- Read sheet data ---
-    const rawData = await readSheetData(
+    const rawDataWithLinks = await readSheetDataWithLinks(
       parsedUrl.spreadsheetId,
       tabTitle,
       parsedUrl.gid
+    );
+    const rawData = rawDataWithLinks.map((row) =>
+      row.map((cell) => cell.text)
     );
 
     if (rawData.length === 0) {
@@ -130,8 +134,13 @@ export async function POST(request: NextRequest) {
     }
 
     // --- Limit large sheets to the last 100 usable rows by default ---
-    const totalDataRows = rawData.length - 1;
-    let finalRawData = rawData;
+    const linkAwareRawData = applyMappedHyperlinks(
+      rawData,
+      rawDataWithLinks,
+      headerResult.mappings
+    );
+    const totalDataRows = linkAwareRawData.length - 1;
+    let finalRawData = linkAwareRawData;
     let rowOffset = 0;
     let limitedCandidateRows = 0;
     const importAll = !!body.importAll;
@@ -140,11 +149,11 @@ export async function POST(request: NextRequest) {
     if (wasLimited) {
       const targetLimit = 100;
       const limitedRows = takeLastUsableRows(
-        rawData,
+        linkAwareRawData,
         headerResult.mappings,
         targetLimit
       );
-      finalRawData = [rawData[0], ...limitedRows.rows];
+      finalRawData = [linkAwareRawData[0], ...limitedRows.rows];
       rowOffset = limitedRows.rowOffset;
       limitedCandidateRows = limitedRows.usableRows;
     }

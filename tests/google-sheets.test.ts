@@ -9,6 +9,7 @@ import { deduplicateInterviewRecords } from "../src/lib/google-sheets/deduplicat
 import { mapHeaders } from "../src/lib/google-sheets/header-mapper";
 import { parseGoogleSheetUrl, appendSheetUrlParams } from "../src/lib/google-sheets/parse-url";
 import {
+  applyMappedHyperlinks,
   extractSocialProfiles,
   getImportedPublishStatus,
   isImportedRecordLive,
@@ -281,6 +282,91 @@ test("keeps rows with a future publish date unpublished even when Emailed says Y
 
   assert.equal(getImportedPublishStatus(record), "2026-07-01");
   assert.equal(isImportedRecordLive(record), false);
+});
+
+test("valid Authority article links still require imported LIVE status", () => {
+  const rows = [
+    ["Estimated Publishing Date", "Authority Magazine Link", "Emailed"],
+    ["", "https://medium.com/authority-magazine/live-link-with-blank-status", ""],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const result = normalizeRows(rows, mappings, 0, "test-spreadsheet-id");
+  const record = result.published[0];
+
+  assert.equal(getImportedPublishStatus(record), null);
+  assert.equal(isImportedRecordLive(record), false);
+});
+
+test("Emailed column is ignored when deciding whether an interview is live", () => {
+  const rows = [
+    ["Estimated Publishing Date", "Authority Magazine Link", "Emailed"],
+    ["2026-07-01", "https://medium.com/authority-magazine/live-guest", "LIVE"],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const result = normalizeRows(rows, mappings, 0, "test-spreadsheet-id");
+  const record = result.published[0];
+
+  assert.equal(record.liveEmailStatusImported, "LIVE");
+  assert.equal(getImportedPublishStatus(record), "2026-07-01");
+  assert.equal(isImportedRecordLive(record), false);
+});
+
+test("Send Press Email column is ignored when deciding whether an interview is live", () => {
+  const rows = [
+    ["Authority Magazine Link", "Send Press Email"],
+    ["https://medium.com/authority-magazine/live-guest", "LIVE"],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const result = normalizeRows(rows, mappings, 0, "test-spreadsheet-id");
+  const record = result.published[0];
+
+  assert.equal(record.liveEmailStatusImported, null);
+  assert.equal(getImportedPublishStatus(record), null);
+  assert.equal(isImportedRecordLive(record), false);
+});
+
+test("maps a Live column as imported publish status, not email status", () => {
+  const rows = [
+    ["Live", "Authority Magazine Link", "Emailed"],
+    ["LIVE", "https://medium.com/authority-magazine/live-guest", "No"],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const result = normalizeRows(rows, mappings, 0, "test-spreadsheet-id");
+  const record = result.published[0];
+
+  assert.equal(record.estimatedPublishDate, "LIVE");
+  assert.equal(record.liveEmailStatusImported, "No");
+  assert.equal(getImportedPublishStatus(record), "LIVE");
+  assert.equal(isImportedRecordLive(record), true);
+});
+
+test("mapped URL columns use rich hyperlinks from Google Sheets cells", () => {
+  const rows = [
+    ["Authority Magazine Link", "Interviewee Name"],
+    ["Read interview", "Jim Hamel"],
+  ];
+  const linkedRows = [
+    [
+      { text: "Authority Magazine Link", url: null },
+      { text: "Interviewee Name", url: null },
+    ],
+    [
+      {
+        text: "Read interview",
+        url: "https://medium.com/authority-magazine/jim-hamel-live-article",
+      },
+      { text: "Jim Hamel", url: null },
+    ],
+  ];
+  const mappings = mapHeaders(rows[0]).mappings;
+  const linked = applyMappedHyperlinks(rows, linkedRows, mappings);
+  const result = normalizeRows(linked, mappings, 0, "test-spreadsheet-id");
+
+  assert.equal(
+    result.published[0].articleUrl,
+    "https://medium.com/authority-magazine/jim-hamel-live-article"
+  );
+  assert.equal(result.published[0].intervieweeName, "Jim Hamel");
 });
 
 test("deduplicates repeated article links within one sheet", () => {

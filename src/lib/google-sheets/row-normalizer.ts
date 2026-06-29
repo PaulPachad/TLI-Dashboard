@@ -3,6 +3,7 @@
 // ==============================================================================
 
 import { createHash } from "crypto";
+import type { CellDataWithLink } from "./client";
 import { HeaderMapping } from "./header-mapper";
 import {
   parseCountMetric,
@@ -67,21 +68,58 @@ export interface LimitedImportRows {
   usableRows: number;
 }
 
+const LINKABLE_IMPORT_FIELDS = new Set([
+  "articleUrl",
+  "buzzfeedUrl",
+  "interviewDocUrl",
+  "image1Url",
+  "image2Url",
+  "extraImagesUrl",
+  "videoUrl",
+  "linkedinUrl",
+  "twitterUrl",
+  "socialProfiles",
+]);
+
 export function getImportedPublishStatus(
   record: Pick<InterviewRecord, "estimatedPublishDate" | "liveEmailStatusImported">
 ): string | null {
   const estimatedPublishStatus = normalizeStatusValue(record.estimatedPublishDate);
-  if (estimatedPublishStatus) {
-    return estimatedPublishStatus;
-  }
-
-  return normalizeStatusValue(record.liveEmailStatusImported);
+  return estimatedPublishStatus;
 }
 
 export function isImportedRecordLive(
   record: Pick<InterviewRecord, "estimatedPublishDate" | "liveEmailStatusImported">
 ): boolean {
   return getImportedPublishStatus(record)?.toUpperCase() === "LIVE";
+}
+
+export function applyMappedHyperlinks(
+  rows: string[][],
+  linkedRows: CellDataWithLink[][],
+  mappings: HeaderMapping[]
+): string[][] {
+  if (linkedRows.length === 0) return rows;
+
+  const linkableColumns = mappings
+    .filter((mapping) => LINKABLE_IMPORT_FIELDS.has(mapping.field))
+    .map((mapping) => mapping.columnIndex);
+
+  if (linkableColumns.length === 0) return rows;
+
+  return rows.map((row, rowIndex) => {
+    if (rowIndex === 0) return row;
+
+    const nextRow = [...row];
+    for (const columnIndex of linkableColumns) {
+      const linkedUrl = linkedRows[rowIndex]?.[columnIndex]?.url?.trim();
+      if (linkedUrl) {
+        nextRow[columnIndex] = linkedUrl;
+      }
+    }
+
+    return nextRow;
+  });
 }
 
 function extractUrlForHosts(value: string, hosts: string[]): string | null {
@@ -354,7 +392,7 @@ function isImportLimiterUsableRow(
   );
 }
 
-function isAuthorityMagazineUrl(value: string): boolean {
+export function isAuthorityMagazineUrl(value: string): boolean {
   try {
     const url = new URL(value);
     const hostname = url.hostname.toLowerCase().replace(/^www\./, "");

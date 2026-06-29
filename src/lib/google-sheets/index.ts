@@ -20,8 +20,10 @@ export {
 export type { SheetTab } from "./client";
 
 export {
+  applyMappedHyperlinks,
   getImportedPublishStatus,
   isImportedRecordLive,
+  isAuthorityMagazineUrl,
   normalizeRows,
   takeLastUsableRows,
 } from "./row-normalizer";
