@@ -136,9 +136,9 @@ export async function GET(request: NextRequest) {
     // Client-side status filtering (based on actions)
     if (status && status !== "all") {
       enriched = enriched.filter((i) => {
-        const isUnpub = i.articleUrl.includes("/unpublished/") || i.liveEmailStatusImported?.toUpperCase() !== "LIVE";
-        if (status === "upcoming") return isUnpub;
-        if (status !== "needs_contact" && isUnpub) return false; // Hide unpublished from action-based tabs, but keep in needs_contact if needed
+        const isUpcoming = i.liveEmailStatusImported?.toUpperCase() !== "LIVE";
+        if (status === "upcoming") return isUpcoming;
+        if (status !== "needs_contact" && isUpcoming) return false; // Hide not-yet-live rows from action-based tabs, but keep in needs_contact if needed
 
         if (status === "new") return i.currentStatus === "new";
         if (status === "email_sent") return i.currentStatus === "email_sent";

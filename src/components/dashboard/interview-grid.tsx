@@ -412,19 +412,16 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
     }
   };
 
-  // Helper to determine if an interview is unpublished
-  const isUnpublished = (interview: InterviewView) => {
-    return interview.articleUrl.includes("/unpublished/") || 
-           interview.liveEmailStatusImported?.toUpperCase() !== "LIVE";
-  };
+  const isUpcoming = (interview: InterviewView) =>
+    interview.liveEmailStatusImported?.toUpperCase() !== "LIVE";
 
   // Stats
   const dismissedCount = interviews.filter((i) => dismissedIds.has(i.id)).length;
   const nonDismissed = interviews.filter((i) => !dismissedIds.has(i.id));
   const stats = {
     total: pagination?.totalCount ?? interviews.length,
-    upcoming: nonDismissed.filter(isUnpublished).length,
-    needsAction: nonDismissed.filter((interview) => !isUnpublished(interview) && interview.currentStatus !== "leveraged").length,
+    upcoming: nonDismissed.filter(isUpcoming).length,
+    needsAction: nonDismissed.filter((interview) => !isUpcoming(interview) && interview.currentStatus !== "leveraged").length,
     leveraged: nonDismissed.filter((interview) => interview.currentStatus === "leveraged").length,
     needsContact: nonDismissed.filter((interview) => interview.currentStatus === "needs_contact").length,
     signalsFound: nonDismissed.filter(
@@ -441,7 +438,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
   const sortedInterviews = filteredByDismissed.sort((a, b) => {
     const getScore = (interview: InterviewView) => {
       if (interview.currentStatus === "leveraged") return 3; // Lowest priority
-      if (isUnpublished(interview)) return 2; // Medium priority
+      if (isUpcoming(interview)) return 2; // Medium priority
       return 1; // Highest priority (Needs Action / Live)
     };
     const workflowSort = getScore(a) - getScore(b);
