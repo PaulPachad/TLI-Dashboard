@@ -138,25 +138,32 @@ test("maps common Authority Magazine sheet headers", () => {
 });
 
 test("maps full Google Form topic question headers", () => {
-  const rows = [
-    [
-      "Name",
-      "What is the name of the interview topic?",
-      "Authority Magazine Link",
-    ],
-    [
-      "Topic Guest",
-      "5 Things You Need To Know To Successfully Run A Live Virtual Event",
-      "https://medium.com/authority-magazine/topic-guest",
-    ],
+  const topicHeaders = [
+    "What is the topic of your interview?",
+    "What is the name of the interview topic?",
   ];
-  const mappings = mapHeaders(rows[0]).mappings;
-  const result = normalizeRows(rows, mappings, 0, "test-spreadsheet-id");
 
-  assert.equal(
-    result.published[0].topic,
-    "5 Things You Need To Know To Successfully Run A Live Virtual Event"
-  );
+  for (const topicHeader of topicHeaders) {
+    const rows = [
+      [
+        "Name",
+        topicHeader,
+        "Authority Magazine Link",
+      ],
+      [
+        "Topic Guest",
+        "5 Things You Need To Know To Successfully Run A Live Virtual Event",
+        "https://medium.com/authority-magazine/topic-guest",
+      ],
+    ];
+    const mappings = mapHeaders(rows[0]).mappings;
+    const result = normalizeRows(rows, mappings, 0, "test-spreadsheet-id");
+
+    assert.equal(
+      result.published[0].topic,
+      "5 Things You Need To Know To Successfully Run A Live Virtual Event"
+    );
+  }
 });
 
 test("maps Google Form upload columns to interview document and sheet images", () => {
@@ -288,7 +295,7 @@ test("treats Estimated Publishing Date LIVE as the live status even when Emailed
   const record = result.published[0];
 
   assert.equal(record.estimatedPublishDate, "LIVE");
-  assert.equal(record.liveEmailStatusImported, "Yes");
+  assert.equal(record.liveEmailStatusImported, null);
   assert.equal(getImportedPublishStatus(record), "LIVE");
   assert.equal(isImportedRecordLive(record), true);
 });
@@ -328,7 +335,7 @@ test("Emailed column is ignored when deciding whether an interview is live", () 
   const result = normalizeRows(rows, mappings, 0, "test-spreadsheet-id");
   const record = result.published[0];
 
-  assert.equal(record.liveEmailStatusImported, "LIVE");
+  assert.equal(record.liveEmailStatusImported, null);
   assert.equal(getImportedPublishStatus(record), "2026-07-01");
   assert.equal(isImportedRecordLive(record), false);
 });
@@ -357,7 +364,7 @@ test("maps a Live column as imported publish status, not email status", () => {
   const record = result.published[0];
 
   assert.equal(record.estimatedPublishDate, "LIVE");
-  assert.equal(record.liveEmailStatusImported, "No");
+  assert.equal(record.liveEmailStatusImported, null);
   assert.equal(getImportedPublishStatus(record), "LIVE");
   assert.equal(isImportedRecordLive(record), true);
 });

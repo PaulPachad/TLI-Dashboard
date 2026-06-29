@@ -72,6 +72,8 @@ const FIELD_ALIASES: Record<string, string[]> = {
     "article topics",
     "authority topic",
     "authority magazine topic",
+    "what is the topic of your interview",
+    "what is the topic of your interview?",
     "what is the name of the interview topic",
     "what is the name of the interview topic?",
     "name of the interview topic",
@@ -190,12 +192,6 @@ const FIELD_ALIASES: Record<string, string[]> = {
     "date submitted",
     "submitted",
     "submission date",
-  ],
-  liveEmailStatusImported: [
-    "emailed",
-    "live email sent date",
-    "live email status",
-    "email sent",
   ],
   pressFollowupStatusImported: [
     "press follow-up status",

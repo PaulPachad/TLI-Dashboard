@@ -221,6 +221,7 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
           <h3 className="font-semibold text-slate-900 mb-1">Import Interviews Sheet</h3>
           <p className="text-sm text-slate-500 mb-4">
             Paste the Interviews Google Sheets link. This will trigger a preview before importing.
+            After preview, you can customize column mappings; saved mappings are reused by Sync Sheet.
           </p>
 
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -297,7 +298,7 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
               <div>
                 <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider">Configure Column Mappings</h4>
                 <p className="text-[11px] text-slate-500 mt-1">
-                  If the system did not automatically detect the correct columns, or if you want to override them, select the columns manually:
+                  If the system did not automatically detect the correct columns, or if you want to override them, select the columns manually. Confirming the import saves these choices for future syncs.
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -306,8 +307,7 @@ export function SheetImportForm({ clientId, initialTopicsSheetUrl, onImportCompl
                   { field: "intervieweeName", label: "Guest Name" },
                   { field: "intervieweeEmail", label: "Guest Email" },
                   { field: "topic", label: "Topic" },
-                  { field: "estimatedPublishDate", label: "Estimated Publishing Date" },
-                  { field: "liveEmailStatusImported", label: "Emailed Status (LIVE)" },
+                  { field: "estimatedPublishDate", label: "Estimated Publishing Date / LIVE" },
                   { field: "linkedinUrl", label: "LinkedIn URL" },
                   { field: "twitterUrl", label: "Twitter/X URL" },
                   { field: "videoUrl", label: "Video URL" },
