@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
     // --- Validate client exists ---
     const client = await db.client.findUnique({
       where: { id: body.clientId },
+      select: { id: true },
     });
 
     if (!client) {

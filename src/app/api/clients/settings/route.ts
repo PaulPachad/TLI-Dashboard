@@ -1,5 +1,5 @@
 // ==============================================================================
-// GET/PUT /api/clients/settings — Client profile settings
+// GET/PUT /api/clients/settings - Client profile settings
 // ==============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
@@ -7,20 +7,42 @@ import { db } from "@/lib/db";
 import { requireApiAuth } from "@/lib/auth-helpers";
 import { normalizeAuthorityColumnUrl } from "@/lib/clients/authority-column";
 
-// GET — Fetch current client settings
+const clientSettingsSelect = {
+  id: true,
+  name: true,
+  company: true,
+  email: true,
+  title: true,
+  signature: true,
+  linkedinUrl: true,
+  schedulingLink: true,
+  defaultHashtags: true,
+  defaultSignoff: true,
+  replyToEmail: true,
+  topicsSheetUrl: true,
+} as const;
+
+// GET - Fetch current client settings
 export async function GET() {
   try {
     const user = await requireApiAuth();
-    
+
     if (!user.clientId) {
       return NextResponse.json({ client: null });
     }
 
     const client = await db.client.findUnique({
       where: { id: user.clientId },
+      select: clientSettingsSelect,
     });
 
-    return NextResponse.json({ client });
+    const authorityColumnUrl = await getAuthorityColumnUrlIfAvailable(
+      user.clientId
+    );
+
+    return NextResponse.json({
+      client: client ? { ...client, authorityColumnUrl } : null,
+    });
   } catch (error: unknown) {
     const err = error as { status?: number; message?: string };
     if (err.status) {
@@ -34,11 +56,11 @@ export async function GET() {
   }
 }
 
-// PUT — Update client settings
+// PUT - Update client settings
 export async function PUT(request: NextRequest) {
   try {
     const user = await requireApiAuth();
-    
+
     if (!user.clientId) {
       return NextResponse.json(
         { error: "Only client users can update settings." },
@@ -58,6 +80,7 @@ export async function PUT(request: NextRequest) {
       topicsSheetUrl,
       authorityColumnUrl,
     } = body;
+    const authorityColumnUrlWasProvided = "authorityColumnUrl" in body;
     const normalizedName = String(name || "").trim();
     const normalizedEmail = String(email || "").trim().toLowerCase();
 
@@ -126,11 +149,21 @@ export async function PUT(request: NextRequest) {
         defaultSignoff: String(defaultSignoff || "").trim() || "Warmly",
         replyToEmail: normalizedReplyTo || null,
         topicsSheetUrl: String(topicsSheetUrl || "").trim() || null,
-        authorityColumnUrl: normalizedAuthorityColumnUrl,
       },
+      select: clientSettingsSelect,
     });
 
-    return NextResponse.json({ success: true, client: updated });
+    const savedAuthorityColumnUrl = authorityColumnUrlWasProvided
+      ? await updateAuthorityColumnUrlIfAvailable(
+          user.clientId,
+          normalizedAuthorityColumnUrl
+        )
+      : await getAuthorityColumnUrlIfAvailable(user.clientId);
+
+    return NextResponse.json({
+      success: true,
+      client: { ...updated, authorityColumnUrl: savedAuthorityColumnUrl },
+    });
   } catch (error: unknown) {
     const err = error as { status?: number; message?: string };
     if (err.status) {
@@ -142,4 +175,49 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+async function getAuthorityColumnUrlIfAvailable(
+  clientId: string
+): Promise<string | null> {
+  try {
+    const client = await db.client.findUnique({
+      where: { id: clientId },
+      select: { authorityColumnUrl: true },
+    });
+    return client?.authorityColumnUrl || null;
+  } catch (error) {
+    if (isMissingAuthorityColumnUrlColumnError(error)) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+async function updateAuthorityColumnUrlIfAvailable(
+  clientId: string,
+  authorityColumnUrl: string | null
+): Promise<string | null> {
+  try {
+    const client = await db.client.update({
+      where: { id: clientId },
+      data: { authorityColumnUrl },
+      select: { authorityColumnUrl: true },
+    });
+    return client.authorityColumnUrl || null;
+  } catch (error) {
+    if (isMissingAuthorityColumnUrlColumnError(error)) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+function isMissingAuthorityColumnUrlColumnError(error: unknown): boolean {
+  const message =
+    error instanceof Error ? error.message : JSON.stringify(error);
+  return (
+    /authorityColumnUrl/.test(message) &&
+    /does not exist|no such column|unknown column|invalid/i.test(message)
+  );
 }
