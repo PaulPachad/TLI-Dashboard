@@ -186,7 +186,7 @@ function buildInterviewWhere({
 
   const trimmedTopic = topic?.trim();
   if (trimmedTopic) {
-    where.topic = { equals: trimmedTopic };
+    where.topic = { contains: trimmedTopic };
   }
 
   const trimmedSearch = search?.trim();
@@ -203,25 +203,39 @@ function buildInterviewWhere({
 }
 
 async function listInterviewTopicOptions(clientId?: string): Promise<string[]> {
-  const rows = await db.interview.findMany({
-    where: {
-      ...(clientId ? { clientId } : {}),
-      topic: { not: null },
-    },
-    select: { topic: true },
-    orderBy: { topic: "asc" },
-  });
+  const [interviewRows, topicRows] = await Promise.all([
+    db.interview.findMany({
+      where: {
+        ...(clientId ? { clientId } : {}),
+        topic: { not: null },
+      },
+      select: { topic: true },
+    }),
+    db.topic.findMany({
+      where: clientId ? { clientId } : {},
+      select: { title: true },
+    }),
+  ]);
 
   const seen = new Set<string>();
   const topics: string[] = [];
-  for (const row of rows) {
-    const topic = row.topic?.trim();
-    if (!topic || seen.has(topic)) continue;
-    seen.add(topic);
+  const addTopic = (value?: string | null) => {
+    const topic = value?.trim();
+    const key = topic?.toLocaleLowerCase();
+    if (!topic || !key || seen.has(key)) return;
+    seen.add(key);
     topics.push(topic);
+  };
+
+  for (const row of interviewRows) {
+    addTopic(row.topic);
   }
 
-  return topics;
+  for (const row of topicRows) {
+    addTopic(row.title);
+  }
+
+  return topics.sort((left, right) => left.localeCompare(right));
 }
 
 // --- Interview enrichment: compute status and next action ---
