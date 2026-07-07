@@ -16,6 +16,7 @@ import {
   buildLiveLinkEmailBody,
   buildZoomInviteEmailBody,
 } from "@/lib/email/copy";
+import { buildInterviewEmailRecipients } from "@/lib/email/recipients";
 import { Resend } from "resend";
 import { fetchArticleMetadata } from "@/lib/images/interview-image-server";
 import { ReactElement } from "react";
@@ -100,13 +101,13 @@ export async function GET(
 
     const articleMetadata = await fetchArticleMetadata(interview.articleUrl);
 
-    const recipient = interview.intervieweeEmail || interview.publicistEmail || "";
-    const cc =
-      interview.intervieweeEmail &&
-      interview.publicistEmail &&
-      interview.publicistEmail !== interview.intervieweeEmail
-        ? interview.publicistEmail
-        : "";
+    const emailRecipients = buildInterviewEmailRecipients({
+      intervieweeEmail: interview.intervieweeEmail,
+      publicistEmail: interview.publicistEmail,
+      clientEmail: interview.client.email,
+    });
+    const recipient = emailRecipients.recipient || "";
+    const cc = emailRecipients.ccDisplay || "";
 
     // Generate live email defaults
     const liveEmailSubject = "Your interview in Authority Magazine is live!";
@@ -259,23 +260,13 @@ export async function POST(
       }
 
       case "send_live_email": {
-        const recipient = interview.intervieweeEmail || interview.publicistEmail;
-        const ccEmails: string[] = [];
-        if (
-          interview.intervieweeEmail &&
-          interview.publicistEmail &&
-          interview.publicistEmail !== interview.intervieweeEmail
-        ) {
-          ccEmails.push(interview.publicistEmail);
-        }
-        if (
-          interview.client.email &&
-          interview.client.email !== recipient &&
-          !ccEmails.includes(interview.client.email)
-        ) {
-          ccEmails.push(interview.client.email);
-        }
-        const cc = ccEmails.length > 0 ? ccEmails.join(", ") : null;
+        const emailRecipients = buildInterviewEmailRecipients({
+          intervieweeEmail: interview.intervieweeEmail,
+          publicistEmail: interview.publicistEmail,
+          clientEmail: interview.client.email,
+        });
+        const recipient = emailRecipients.recipient;
+        const cc = emailRecipients.ccDisplay;
         if (!recipient) {
           return NextResponse.json(
             { error: "No recipient email address available. Please add contact info first." },
@@ -316,7 +307,7 @@ export async function POST(
             const sendResult = await resend.emails.send({
               from: emailFrom,
               to: recipient,
-              cc: cc || undefined,
+              cc: emailRecipients.cc.length > 0 ? emailRecipients.cc : undefined,
               replyTo: interview.client.replyToEmail || undefined,
               subject: emailSubject,
               text: emailBody,
@@ -536,23 +527,13 @@ export async function POST(
       }
 
       case "send_zoom_invite": {
-        const recipient = interview.intervieweeEmail || interview.publicistEmail;
-        const ccEmails: string[] = [];
-        if (
-          interview.intervieweeEmail &&
-          interview.publicistEmail &&
-          interview.publicistEmail !== interview.intervieweeEmail
-        ) {
-          ccEmails.push(interview.publicistEmail);
-        }
-        if (
-          interview.client.email &&
-          interview.client.email !== recipient &&
-          !ccEmails.includes(interview.client.email)
-        ) {
-          ccEmails.push(interview.client.email);
-        }
-        const cc = ccEmails.length > 0 ? ccEmails.join(", ") : null;
+        const emailRecipients = buildInterviewEmailRecipients({
+          intervieweeEmail: interview.intervieweeEmail,
+          publicistEmail: interview.publicistEmail,
+          clientEmail: interview.client.email,
+        });
+        const recipient = emailRecipients.recipient;
+        const cc = emailRecipients.ccDisplay;
         if (!recipient) {
           return NextResponse.json(
             { error: "No recipient email address available." },
@@ -595,7 +576,7 @@ export async function POST(
             const sendResult = await resend.emails.send({
               from: emailFrom,
               to: recipient,
-              cc: cc || undefined,
+              cc: emailRecipients.cc.length > 0 ? emailRecipients.cc : undefined,
               replyTo: interview.client.replyToEmail || undefined,
               subject: emailSubject,
               text: emailBody,

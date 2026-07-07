@@ -7,6 +7,7 @@ import {
   buildLiveLinkEmailBody,
   buildZoomInviteEmailBody,
 } from "../src/lib/email/copy";
+import { buildInterviewEmailRecipients } from "../src/lib/email/recipients";
 
 test("live-link email renders branded content and a clickable article URL", () => {
   const markup = renderToStaticMarkup(
@@ -74,4 +75,28 @@ test("Zoom copy asks for a multimedia follow-up and inserts available times", ()
   assert.match(body, /multimedia element/);
   assert.match(body, /https:\/\/calendly\.com\/taylor\/follow-up/);
   assert.match(body, /Taylor Reed\nAuthority Magazine/);
+});
+
+test("email recipient builder keeps CC addresses as separate provider recipients", () => {
+  const recipients = buildInterviewEmailRecipients({
+    intervieweeEmail: "guest@example.com",
+    publicistEmail: "pr@example.com",
+    clientEmail: "client@example.com",
+  });
+
+  assert.equal(recipients.recipient, "guest@example.com");
+  assert.deepEqual(recipients.cc, ["pr@example.com", "client@example.com"]);
+  assert.equal(recipients.ccDisplay, "pr@example.com, client@example.com");
+});
+
+test("email recipient builder trims addresses and avoids duplicate CCs", () => {
+  const recipients = buildInterviewEmailRecipients({
+    intervieweeEmail: "  guest@example.com ",
+    publicistEmail: "PR@example.com",
+    clientEmail: " pr@example.com ",
+  });
+
+  assert.equal(recipients.recipient, "guest@example.com");
+  assert.deepEqual(recipients.cc, ["PR@example.com"]);
+  assert.equal(recipients.ccDisplay, "PR@example.com");
 });
