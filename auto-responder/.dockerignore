@@ -1,0 +1,16 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.venv
+venv
+env
+*.log
+*.log.*
+*.bat
+*.vbs
+tests/__pycache__
+scratch
+.system_generated
