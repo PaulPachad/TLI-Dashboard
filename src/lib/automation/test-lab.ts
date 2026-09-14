@@ -129,12 +129,11 @@ export async function runAutomationTest(input: AutomationTestInput): Promise<Aut
       : [];
     const isMultiple = multipleParts.length > 1;
 
-    let templateKey = AUTOMATION_TEMPLATE_KEYS.noMatch;
-    if (extractedTopic) {
-      templateKey = isMultiple
-        ? AUTOMATION_TEMPLATE_KEYS.multipleMatch
-        : AUTOMATION_TEMPLATE_KEYS.acceptance;
-    }
+    const templateKey = !extractedTopic
+      ? AUTOMATION_TEMPLATE_KEYS.noMatch
+      : isMultiple
+      ? AUTOMATION_TEMPLATE_KEYS.multipleMatch
+      : AUTOMATION_TEMPLATE_KEYS.acceptance;
 
     const template = findTemplate(profile.templates, templateKey);
     const score = extractedTopic ? (extractedTopic.length > 25 ? 98 : 92) : 35;
