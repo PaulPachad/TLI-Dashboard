@@ -54,30 +54,44 @@ Warmly,
 Thank you for your interest in Authority Magazine.
 
 Can you please choose one of our ongoing interview series topics from our list here:
-https://medium.com/authority-magazine/ongoing-interview-series-in-authority-magazine-7d633a349753
+[📚 Browse Ongoing Interview Series](https://medium.com/authority-magazine/ongoing-interview-series-in-authority-magazine-7d633a349753)
 
-Once you've selected a topic that fits your expertise, please reply with your preferred series and if chosen, we'll send you the interview questions.
+If you'd like help finding the best match, you can ask our AI Bot here:
+[🤖 Ask Authority Magazine AI Bot](https://chatgpt.com/g/g-DOnEg59Sc-authority-magazine-bot)
+
+Once you've selected a topic that fits your expertise, please submit your selection in our pitch form here:
+[📝 Submit Pitch Form](https://docs.google.com/forms/d/e/1FAIpQLSdkUiiJpgE53-I6pDQOm-zWveNeCXkGFonoVX5ULmN0dPsfxA/viewform)
 
 Best regards,
-{signature}`,
+Authority Magazine Editorial Team`,
   },
   {
     templateKey: AUTOMATION_TEMPLATE_KEYS.multipleMatch,
     name: "Pitch multiple matches",
     subject: "Authority Magazine - Interview Invitation",
     allowedVariables: ["series_list", "signature"],
-    body: `Thank you so much for your pitch to Authority Magazine.
+    body: `Thank you so much for your pitch to Authority Magazine. 
 
-You have been accepted and we would like to move forward with an email interview.
+You have been accepted and we would like to move forward with an email interview. 
 
-Based on your pitch, here are the interview series that may fit your expertise. Please choose the link that best matches:
+Based on your pitch, here is the interview series that fits your expertise. Please click the link below to get started:
 
 {series_list}
 
 Please complete the written interview, (please do not use AI to create your answers) and upload the interview, images and bio into the portal linked at the bottom of the interview when it is complete.
 
+When you upload the material, please keep your browser open until you see a confirmation message.
+
+The official deadline is 21 days.
+ 
+After you upload the interview in the writer's portal, you will see a link to a spreadsheet queue with our estimated publishing dates.
+ 
+All other details and frequently asked questions are addressed here: https://bit.ly/AuthorityMagFAQandInstructions   
+ 
+We look forward to seeing your interview submission!
+ 
 Warmly,
-{signature}`,
+Yitzi`,
   },
   {
     templateKey: AUTOMATION_TEMPLATE_KEYS.extension,
@@ -101,19 +115,21 @@ Can you add your basic info in the form here?
 After the pitches come in we will send you the interview questions.
 
 I look forward!
-{signature}`,
+
+Yitzi`,
   },
   {
     templateKey: AUTOMATION_TEMPLATE_KEYS.collaborationNoMatch,
     name: "Collaboration no match",
     subject: "Re: {original_subject}",
     allowedVariables: ["original_subject", "signature"],
-    body: `Thanks for reaching out.
+    body: `Thank you for reaching out to Authority Magazine!
 
-Can you send a little more detail about the topic or series so we can send the correct submission form?
+We'd love to consider you for one of our ongoing interview series. To make sure we connect you with the right series, could you share a bit more about your area of expertise or the topic you're pitching on?
 
-Warmly,
-{signature}`,
+Once we know more, we'll send you the correct submission form.
+
+Looking forward to hearing from you!`,
   },
 ] as const;
 

@@ -193,23 +193,51 @@ async function ensureMissingDefaults(profileId: string) {
   }
 
   for (const template of DEFAULT_AUTOMATION_TEMPLATES) {
-    await db.automationTemplate.upsert({
+    const existing = await db.automationTemplate.findUnique({
       where: {
         profileId_templateKey: {
           profileId,
           templateKey: template.templateKey,
         },
       },
-      update: {},
-      create: {
-        profileId,
-        templateKey: template.templateKey,
-        name: template.name,
-        subject: template.subject,
-        body: template.body,
-        allowedVariablesJson: jsonField(template.allowedVariables),
-      } as never,
     });
+
+    if (!existing) {
+      await db.automationTemplate.create({
+        data: {
+          profileId,
+          templateKey: template.templateKey,
+          name: template.name,
+          subject: template.subject,
+          body: template.body,
+          allowedVariablesJson: jsonField(template.allowedVariables),
+        } as never,
+      });
+    } else {
+      // Auto-migrate legacy templates that don't have the modern desktop text
+      const isLegacyNoMatch =
+        existing.templateKey === "pitch_no_match" &&
+        !existing.body.includes("chatgpt.com");
+      const isLegacyMultiple =
+        existing.templateKey === "pitch_multiple_match" &&
+        !existing.body.includes("FAQandInstructions");
+      const isLegacyCollabNoMatch =
+        existing.templateKey === "collab_no_match" &&
+        existing.body.includes("Can you send a little more detail");
+
+      if (isLegacyNoMatch || isLegacyMultiple || isLegacyCollabNoMatch) {
+        await db.automationTemplate.update({
+          where: { id: existing.id },
+          data: {
+            body: template.body,
+            name: template.name,
+            subject: template.subject,
+            allowedVariablesJson: jsonField(template.allowedVariables),
+            version: { increment: 1 },
+          },
+        });
+      }
+    }
   }
 }
 
@@ -506,4 +534,65 @@ export async function syncBridgeLearnedRules(
   }
   return { success: true, count };
 }
+
+export async function syncBridgeTemplates(
+  profileId: string,
+  templates: Array<{
+    templateKey?: string;
+    key?: string;
+    name?: string;
+    subject?: string;
+    body: string;
+    allowedVariables?: string[];
+  }>
+) {
+  let count = 0;
+  for (const item of templates) {
+    const key = String(item.templateKey || item.key || "").trim();
+    const body = String(item.body || "").trim();
+    if (!key || !body) continue;
+
+    const existing = await db.automationTemplate.findUnique({
+      where: {
+        profileId_templateKey: {
+          profileId,
+          templateKey: key,
+        },
+      },
+    });
+
+    if (existing) {
+      await db.automationTemplate.update({
+        where: { id: existing.id },
+        data: {
+          body,
+          ...(item.subject ? { subject: String(item.subject).trim() } : {}),
+          ...(item.name ? { name: String(item.name).trim() } : {}),
+          version: { increment: 1 },
+        },
+      });
+      count++;
+    } else {
+      await db.automationTemplate.create({
+        data: {
+          profileId,
+          templateKey: key,
+          name: item.name || key,
+          subject: item.subject || null,
+          body,
+          allowedVariablesJson: jsonField(item.allowedVariables || ["signature"]),
+        } as never,
+      });
+      count++;
+    }
+  }
+
+  await db.automationProfile.update({
+    where: { id: profileId },
+    data: { configVersion: { increment: 1 } },
+  });
+
+  return { success: true, count };
+}
+
 

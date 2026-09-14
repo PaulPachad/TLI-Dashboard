@@ -53,6 +53,24 @@ test("template validation rejects unsupported variables", () => {
   );
 });
 
+test("default templates use modern desktop copy and valid variables", async () => {
+  const { DEFAULT_AUTOMATION_TEMPLATES } = await import("../src/lib/automation/defaults");
+  const noMatch = DEFAULT_AUTOMATION_TEMPLATES.find((t) => t.templateKey === "pitch_no_match");
+  assert.ok(noMatch, "pitch_no_match should exist");
+  assert.ok(noMatch.body.includes("chatgpt.com/g/g-DOnEg59Sc-authority-magazine-bot"), "Fallback must contain AI Bot link");
+  assert.ok(noMatch.body.includes("docs.google.com/forms"), "Fallback must contain pitch form link");
+
+  const multipleMatch = DEFAULT_AUTOMATION_TEMPLATES.find((t) => t.templateKey === "pitch_multiple_match");
+  assert.ok(multipleMatch, "pitch_multiple_match should exist");
+  assert.ok(multipleMatch.body.includes("AuthorityMagFAQandInstructions"), "Multiple match must contain FAQ link");
+
+  for (const t of DEFAULT_AUTOMATION_TEMPLATES) {
+    const invalid = validateTemplateVariables(t.body, t.subject, [...t.allowedVariables]);
+    assert.deepEqual(invalid, [], `Template ${t.templateKey} should not have invalid variables`);
+  }
+});
+
+
 test("operations run statuses normalize to dashboard states", () => {
   assert.equal(mapOperationsRunStatus("SUCCESS"), "completed");
   assert.equal(mapOperationsRunStatus("completed_with_issues"), "completed_with_issues");

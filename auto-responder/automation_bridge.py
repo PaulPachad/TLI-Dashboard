@@ -136,6 +136,26 @@ class AutomationBridge:
             logger.warning("Could not post SaaS bridge log: %s", exc)
             return False
 
+    def post_learned_rules(self, rules: list[dict[str, Any]]) -> bool:
+        if not self.is_configured():
+            return False
+        try:
+            self._request("POST", "/api/automation/bridge/learned-rules", {"rules": rules})
+            return True
+        except Exception as exc:
+            logger.warning("Could not post learned rules to SaaS bridge: %s", exc)
+            return False
+
+    def post_templates(self, templates: list[dict[str, Any]]) -> bool:
+        if not self.is_configured():
+            return False
+        try:
+            self._request("POST", "/api/automation/bridge/templates", {"templates": templates})
+            return True
+        except Exception as exc:
+            logger.warning("Could not post templates to SaaS bridge: %s", exc)
+            return False
+
     def _request(self, method: str, path: str, body: Optional[dict[str, Any]] = None):
         url = f"{self.base_url}{path}"
         data = None
