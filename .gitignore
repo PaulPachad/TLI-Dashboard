@@ -44,4 +44,7 @@ production.env
 *.tsbuildinfo
 next-env.d.ts
 
-.vercel
+# python
+__pycache__/
+*.py[cod]
+*$py.class

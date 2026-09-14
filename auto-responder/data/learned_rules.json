@@ -1219,5 +1219,13 @@
     "correct_doc_id": "1NVo-mAMGaBee6B_yVfCfdV2iFK32JpxwqxuZjx8J180",
     "created_at": "2026-09-09T15:12:50.660504Z",
     "updated_at": "2026-09-09T15:12:52.101175Z"
+  },
+  {
+    "id": "246d4840-e049-478a-a8f8-dde3b316c0ec",
+    "normalized_topic": "5 things i wish i knew before becoming a c suite exec",
+    "original_topic": "5 things I wish I knew before becoming a C Suite Exec",
+    "correct_topic_name": "5 Things I Wish Someone Told Me Before I Became a C-Suite Executive",
+    "correct_doc_id": "1bsXgBQHiGWqKuvntxubsnk8_K1sR141uPrvsRbXbnTw",
+    "created_at": "2026-09-14T20:44:11.971568Z"
   }
 ]

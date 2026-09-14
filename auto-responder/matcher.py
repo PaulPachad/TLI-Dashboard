@@ -23,7 +23,10 @@ class MatchResult:
 
 
 COMMON_PREFIXES = [
-    # "5 Things I Wish Someone Told Me Before I Became" variations
+    # "5 Things I Wish Someone Told Me / I Knew Before I Became / Becoming" variations
+    r'^(?:5|five) things i wish (?:someone|somebody) told me before (?:i became|becoming)\s+(?:an|a)?\s*',
+    r'^(?:5|five) things i wish (?:i|someone|somebody) (?:knew|had known|told me) before (?:i became|becoming)\s+(?:an|a)?\s*',
+    r'^(?:5|five) things i wish (?:i|someone|somebody) (?:knew|had known) when i (?:first )?became\s+(?:an|a)?\s*',
     r'^(?:5|five) things i wish (?:someone|somebody) told me before i became\s+(?:an|a)?\s*',
     r'^(?:5|five) things i wish (?:someone|somebody) told me when i first became\s+(?:an|a)?\s*',
     # New prefix patterns for "5 things/lessons I learned"
@@ -140,6 +143,9 @@ ACRONYM_EQUIVALENCES = {
     "employee stock ownership plan": "esop",
     "employee stock ownership plans": "esops",
     "software as a service": "saas",
+    "c suite exec": "c-suite executive",
+    "c-suite exec": "c-suite executive",
+    "c suite": "c-suite",
 }
 
 # Synonym mappings for common role/industry equivalents
@@ -149,6 +155,10 @@ ROLE_SYNONYMS = {
     # CEO/C-Suite mappings
     'ceo': ['c-suite executive', 'c-suite', 'chief executive'],
     'c-suite': ['c-suite executive', 'ceo'],
+    'c suite': ['c-suite executive', 'c-suite', 'ceo'],
+    'c suite exec': ['c-suite executive', 'c-suite', 'ceo'],
+    'c-suite exec': ['c-suite executive', 'c-suite', 'ceo'],
+    'exec': ['executive', 'c-suite executive'],
     
     # Filmmaker mappings
     'filmmaker': ['directors', 'producers'],

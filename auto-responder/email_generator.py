@@ -30,6 +30,16 @@ class EmailDraft:
     is_acceptance: bool
 
 
+def safe_format(template_str: str, **kwargs) -> str:
+    """Format template string without throwing KeyError on missing placeholders."""
+    defaults = {"signature": "Yitzi"}
+    defaults.update({k: v for k, v in kwargs.items() if v is not None})
+    class SafeDict(dict):
+        def __missing__(self, key):
+            return "{" + key + "}"
+    return template_str.format_map(SafeDict(defaults))
+
+
 class EmailGenerator:
     """Generates email drafts for pitch responses."""
     
@@ -134,9 +144,11 @@ Yitzi"""
         Returns:
             EmailDraft with subject and body
         """
-        body = self.ACCEPTANCE_TEMPLATE.format(
+        body = safe_format(
+            self.ACCEPTANCE_TEMPLATE,
             series_name=series_name,
-            interview_link=interview_link
+            interview_link=interview_link,
+            interviewee_name=interviewee_name or "",
         )
         if review_note:
             body = f"{review_note}\n\n{body}"
@@ -158,7 +170,7 @@ Yitzi"""
         """
         return EmailDraft(
             subject="Authority Magazine - Please Select an Interview Series",
-            body=self.NO_MATCH_TEMPLATE,
+            body=safe_format(self.NO_MATCH_TEMPLATE),
             is_acceptance=False
         )
     
@@ -181,7 +193,10 @@ Yitzi"""
         
         series_list = "\n\n".join(series_lines)
         
-        body = self.MULTIPLE_MATCH_TEMPLATE.format(series_list=series_list)
+        body = safe_format(
+            self.MULTIPLE_MATCH_TEMPLATE,
+            series_list=series_list,
+        )
         
         return EmailDraft(
             subject="Authority Magazine - Interview Invitation",

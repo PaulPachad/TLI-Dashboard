@@ -58,9 +58,14 @@ class AutoResponder:
         self.match_threshold = 90
         self.max_matches = 3
         self.max_emails_per_run = 30
+        self.blocked_senders: list[str] = []
+        self.blocked_domains: list[str] = []
+        self.skip_phrases: list[str] = []
         # Set Gmail client for correction tracking (after auth)
         self.correction_tracker.set_gmail_client(self.gmail)
         self._sync_bridge_config(force=True)
+        self.sync_learned_rules_to_bridge()
+        self.sync_templates_to_bridge()
         
         logger.info(f"AutoResponder initialized with {len(self.matcher.series)} interview series")
     
@@ -118,6 +123,23 @@ class AutoResponder:
         self.max_matches = int(profile.get("maxMatches") or self.max_matches)
         self.max_emails_per_run = int(profile.get("maxEmailsPerRun") or self.max_emails_per_run)
 
+        # Safety rules sync from SaaS
+        self.blocked_senders = [s.strip().lower() for s in profile.get("blockedSenders", []) if s.strip()]
+        self.blocked_domains = [d.strip().lower() for d in profile.get("blockedDomains", []) if d.strip()]
+        self.skip_phrases = [p.strip().lower() for p in profile.get("skipPhrases", []) if p.strip()]
+
+        # Suppressions
+        for sup in getattr(config, "suppressions", []):
+            if sup.get("enabled", True):
+                val = str(sup.get("value", "")).strip().lower()
+                kind = sup.get("kind", "")
+                if kind == "SENDER" and val:
+                    self.blocked_senders.append(val)
+                elif kind == "DOMAIN" and val:
+                    self.blocked_domains.append(val)
+                elif kind == "PHRASE" and val:
+                    self.skip_phrases.append(val)
+
         template_map = {
             "pitch_acceptance": "ACCEPTANCE_TEMPLATE",
             "pitch_no_match": "NO_MATCH_TEMPLATE",
@@ -130,6 +152,75 @@ class AutoResponder:
                 setattr(self.email_generator, attr, template["body"])
 
         return config
+
+    def sync_learned_rules_to_bridge(self) -> bool:
+        """Push local learned rules to SaaS bridge so they display in Learning & Intelligence."""
+        if not self.bridge.is_configured():
+            return False
+        try:
+            local_rules = self.correction_tracker.get_learned_rules()
+            if not local_rules:
+                return False
+            payload = [
+                {
+                    "originalTopic": r.get("original_topic", ""),
+                    "correctTopicName": r.get("correct_topic_name", ""),
+                    "correctDocId": r.get("correct_doc_id"),
+                    "confidence": r.get("confidence", 1.0),
+                }
+                for r in local_rules
+                if r.get("original_topic") and r.get("correct_topic_name")
+            ]
+            success = self.bridge.post_learned_rules(payload)
+            if success:
+                logger.info(f"Successfully synced {len(payload)} learned rules to SaaS control plane")
+            return success
+        except Exception as e:
+            logger.warning(f"Could not sync learned rules to bridge: {e}")
+            return False
+
+    def sync_templates_to_bridge(self) -> bool:
+        """Push local desktop email templates to SaaS bridge so website matches latest copy."""
+        if not self.bridge.is_configured():
+            return False
+        try:
+            templates = [
+                {
+                    "templateKey": "pitch_acceptance",
+                    "name": "Pitch acceptance",
+                    "subject": "Authority Magazine - {series_name} Interview Invitation",
+                    "body": self.email_generator.ACCEPTANCE_TEMPLATE,
+                    "allowedVariables": ["series_name", "interview_link", "signature", "review_note"],
+                },
+                {
+                    "templateKey": "pitch_no_match",
+                    "name": "Pitch no match",
+                    "subject": "Authority Magazine - Please Select an Interview Series",
+                    "body": self.email_generator.NO_MATCH_TEMPLATE,
+                    "allowedVariables": ["signature"],
+                },
+                {
+                    "templateKey": "pitch_multiple_match",
+                    "name": "Pitch multiple matches",
+                    "subject": "Authority Magazine - Interview Invitation",
+                    "body": self.email_generator.MULTIPLE_MATCH_TEMPLATE,
+                    "allowedVariables": ["series_list", "signature"],
+                },
+                {
+                    "templateKey": "pitch_extension",
+                    "name": "Deadline extension",
+                    "subject": "Re: {original_subject}",
+                    "body": getattr(self.email_generator, "EXTENSION_TEMPLATE", "Sure! :-)"),
+                    "allowedVariables": ["original_subject"],
+                },
+            ]
+            success = self.bridge.post_templates(templates)
+            if success:
+                logger.info("Successfully synced latest desktop templates to SaaS control plane")
+            return success
+        except Exception as e:
+            logger.warning(f"Could not sync templates to bridge: {e}")
+            return False
 
     def _bridge_log(self, **entry):
         """Send a privacy-safe activity entry to the SaaS bridge."""
@@ -402,11 +493,67 @@ class AutoResponder:
         subject = subject or ""
         logger.info(f"Processing: {subject}")
         
+        sender_lower = (sender or "").lower()
+        subject_lower = subject.lower()
+
+        # Check safety rules: blocked senders
+        for bs in self.blocked_senders:
+            if bs in sender_lower:
+                logger.info(f"  Skipping: sender '{sender}' is in blocked senders list ({bs})")
+                self._bridge_log(
+                    status="SKIPPED",
+                    workflowType="PITCH_RESPONDER",
+                    recipient=sender,
+                    subject=subject,
+                    reason=f"Blocked sender: {bs}",
+                )
+                return False
+
+        # Check safety rules: blocked domains
+        for bd in self.blocked_domains:
+            if bd in sender_lower:
+                logger.info(f"  Skipping: sender domain matches blocked domain ({bd})")
+                self._bridge_log(
+                    status="SKIPPED",
+                    workflowType="PITCH_RESPONDER",
+                    recipient=sender,
+                    subject=subject,
+                    reason=f"Blocked domain: {bd}",
+                )
+                return False
+
+        # Check safety rules: skip phrases in subject
+        for sp in self.skip_phrases:
+            if sp in subject_lower:
+                logger.info(f"  Skipping: subject contains skip phrase ({sp})")
+                self._bridge_log(
+                    status="SKIPPED",
+                    workflowType="PITCH_RESPONDER",
+                    recipient=sender,
+                    subject=subject,
+                    reason=f"Skip phrase in subject: {sp}",
+                )
+                return False
+
         # Get full email content
         content = self.gmail.get_message_content(msg_id)
         if not content:
             logger.error(f"Failed to get content for {msg_id}")
             return False
+
+        content_lower = content.lower()
+        # Check safety rules: skip phrases in body
+        for sp in self.skip_phrases:
+            if sp in content_lower:
+                logger.info(f"  Skipping: body contains skip phrase ({sp})")
+                self._bridge_log(
+                    status="SKIPPED",
+                    workflowType="PITCH_RESPONDER",
+                    recipient=sender,
+                    subject=subject,
+                    reason=f"Skip phrase in body: {sp}",
+                )
+                return False
         
         # Get thread details for reply threading
         msg_details = self.gmail.get_message_details(msg_id)

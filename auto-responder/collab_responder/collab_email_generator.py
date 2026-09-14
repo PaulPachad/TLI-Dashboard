@@ -31,6 +31,16 @@ class CollabEmailDraft:
     is_acceptance: bool
 
 
+def safe_format(template_str: str, **kwargs) -> str:
+    """Format template string without throwing KeyError on missing placeholders."""
+    defaults = {"signature": "Yitzi"}
+    defaults.update({k: v for k, v in kwargs.items() if v is not None})
+    class SafeDict(dict):
+        def __missing__(self, key):
+            return "{" + key + "}"
+    return template_str.format_map(SafeDict(defaults))
+
+
 class CollabEmailGenerator:
     """
     Generates draft emails for responses to HARO/SOS/Qwoted pitches.
@@ -82,9 +92,12 @@ Looking forward to hearing from you!"""
         Returns:
             CollabEmailDraft ready for use as a Gmail draft.
         """
-        body = self.ACCEPTANCE_TEMPLATE.format(
+        body = safe_format(
+            self.ACCEPTANCE_TEMPLATE,
             topic_name=topic_name,
             form_url=form_url,
+            series_name=topic_name,
+            interview_link=form_url,
         )
 
         # Build a clean reply subject
@@ -120,6 +133,6 @@ Looking forward to hearing from you!"""
 
         return CollabEmailDraft(
             subject=clean_subject,
-            body=self.NO_MATCH_TEMPLATE,
+            body=safe_format(self.NO_MATCH_TEMPLATE),
             is_acceptance=False,
         )

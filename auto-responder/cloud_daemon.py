@@ -228,7 +228,7 @@ def main():
 
     # 5. Start Collab Responder thread if credentials exist
     collab_cred = os.path.join(BASE_DIR, "credentials_collab.json")
-    if os.path.exists(collab_cred) or os.getenv("GMAIL_COLLAB_CREDENTIALS_JSON"):
+    if os.path.exists(collab_cred) or os.getenv("GMAIL_COLLAB_CREDENTIALS_JSON") or os.getenv("GMAIL_COLLAB_CREDENTIALS_B64"):
         collab_thread = threading.Thread(target=run_collab_worker, name="CollabWorker", daemon=True)
         collab_thread.start()
     else:
