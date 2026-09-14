@@ -19,7 +19,7 @@ export const DEFAULT_AUTOMATION_TEMPLATES = [
     templateKey: AUTOMATION_TEMPLATE_KEYS.acceptance,
     name: "Pitch acceptance",
     subject: "Authority Magazine - {series_name} Interview Invitation",
-    allowedVariables: ["series_name", "interview_link", "signature"],
+    allowedVariables: ["series_name", "interview_link", "signature", "review_note"],
     body: `Thank you so much for your pitch to Authority Magazine.
 
 You have been accepted and we would like to move forward with an email interview.

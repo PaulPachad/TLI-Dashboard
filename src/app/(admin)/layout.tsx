@@ -80,6 +80,7 @@ const adminNavItems: NavItem[] = [
   { label: "Admin Panel", href: "/admin", icon: GridIcon },
   { label: "Clients", href: "/admin/clients", icon: UsersIcon },
   { label: "Import", href: "/admin/import", icon: ArrowUpTrayIcon },
+  { label: "Operations", href: "/admin/operations", icon: BoltIcon },
   { label: "Automation", href: "/admin/automation", icon: BoltIcon },
 ];
 

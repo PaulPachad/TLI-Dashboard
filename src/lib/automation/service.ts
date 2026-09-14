@@ -96,6 +96,9 @@ export function toJsonList(value: unknown): string[] {
 }
 
 function jsonField(value: unknown) {
+  if ((process.env.DATABASE_URL || "").startsWith("file:")) {
+    return JSON.stringify(value) as never;
+  }
   return value as never;
 }
 
@@ -444,3 +447,63 @@ export async function recordBridgeDraftLog(mailboxId: string, input: BridgeLogIn
     } as never,
   });
 }
+
+export async function syncBridgeLearnedRules(
+  profileId: string,
+  rules: Array<{
+    original_topic?: string;
+    originalTopic?: string;
+    normalized_topic?: string;
+    normalizedTopic?: string;
+    correct_topic_name?: string;
+    correctTopicName?: string;
+    correct_doc_id?: string | null;
+    correctDocId?: string | null;
+    match_type?: string;
+    source?: string;
+    confidence?: number | null;
+  }>
+) {
+  let count = 0;
+  for (const rule of rules) {
+    const original = String(rule.originalTopic || rule.original_topic || "").trim();
+    const correct = String(rule.correctTopicName || rule.correct_topic_name || "").trim();
+    if (!original || !correct) continue;
+    const normalized =
+      String(rule.normalizedTopic || rule.normalized_topic || "").trim().toLowerCase() ||
+      original.toLowerCase().replace(/[^a-z0-9]/g, " ").replace(/\s+/g, " ").trim();
+
+    const rawConf = rule.confidence != null ? Number(rule.confidence) : 100;
+    const confidence = rawConf <= 1.0 ? Math.round(rawConf * 100) : Math.round(rawConf);
+
+    await db.learnedRule.upsert({
+      where: {
+        profileId_normalizedTopic: {
+          profileId,
+          normalizedTopic: normalized,
+        },
+      },
+      update: {
+        originalTopic: original,
+        correctTopicName: correct,
+        correctDocId: rule.correctDocId || rule.correct_doc_id || null,
+        confidence,
+        isEnabled: true,
+      },
+      create: {
+        profileId,
+        originalTopic: original,
+        normalizedTopic: normalized,
+        correctTopicName: correct,
+        correctDocId: rule.correctDocId || rule.correct_doc_id || null,
+        matchType: rule.match_type || "learned",
+        source: rule.source || "local_autoresponder",
+        confidence,
+        isEnabled: true,
+      },
+    });
+    count++;
+  }
+  return { success: true, count };
+}
+

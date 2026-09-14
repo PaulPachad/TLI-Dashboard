@@ -7,8 +7,8 @@ import { useRouter } from "next/navigation";
 export default function LoginPage() {
   const router = useRouter();
   const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
-  const [email, setEmail] = useState(demoMode ? "admin@example.com" : "");
-  const [password, setPassword] = useState(demoMode ? "admin123" : "");
+  const [email, setEmail] = useState(demoMode ? "support@authoritymag.co" : "");
+  const [password, setPassword] = useState(demoMode ? "Thought@Leader" : "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +29,9 @@ export default function LoginPage() {
           ? "Invalid email or password."
           : result.error);
       } else {
-        router.push("/dashboard");
+        const params = new URLSearchParams(window.location.search);
+        const callbackUrl = params.get("callbackUrl");
+        router.push(callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard");
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");

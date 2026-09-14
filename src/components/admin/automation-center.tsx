@@ -4,8 +4,6 @@ import { useMemo, useState } from "react";
 
 type TabId =
   | "mailboxes"
-  | "pitch"
-  | "collab"
   | "templates"
   | "rules"
   | "learning"
@@ -121,12 +119,10 @@ interface LearnedRule {
 }
 
 const TABS: Array<{ id: TabId; label: string }> = [
-  { id: "mailboxes", label: "Mailboxes" },
-  { id: "pitch", label: "Pitch Responder" },
-  { id: "collab", label: "Collaboration" },
+  { id: "mailboxes", label: "Mailboxes & Controls" },
   { id: "templates", label: "Templates" },
-  { id: "rules", label: "Rules" },
-  { id: "learning", label: "Learning" },
+  { id: "rules", label: "Safety Rules" },
+  { id: "learning", label: "Learning & Intelligence" },
   { id: "activity", label: "Activity" },
   { id: "test", label: "Test Lab" },
 ];
@@ -137,6 +133,7 @@ export function AutomationCenter({ initialData }: AutomationCenterProps) {
   const [saving, setSaving] = useState(false);
   const [banner, setBanner] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [revealedToken, setRevealedToken] = useState<string | null>(null);
+  const [learningSearch, setLearningSearch] = useState("");
   const [testInput, setTestInput] = useState({
     subject: "Pitch: 5 Things You Need To Know To Successfully Run A Live Virtual Event",
     sender: "Publicist <publicist@example.com>",
@@ -147,8 +144,16 @@ export function AutomationCenter({ initialData }: AutomationCenterProps) {
   const [confirmingRuleId, setConfirmingRuleId] = useState<string | null>(null);
 
   const profile = data.profile;
-  const pitchMailbox = profile.mailboxes.find((mailbox) => mailbox.workflowType === "PITCH_RESPONDER");
-  const collabMailbox = profile.mailboxes.find((mailbox) => mailbox.workflowType === "COLLAB_RESPONDER");
+
+  const filteredRules = useMemo(() => {
+    if (!learningSearch.trim()) return data.learnedRules;
+    const q = learningSearch.toLowerCase();
+    return data.learnedRules.filter(
+      (rule) =>
+        rule.originalTopic.toLowerCase().includes(q) ||
+        rule.correctTopicName.toLowerCase().includes(q)
+    );
+  }, [data.learnedRules, learningSearch]);
 
   const stats = useMemo(() => {
     const drafts = data.draftLogs.filter((log) => log.status === "DRAFT_CREATED").length;
@@ -407,42 +412,6 @@ export function AutomationCenter({ initialData }: AutomationCenterProps) {
         </section>
       )}
 
-      {activeTab === "pitch" && (
-        pitchMailbox ? (
-          <ResponderPanel
-            title="Pitch Responder"
-            mailbox={pitchMailbox}
-            profile={profile}
-            updateMailbox={updateMailbox}
-            updateProfile={updateProfile}
-            saveSettings={saveSettings}
-            saving={saving}
-          />
-        ) : (
-          <section className="rounded-lg border border-dashed border-slate-300 bg-slate-50">
-            <EmptyState text="No pitch mailbox configured. Add one in the Mailboxes tab." />
-          </section>
-        )
-      )}
-
-      {activeTab === "collab" && (
-        collabMailbox ? (
-          <ResponderPanel
-            title="Collaboration Responder"
-            mailbox={collabMailbox}
-            profile={profile}
-            updateMailbox={updateMailbox}
-            updateProfile={updateProfile}
-            saveSettings={saveSettings}
-            saving={saving}
-            showFormSheet
-          />
-        ) : (
-          <section className="rounded-lg border border-dashed border-slate-300 bg-slate-50">
-            <EmptyState text="No collaboration mailbox configured. Add one in the Mailboxes tab." />
-          </section>
-        )
-      )}
 
       {activeTab === "templates" && (
         <section className="space-y-4">
@@ -487,26 +456,57 @@ export function AutomationCenter({ initialData }: AutomationCenterProps) {
 
       {activeTab === "learning" && (
         <section className="rounded-lg border border-slate-200 bg-white">
-          <div className="border-b border-slate-100 px-5 py-4">
-            <h2 className="text-lg font-semibold text-slate-900">Learning and Corrections</h2>
+          <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-slate-900">Learning & Intelligence</h2>
+                <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+                  {data.learnedRules.length} rules
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Corrections synced from the Python engine (learned_rules.json). Auto-applied when matching incoming pitches.
+              </p>
+            </div>
+            <div className="w-full sm:w-64">
+              <input
+                type="search"
+                placeholder="Search learned rules..."
+                value={learningSearch}
+                onChange={(e) => setLearningSearch(e.target.value)}
+                className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
             {data.learnedRules.length === 0 ? (
-              <EmptyState text="No learned corrections have been synced yet." />
+              <EmptyState text="No learned corrections have been synced yet. The Python engine automatically uploads learned rules on startup and scan cycles." />
+            ) : filteredRules.length === 0 ? (
+              <EmptyState text={`No rules match "${learningSearch}".`} />
             ) : (
-              data.learnedRules.map((rule) => (
-                <div key={rule.id} className="flex flex-col gap-3 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{rule.originalTopic}</p>
-                    <p className="mt-1 text-sm text-slate-600">{rule.correctTopicName}</p>
+              filteredRules.map((rule) => (
+                <div key={rule.id} className="flex flex-col gap-3 px-5 py-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-slate-900 truncate">{rule.originalTopic}</p>
+                      {rule.confidence != null && (
+                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
+                          {Math.round(rule.confidence * 100)}% conf
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 flex items-center gap-1.5 text-sm text-emerald-700">
+                      <span className="font-medium text-slate-400">&rarr;</span>
+                      <span className="font-medium">{rule.correctTopicName}</span>
+                    </div>
                   </div>
                   {confirmingRuleId === rule.id ? (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 shrink-0">
                       <button
                         type="button"
                         onClick={() => setConfirmingRuleId(null)}
                         disabled={saving}
-                        className="self-start rounded-md border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                        className="self-start rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
                       >
                         Cancel
                       </button>
@@ -514,7 +514,7 @@ export function AutomationCenter({ initialData }: AutomationCenterProps) {
                         type="button"
                         onClick={() => deleteLearnedRule(rule.id)}
                         disabled={saving}
-                        className="self-start rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+                        className="self-start rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
                       >
                         Confirm delete
                       </button>
@@ -524,7 +524,7 @@ export function AutomationCenter({ initialData }: AutomationCenterProps) {
                       type="button"
                       onClick={() => setConfirmingRuleId(rule.id)}
                       disabled={saving}
-                      className="self-start rounded-md border border-rose-200 px-3 py-1.5 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                      className="self-start rounded-md border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50 shrink-0"
                     >
                       Delete
                     </button>
@@ -566,11 +566,12 @@ function ControlBar({
 }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-5">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <Toggle label="Automation Enabled" checked={profile.isEnabled} onChange={(checked) => updateProfile({ isEnabled: checked })} />
         <Toggle label="Kill Switch" checked={profile.globalKillSwitch} onChange={(checked) => updateProfile({ globalKillSwitch: checked })} danger />
         <NumberField label="Check Interval" value={profile.checkIntervalSeconds} onChange={(value) => updateProfile({ checkIntervalSeconds: value })} suffix="sec" />
         <NumberField label="Max Emails" value={profile.maxEmailsPerRun} onChange={(value) => updateProfile({ maxEmailsPerRun: value })} />
+        <NumberField label="Match Threshold" value={profile.matchThreshold} onChange={(value) => updateProfile({ matchThreshold: value })} suffix="%" />
       </div>
       <ActionFooter saving={saving} onSave={saveSettings} label="Save Mailbox Settings" />
     </div>
@@ -624,54 +625,6 @@ function MailboxPanel({
         </button>
       </div>
     </div>
-  );
-}
-
-function ResponderPanel({
-  title,
-  mailbox,
-  profile,
-  updateMailbox,
-  updateProfile,
-  saveSettings,
-  saving,
-  showFormSheet = false,
-}: {
-  title: string;
-  mailbox: AutomationMailbox;
-  profile: AutomationProfile;
-  updateMailbox: (id: string, partial: Partial<AutomationMailbox>) => void;
-  updateProfile: (partial: Partial<AutomationProfile>) => void;
-  saveSettings: () => void;
-  saving: boolean;
-  showFormSheet?: boolean;
-}) {
-  return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-          <p className="mt-1 text-sm text-slate-500">{mailbox.emailAddress}</p>
-        </div>
-        <Toggle label="Enabled" checked={mailbox.isEnabled} onChange={(checked) => updateMailbox(mailbox.id, { isEnabled: checked })} />
-      </div>
-      <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <NumberField label="Match Threshold" value={profile.matchThreshold} onChange={(value) => updateProfile({ matchThreshold: value })} suffix="%" />
-        <NumberField label="Multiple Gap" value={profile.multipleChoiceGap} onChange={(value) => updateProfile({ multipleChoiceGap: value })} />
-        <NumberField label="Max Matches" value={profile.maxMatches} onChange={(value) => updateProfile({ maxMatches: value })} />
-        <NumberField label="Active Topic Limit" value={profile.activeTopicLimit || 0} onChange={(value) => updateProfile({ activeTopicLimit: value || null })} />
-      </div>
-      {showFormSheet ? (
-        <div className="mt-4">
-          <TextField label="Form Sheet URL" value={profile.formSheetUrl || ""} onChange={(value) => updateProfile({ formSheetUrl: value })} />
-        </div>
-      ) : (
-        <div className="mt-4">
-          <TextField label="Topic Source URL" value={profile.topicSourceUrl || ""} onChange={(value) => updateProfile({ topicSourceUrl: value })} />
-        </div>
-      )}
-      <ActionFooter saving={saving} onSave={saveSettings} label="Save Responder Settings" />
-    </section>
   );
 }
 

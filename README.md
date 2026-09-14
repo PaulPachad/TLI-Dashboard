@@ -13,8 +13,8 @@ logins, starts the app, and opens `http://localhost:3000`.
 
 Demo admin:
 
-- Email: `admin@example.com`
-- Password: `admin123`
+- Email: `support@authoritymag.co`
+- Password: `Thought@Leader`
 
 Demo client:
 
@@ -59,6 +59,10 @@ Copy `.env.example` to `.env.local` and configure:
   default. Set to `false` only if you want research to run from explicit button
   clicks or scheduled background jobs.
 - `RESEND_API_KEY` and `EMAIL_FROM`.
+- `APPS_SCRIPT_AUTOMATION_URL` and `APPS_SCRIPT_AUTOMATION_SECRET`: optional
+  read-only Operations Center bridge to the Authority Press Apps Script Web App.
+  The same secret must be stored in Apps Script Properties as
+  `APPS_SCRIPT_AUTOMATION_SECRET`.
 - `DEMO_MODE`: keep `false` in production.
 - `NEXT_PUBLIC_DEMO_MODE`: keep `false` in production.
 
@@ -92,6 +96,23 @@ EMAIL_FROM="TLI Dashboard <notifications@authoritymagazine.com>"
 Replies are sent to the client's configured reply-to address. Outside demo
 mode, the app refuses to mark an email successful when Resend is missing or
 reports a delivery error.
+
+## Operations Center Apps Script Bridge
+
+The admin Operations Center can read status from the existing Authority Press
+Apps Script without enabling browser-side automation controls.
+
+1. Paste `docs/apps-script/operations-bridge.gs` at the bottom of the Apps
+   Script project.
+2. In Apps Script, add Script Property `APPS_SCRIPT_AUTOMATION_SECRET` with a
+   long random value.
+3. Deploy the script as a Web App.
+4. Set the Web App URL in the SaaS as `APPS_SCRIPT_AUTOMATION_URL`.
+5. Set the same secret in the SaaS as `APPS_SCRIPT_AUTOMATION_SECRET`.
+
+The bridge is read-only. It supports status, report counts, trigger state,
+quota pause state, and master-row summaries. It does not send emails, update
+sheets, change cron triggers, or edit Apps Script code.
 
 ## Standout Signals Research Setup
 

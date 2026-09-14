@@ -122,36 +122,68 @@ export async function runAutomationTest(input: AutomationTestInput): Promise<Aut
 
   if (pitchMarkerCount >= 2 || /pitch|interview topic|authority magazine/i.test(haystack)) {
     const extractedTopic = extractPitchTopic(body) || extractSubjectTopic(subject, body);
-    const templateKey = extractedTopic
-      ? AUTOMATION_TEMPLATE_KEYS.acceptance
-      : AUTOMATION_TEMPLATE_KEYS.noMatch;
-    const template = findTemplate(profile.templates, templateKey);
-    const score = extractedTopic ? Math.max(profile.matchThreshold, 90) : 35;
+    
+    // Check if extracted topic contains multiple choices (e.g. separated by semicolon, or commas with 'or')
+    const multipleParts = extractedTopic
+      ? extractedTopic.split(/;\s*|\n+|\s*,\s*(?:or|and)\s+/i).map((s) => s.trim()).filter((s) => s.length > 6)
+      : [];
+    const isMultiple = multipleParts.length > 1;
 
-    reasons.push(
-      extractedTopic
-        ? "Detected an Authority Magazine pitch form."
-        : "Detected a pitch, but no clear topic was found."
-    );
-    reasons.push("Exact topic matching still runs in the local bridge worker.");
+    let templateKey = AUTOMATION_TEMPLATE_KEYS.noMatch;
+    if (extractedTopic) {
+      templateKey = isMultiple
+        ? AUTOMATION_TEMPLATE_KEYS.multipleMatch
+        : AUTOMATION_TEMPLATE_KEYS.acceptance;
+    }
+
+    const template = findTemplate(profile.templates, templateKey);
+    const score = extractedTopic ? (extractedTopic.length > 25 ? 98 : 92) : 35;
+    const isTier1 = score >= 95;
+    const reviewNote = (!isTier1 && extractedTopic && !isMultiple)
+      ? `[NOTE FOR REVIEW: Matched '${extractedTopic}' with ${score}% confidence. Please verify before sending.]`
+      : null;
+
+    if (isMultiple) {
+      reasons.push(`Detected multiple topic options in pitch (${multipleParts.length} candidates). Routing to multi-match selection template.`);
+    } else if (extractedTopic) {
+      reasons.push(`Detected an Authority Magazine pitch form. Evaluated as ${isTier1 ? "Tier 1 (High Confidence >= 95%)" : "Tier 2 (Review Note Added 90-94%)"}.`);
+    } else {
+      reasons.push("Detected a pitch, but no clear topic was found. Routing to fallback.");
+    }
+    reasons.push("Exact catalog matching and learning rules run in the live local worker.");
+
+    let bodyRendered = "";
+    if (isMultiple) {
+      const seriesList = multipleParts.map((p, i) => `${i + 1}. ${p}\n   https://docs.google.com/document/d/example_${i + 1}`).join("\n\n");
+      bodyRendered = renderTemplate(template?.body || "", {
+        series_list: seriesList,
+        signature: "Yitzi",
+      });
+    } else {
+      bodyRendered = renderTemplate(template?.body || "", {
+        series_name: extractedTopic || "Selected Series",
+        interview_link: extractedTopic ? "https://docs.google.com/document/d/example_interview" : "",
+        signature: "Yitzi",
+        review_note: reviewNote || "",
+      });
+      if (reviewNote) {
+        bodyRendered = `${reviewNote}\n\n${bodyRendered}`;
+      }
+    }
 
     return {
       workflowType: AUTOMATION_WORKFLOWS.pitch,
       action: skipHit ? "manual_review" : "draft",
       replyTo,
       matchedTopic: extractedTopic,
-      matchedUrl: extractedTopic ? "[matched interview questions link]" : null,
+      matchedUrl: extractedTopic ? "https://docs.google.com/document/d/example_interview" : null,
       matchScore: score,
-      confidence: extractedTopic ? "high" : "low",
+      confidence: isTier1 ? "high" : extractedTopic ? "medium" : "low",
       templateKey,
-      subjectPreview: renderTemplate(template?.subject || "", {
+      subjectPreview: renderTemplate(template?.subject || "Authority Magazine - {series_name} Interview Invitation", {
         series_name: extractedTopic || "Selected Series",
       }),
-      bodyPreview: renderTemplate(template?.body || "", {
-        series_name: extractedTopic || "Selected Series",
-        interview_link: extractedTopic ? "[matched interview questions link]" : "",
-        signature: "Yitzi",
-      }),
+      bodyPreview: bodyRendered,
       reasons,
     };
   }
