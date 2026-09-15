@@ -149,7 +149,7 @@ export async function ensureAutomationProfile() {
       data: {
         name: AUTOMATION_PROFILE_NAME,
         description:
-          "Draft-only control center for Authority Magazine email automation.",
+          "Operational control center for Authority Magazine email automation.",
         mode: "DRAFT_ONLY",
         matchThreshold: 90,
         multipleChoiceGap: 6,

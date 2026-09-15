@@ -449,12 +449,12 @@ export function AutomationCenter({ initialData }: AutomationCenterProps) {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Automation Center</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Draft-only controls for Authority Magazine email automation.
+            Operational controls and monitoring for Authority Magazine email automation.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <StatusPill label={profile.isEnabled ? "Enabled" : "Paused"} tone={profile.isEnabled ? "emerald" : "slate"} />
-          <StatusPill label={profile.globalKillSwitch ? "Kill Switch On" : "Draft Only"} tone={profile.globalKillSwitch ? "rose" : "indigo"} />
+          <StatusPill label={profile.globalKillSwitch ? "Kill Switch On" : "Active"} tone={profile.globalKillSwitch ? "rose" : "emerald"} />
           <StatusPill label={`v${profile.configVersion}`} tone="amber" />
         </div>
       </div>
@@ -483,7 +483,7 @@ export function AutomationCenter({ initialData }: AutomationCenterProps) {
 
       <div className="grid gap-4 md:grid-cols-4">
         <Metric label="Bridge Mailboxes" value={`${stats.connected}/${profile.mailboxes.length}`} />
-        <Metric label="Recent Draft Logs" value={stats.drafts} />
+        <Metric label="Recent Operations" value={stats.drafts} />
         <Metric label="Recent Run Errors" value={stats.errors} />
         <Metric label="Match Threshold" value={`${profile.matchThreshold}%`} />
       </div>
@@ -727,23 +727,14 @@ function GenericWorkflowPanel({
 
   return (
     <section className="space-y-6">
-      {/* Status / Mode Banner */}
-      {workflow.isEnabled && workflow.mode === "SEND" ? (
-        <div className="rounded-lg border border-rose-300 bg-rose-50 p-4 text-sm text-rose-900">
-          <div className="flex items-center gap-2 font-bold text-rose-800">
-            <span className="text-base">&#9888;&#65039;</span> LIVE SENDING ACTIVE (10:00 AM NY)
+      {/* Status Banner */}
+      {workflow.isEnabled ? (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50/80 p-4 text-sm text-emerald-950">
+          <div className="flex items-center gap-2 font-bold text-emerald-800">
+            <span className="text-base">&#9889;</span> Daily Generic Response Active (10:00 AM NY)
           </div>
-          <p className="mt-1">
-            At 10:00 AM America/New_York daily, matching emails in the verified queue label (&ldquo;{workflow.queueLabelName || "1. Send Generic Re..."}&rdquo;) will receive live outgoing emails, and the queue label will be removed upon confirmed send.
-          </p>
-        </div>
-      ) : workflow.isEnabled && workflow.mode === "PREVIEW" ? (
-        <div className="rounded-lg border border-sky-300 bg-sky-50 p-4 text-sm text-sky-900">
-          <div className="flex items-center gap-2 font-bold text-sky-800">
-            <span className="text-base">&#128269;</span> PREVIEW MODE (Safe Dry Run)
-          </div>
-          <p className="mt-1">
-            The daemon will discover queue candidates, inspect thread history, check suppressions, and log planned decisions. No emails will be sent and no Gmail labels will be modified.
+          <p className="mt-1 text-emerald-900/90">
+            At 10:00 AM America/New_York daily, matching pitches in &ldquo;{workflow.queueLabelName || "1. Send Generic Response"}&rdquo; receive the approved storylines reply, and the queue label is automatically cleared upon send.
           </p>
         </div>
       ) : (
@@ -759,7 +750,7 @@ function GenericWorkflowPanel({
 
       {/* Metrics */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Metric label="Execution Mode" value={workflow.mode} />
+        <Metric label="Workflow Status" value={workflow.isEnabled ? "Active" : "Paused"} />
         <Metric label="Queue Deliveries" value={recentDeliveries.length} />
         <Metric label="Confirmed Sent" value={sentCount} />
         <Metric label="Held / Suppressed" value={heldCount + errorCount} />
@@ -776,7 +767,7 @@ function GenericWorkflowPanel({
           </div>
           <div className="flex items-center gap-2">
             <StatusPill label={workflow.isEnabled ? "Active" : "Disabled"} tone={workflow.isEnabled ? "emerald" : "slate"} />
-            <StatusPill label={workflow.mode} tone={workflow.mode === "SEND" ? "rose" : "indigo"} />
+            <StatusPill label="10:00 AM NY" tone="indigo" />
           </div>
         </div>
 
@@ -787,10 +778,10 @@ function GenericWorkflowPanel({
             onChange={(checked) => updateWorkflow(workflow.id, { isEnabled: checked })}
           />
           <SelectField
-            label="Execution Mode"
-            value={workflow.mode}
-            options={["PREVIEW", "SEND"]}
-            onChange={(value) => updateWorkflow(workflow.id, { mode: value })}
+            label="Sending Mode"
+            value={workflow.mode === "PREVIEW" ? "Simulation (Test Only)" : "Live Sending"}
+            options={["Live Sending", "Simulation (Test Only)"]}
+            onChange={(value) => updateWorkflow(workflow.id, { mode: value === "Live Sending" ? "SEND" : "PREVIEW" })}
           />
           <TextField
             label="Verified Queue Label Name"
@@ -855,7 +846,7 @@ function GenericWorkflowPanel({
                     previewMode === "html" ? "bg-indigo-600 text-white" : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  HTML Preview
+                  Formatted View
                 </button>
                 <button
                   type="button"
