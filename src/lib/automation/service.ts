@@ -839,7 +839,12 @@ export async function enqueueDeliveryCandidates(
     },
   });
 
-  return { success: true, enqueued };
+  const deliveries = await db.automationDelivery.findMany({
+    where: { runId },
+    select: { id: true, gmailThreadId: true },
+  });
+
+  return { success: true, enqueued, deliveries };
 }
 
 export async function claimDelivery(

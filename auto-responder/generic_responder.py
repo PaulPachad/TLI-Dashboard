@@ -452,8 +452,11 @@ class GenericAutoResponder:
                 logger.info("[GenericResponder] Thread %s ineligible: %s", tid, inspection.get("reason"))
 
         # Step 4: Enqueue candidates into SaaS durable ledger
+        delivery_map = {}
         if candidates:
-            self.bridge.enqueue_delivery_candidates(workflow_id, run_id, candidates)
+            enqueue_res = self.bridge.enqueue_delivery_candidates(workflow_id, run_id, candidates)
+            for d in (enqueue_res or {}).get("deliveries", []):
+                delivery_map[d.get("gmailThreadId")] = d.get("id")
 
         # Step 5: Process candidates
         # In PREVIEW mode: do NOT send mail and do NOT modify labels!
@@ -476,9 +479,9 @@ class GenericAutoResponder:
             subject = candidate["subject"]
             anchor_id = candidate["anchorInboundId"]
             source_ids = candidate.get("sourceMessageIds", [])
+            delivery_id = delivery_map.get(tid)
 
-            # Claim delivery lock in DB
-            # We don't have deliveryId directly yet, so we verify config is still active
+            # Verify config is still active before every send
             config_check = self.bridge.get_config()
             if not config_check or not config_check.enabled:
                 logger.warning("[GenericResponder] Global kill switch or pause detected; halting sends immediately.")
@@ -515,6 +518,10 @@ class GenericAutoResponder:
                 logger.info("[GenericResponder] Sent generic reply to %s for thread %s (Sent ID: %s)", recipient, tid, sent_id)
                 sent_count += 1
 
+                # Record sent outcome in SaaS ledger
+                if delivery_id:
+                    self.bridge.record_delivery_outcome(delivery_id, state="SENT", gmail_sent_id=sent_id)
+
                 # Message-level queue label removal
                 for mid in source_ids:
                     try:
@@ -527,9 +534,15 @@ class GenericAutoResponder:
                     except Exception as label_err:
                         logger.error("[GenericResponder] Failed removing label from message %s: %s", mid, label_err)
 
+                # Mark cleaned in SaaS ledger
+                if delivery_id:
+                    self.bridge.complete_delivery_cleanup(delivery_id)
+
             except Exception as send_err:
                 logger.error("[GenericResponder] Error sending generic reply to %s: %s", recipient, send_err)
                 error_count += 1
+                if delivery_id:
+                    self.bridge.record_delivery_outcome(delivery_id, state="UNKNOWN", error_message=str(send_err))
 
         self._last_processed_date = local_date
         logger.info("[GenericResponder] Cycle finished. Sent: %d, Errors: %d", sent_count, error_count)
