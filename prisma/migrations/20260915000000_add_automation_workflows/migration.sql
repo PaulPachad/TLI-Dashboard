@@ -1,4 +1,4 @@
-﻿-- CreateTable
+-- CreateTable
 CREATE TABLE "AutomationWorkflow" (
     "id" TEXT NOT NULL,
     "profileId" TEXT NOT NULL,
