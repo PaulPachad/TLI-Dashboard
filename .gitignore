@@ -48,3 +48,9 @@ next-env.d.ts
 __pycache__/
 *.py[cod]
 *$py.class
+
+# secrets
+token*.json
+credentials*.json
+auto-responder/token*.json
+auto-responder/credentials*.json
