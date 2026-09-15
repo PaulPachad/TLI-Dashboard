@@ -30,6 +30,12 @@ if _BASE_DIR not in sys.path:
 from gmail_client import GmailClient
 from automation_bridge import AutomationBridge, BridgeConfig
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
+
 logger = logging.getLogger(__name__)
 
 WORKFLOW_KEY = "GENERIC_RESPONSE"
