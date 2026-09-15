@@ -30,6 +30,7 @@ class BridgeConfig:
     templates: dict[str, dict[str, Any]]
     suppressions: list[dict[str, Any]]
     fetched_at: float
+    workflows: list[dict[str, Any]] = None
 
     def template(self, key: str) -> Optional[dict[str, Any]]:
         template = self.templates.get(key)
@@ -98,6 +99,8 @@ class AutomationBridge:
             }
             profile = payload.get("profile", {})
             mailbox = payload.get("mailbox", {})
+            workflows = payload.get("workflows", [])
+            mailbox["workflows"] = workflows
             config = BridgeConfig(
                 enabled=bool(profile.get("enabled") and mailbox.get("enabled")),
                 profile=profile,
@@ -105,6 +108,7 @@ class AutomationBridge:
                 templates=templates,
                 suppressions=payload.get("suppressions", []),
                 fetched_at=time.time(),
+                workflows=workflows,
             )
             self._config = config
             self._config_time = time.time()
