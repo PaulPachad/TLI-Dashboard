@@ -78,7 +78,8 @@ class PitchParser:
         topic = topic.strip()
 
         # 6. Leading/trailing punctuation noise
-        topic = re.sub(r'^[.\-,;:!?*#]+\s*', '', topic).strip()
+        topic = re.sub(r'^[.\-,;:!?*#"\'“”„‟]+\s*', '', topic).strip()
+        topic = re.sub(r'\s*[.\-,;:!?*#"\'“”„‟]+$', '', topic).strip()
 
         # 7. Truncate trailing description sentences that bleed into topic field
         if ':' in topic:

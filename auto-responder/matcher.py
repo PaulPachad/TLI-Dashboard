@@ -1145,11 +1145,21 @@ class TopicMatcher:
                 stage1_score = 100
             elif any(syn == name_distinctive for syn in search_synonyms):
                 stage1_score = 99.5
-            elif name_distinctive in search_distinctive or search_distinctive in name_distinctive:
-                # One is a substring of the other
-                if len(search_distinctive) >= 20 and (search_distinctive in name_distinctive or name_distinctive in search_distinctive):
+            elif search_distinctive in name_distinctive:
+                # search_distinctive is inside name_distinctive
+                if len(search_distinctive) >= 20:
                     stage1_score = 100.0
                 elif len(search_distinctive) >= 12 and len(search_distinctive) / max(len(name_distinctive), 1) >= 0.5:
+                    stage1_score = 90.0
+                else:
+                    stage1_score = 0.0
+            elif name_distinctive in search_distinctive:
+                # name_distinctive is inside search_distinctive (query is longer than catalog name)
+                # Only valid if name_distinctive covers a substantial portion of search_distinctive
+                name_coverage = len(name_distinctive) / max(len(search_distinctive), 1)
+                if both_had_prefix and len(name_distinctive) >= 15 and name_coverage >= 0.70:
+                    stage1_score = 95.0
+                elif not both_had_prefix and len(name_distinctive) >= 20 and name_coverage >= 0.80:
                     stage1_score = 90.0
                 else:
                     stage1_score = 0.0
@@ -1174,7 +1184,8 @@ class TopicMatcher:
                 final_score = float(stage1_score)
             else:
                 # One or both don't have the prefix - use traditional matching
-                if stage1_score >= 98:  # Only for very strong distinctive matches
+                # Distinctive part match can ONLY promote to exact if BOTH had prefix or distinctive parts match fully
+                if stage1_score >= 98 and (both_had_prefix or name_distinctive == search_distinctive):
                     is_exact_match = True
                     final_score = float(stage1_score)
                 else:
@@ -1209,8 +1220,8 @@ class TopicMatcher:
                     elif (name_distinctive == search_distinctive and len(name_distinctive) > 3):
                         is_exact_match = True
                         final_score = 95.0
-                    elif (name_distinctive in search_distinctive and len(name_distinctive) > 5) or \
-                         (search_distinctive in name_distinctive and len(search_distinctive) > 5):
+                    elif ((search_distinctive in name_distinctive and len(search_distinctive) >= 15 and len(search_distinctive) / max(len(name_distinctive), 1) >= 0.5) or \
+                          (name_distinctive in search_distinctive and len(name_distinctive) >= 15 and len(name_distinctive) / max(len(search_distinctive), 1) >= 0.6)):
                         is_exact_match = True
                         final_score = 85.0
                     else:
@@ -1218,6 +1229,8 @@ class TopicMatcher:
                         final_score = 0
             
             if is_exact_match and series['id'] not in seen_ids:
+                if not _industry_terms_are_compatible(search_text, series['name']):
+                    continue
                 results.append(MatchResult(
                     series_id=series['id'],
                     name=series['name'],

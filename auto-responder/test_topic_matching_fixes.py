@@ -184,6 +184,50 @@ class TestTopicMatchingFixes(unittest.TestCase):
         self.assertIsNone(arbiter.verify_candidates("test pitch", []))
 
 
+    def test_female_founders_does_not_match_founder_series(self):
+        """Ensure 'Female Founders' matches Female Founders series, NOT 5 Things Before I Became a Founder."""
+        matches = self.matcher.find_matches("Female Founders")
+        self.assertTrue(len(matches) > 0)
+        self.assertEqual(matches[0].name, "Female Founders: Five Things You Need To Thrive and Succeed as a Woman Founder")
+        self.assertGreaterEqual(matches[0].score, 90.0)
+        # Ensure 5 Things Founder is not top match
+        for m in matches[:3]:
+            if "became a founder" in m.name.lower():
+                self.assertLess(m.score, 90.0)
+
+    def test_multi_topic_splitting_with_quotes(self):
+        """Test multi-topic string with curly quotes and 'or' splits and matches both."""
+        import re
+        extracted = 'Highly Effective Networking\u201d or \u201cFemale Founders.'
+        parts = re.split(r'["\'“”„‟]\s*(?:or|and)\s*["\'“”„‟]|;\s*|\n+|\r\n|,\s*(?:or\s+|and\s+)?|\s+\d+[\.:]\s+|\s+or\s+', extracted, flags=re.IGNORECASE)
+        clean_parts = []
+        for p in parts:
+            clean_p = p.strip().strip('"\'“”„‟. ,;:')
+            clean_p = re.sub(r'^\d+[\.:]\s*', '', clean_p).strip()
+            if len(clean_p) > 5:
+                clean_parts.append(clean_p)
+        self.assertEqual(len(clean_parts), 2)
+        self.assertEqual(clean_parts[0], "Highly Effective Networking")
+        self.assertEqual(clean_parts[1], "Female Founders")
+
+        matches_1 = self.matcher.find_matches(clean_parts[0], top_n=1)
+        self.assertTrue(len(matches_1) > 0)
+        self.assertIn("Highly Effective Networking", matches_1[0].name)
+        self.assertGreaterEqual(matches_1[0].score, 90.0)
+
+        matches_2 = self.matcher.find_matches(clean_parts[1], top_n=1)
+        self.assertTrue(len(matches_2) > 0)
+        self.assertIn("Female Founders", matches_2[0].name)
+        self.assertGreaterEqual(matches_2[0].score, 90.0)
+
+    def test_top_5_mistakes_legal_counsel_match(self):
+        """Ensure 'Top 5 Mistakes Businesses Make Without Legal Counsel' matches exactly."""
+        matches = self.matcher.find_matches("Top 5 Mistakes Businesses Make Without Legal Counsel")
+        self.assertTrue(len(matches) > 0)
+        self.assertEqual(matches[0].name, "Top 5 Mistakes Businesses Make Without Legal Counsel")
+        self.assertEqual(matches[0].score, 100.0)
+
+
 if __name__ == '__main__':
     unittest.main()
 

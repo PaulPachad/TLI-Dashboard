@@ -37,6 +37,7 @@ logger = logging.getLogger("cloud_daemon")
 ALERT_EMAIL = os.getenv("ALERT_EMAIL", "rabbiweiner@gmail.com")
 ALERT_COOLDOWN_SECONDS = 3600  # 1 hour between duplicate alerts
 CONSECUTIVE_ERROR_THRESHOLD = 3  # send alert after this many back-to-back loop errors
+BUILD_VERSION = "2026.09.15.2"
 # ──────────────────────────────────────────────────────────────────────────────
 
 
@@ -215,6 +216,7 @@ class HealthHandler(BaseHTTPRequestHandler):
             status_text = "healthy" if is_ready else "degraded"
             self.wfile.write(json.dumps({
                 "status": status_text,
+                "version": BUILD_VERSION,
                 "pitch_running": state.pitch_running,
                 "collab_running": state.collab_running,
                 "uptime_seconds": int(uptime),
@@ -225,6 +227,7 @@ class HealthHandler(BaseHTTPRequestHandler):
         uptime = int(time.time() - state.start_time)
         status_payload = {
             "status": "running" if not state.is_shutting_down else "shutting_down",
+            "version": BUILD_VERSION,
             "service": "Authority Magazine 24/7 Cloud Auto Responder",
             "uptime_seconds": uptime,
             "saas_bridge_url": os.getenv("AUTHORITY_SAAS_URL", "https://tli.authoritymag.co"),

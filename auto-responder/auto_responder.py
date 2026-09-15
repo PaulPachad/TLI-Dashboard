@@ -743,8 +743,14 @@ class AutoResponder:
             
             # If the full string did not match strongly, check if it was a list of multiple topics
             if not matches or matches[0].score < self.match_threshold:
-                parts = re.split(r';\s*|\n+|\r\n|,\s*(?:or\s+|and\s+)?|\s+\d+[\.:]\s+', extracted_topic, flags=re.IGNORECASE)
-                parts = [p.strip() for p in parts if len(p.strip()) > 5]
+                parts = re.split(r'["\'“”„‟]\s*(?:or|and)\s*["\'“”„‟]|;\s*|\n+|\r\n|,\s*(?:or\s+|and\s+)?|\s+\d+[\.:]\s+|\s+or\s+', extracted_topic, flags=re.IGNORECASE)
+                clean_parts = []
+                for p in parts:
+                    clean_p = p.strip().strip('"\'“”„‟. ,;:')
+                    clean_p = re.sub(r'^\d+[\.:]\s*', '', clean_p).strip()
+                    if len(clean_p) > 5:
+                        clean_parts.append(clean_p)
+                parts = clean_parts
                 
                 if len(parts) > 1:
                     logger.info(f"  Full string match was below threshold. Trying delimited parts: {parts}")
