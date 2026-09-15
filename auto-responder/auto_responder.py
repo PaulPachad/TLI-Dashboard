@@ -539,19 +539,6 @@ class AutoResponder:
                 )
                 return False
 
-        # Check safety rules: skip phrases in subject (using word boundaries)
-        for sp in self.skip_phrases:
-            if self._matches_skip_phrase(sp, subject):
-                logger.info(f"  Skipping: subject contains skip phrase ({sp})")
-                self._bridge_log(
-                    status="SKIPPED",
-                    workflowType="PITCH_RESPONDER",
-                    recipient=sender,
-                    subject=subject,
-                    reason=f"Skip phrase in subject: {sp}",
-                )
-                return False
-
         # Get full email content
         content = self.gmail.get_message_content(msg_id)
         if not content:
@@ -564,7 +551,7 @@ class AutoResponder:
         message_id_header = msg_details.get('messageIdHeader') if msg_details else None
         reply_to_header = msg_details.get('replyTo') if msg_details else None
 
-        # 1. Determine if this is a structured form based on the email field
+        # Determine if this is a structured form
         parsed_pitch = PitchParser.parse_pitch(
             email_content=content,
             subject=subject,
@@ -573,15 +560,25 @@ class AutoResponder:
         )
         is_pitch_form = parsed_pitch.is_pitch_form or self._is_likely_pitch(content)
 
-        # Check safety rules: skip phrases in body
+        # Check safety rules: skip phrases in subject and body
         # Broad single words like 'legal' or 'confidential' are standard vocabulary in pitch forms
-        # (e.g. executives discussing compliance/legal exposure, confidential clients, or agency footers)
-        # and must NOT discard a legitimate pitch. They only apply to non-pitch / direct support emails.
+        # and must NOT discard a legitimate pitch.
         PITCH_FORM_SAFE_EXCLUSIONS = {'legal', 'confidential'}
         for sp in self.skip_phrases:
             sp_clean = sp.strip().lower()
             if is_pitch_form and sp_clean in PITCH_FORM_SAFE_EXCLUSIONS:
                 continue
+
+            if self._matches_skip_phrase(sp_clean, subject):
+                logger.info(f"  Skipping: subject contains skip phrase ({sp_clean}) [is_pitch_form={is_pitch_form}]")
+                self._bridge_log(
+                    status="SKIPPED",
+                    workflowType="PITCH_RESPONDER",
+                    recipient=sender,
+                    subject=subject,
+                    reason=f"Skip phrase in subject: {sp_clean}",
+                )
+                return False
 
             if self._matches_skip_phrase(sp_clean, content):
                 logger.info(f"  Skipping: body contains skip phrase ({sp_clean}) [is_pitch_form={is_pitch_form}]")
@@ -738,54 +735,59 @@ class AutoResponder:
         high_score_matches = []
         
         if extracted_topic:
-            # Check the full extracted topic string first
-            matches = self.matcher.find_matches(extracted_topic, top_n=self.max_matches)
+            # Check if extracted_topic contains multiple delimited topics (e.g. "Topic A" or "Topic B")
+            parts = re.split(r'["\'“”„‟]\s*(?:or|and)\s*["\'“”„‟]|;\s*|\n+|\r\n|,\s*(?:or\s+|and\s+)?|\s+\d+[\.:]\s+|\s+or\s+', extracted_topic, flags=re.IGNORECASE)
+            clean_parts = []
+            for p in parts:
+                clean_p = p.strip().strip('"\'“”„‟. ,;:')
+                clean_p = re.sub(r'^\d+[\.:]\s*', '', clean_p).strip()
+                if len(clean_p) > 5:
+                    clean_parts.append(clean_p)
             
-            # If the full string did not match strongly, check if it was a list of multiple topics
-            if not matches or matches[0].score < self.match_threshold:
-                parts = re.split(r'["\'“”„‟]\s*(?:or|and)\s*["\'“”„‟]|;\s*|\n+|\r\n|,\s*(?:or\s+|and\s+)?|\s+\d+[\.:]\s+|\s+or\s+', extracted_topic, flags=re.IGNORECASE)
-                clean_parts = []
-                for p in parts:
-                    clean_p = p.strip().strip('"\'“”„‟. ,;:')
-                    clean_p = re.sub(r'^\d+[\.:]\s*', '', clean_p).strip()
-                    if len(clean_p) > 5:
-                        clean_parts.append(clean_p)
-                parts = clean_parts
-                
-                if len(parts) > 1:
-                    logger.info(f"  Full string match was below threshold. Trying delimited parts: {parts}")
-                    multiple_strong_matches = []
-                    seen_series_ids = set()
-                    
-                    for part in parts:
-                        part_matches = self.matcher.find_matches(part, top_n=1)
-                        if part_matches and part_matches[0].score >= self.match_threshold:
-                            match = part_matches[0]
-                            if match.series_id not in seen_series_ids:
-                                multiple_strong_matches.append(match)
-                                seen_series_ids.add(match.series_id)
-                    
-                    if len(multiple_strong_matches) > 1:
-                        logger.info(f"  MULTIPLE DISTINCT MATCHES: Found {len(multiple_strong_matches)} strong topic matches from parsed list")
-                        logger.info(f"  Sending email with all choices for interviewee to select")
-                        email = self.email_generator.generate_multiple_match_email(multiple_strong_matches)
-                        matches = multiple_strong_matches
-                    elif len(multiple_strong_matches) == 1:
-                        logger.info(f"  Found 1 strong match from parsed list: {multiple_strong_matches[0].name} ({multiple_strong_matches[0].score:.0f}%)")
-                        matches = multiple_strong_matches
-                        email = self.email_generator.generate_acceptance_email(
-                            series_name=matches[0].name,
-                            interview_link=matches[0].link
-                        )
-                    else:
-                        logger.info(f"  No strong matches found for any part of the delimited list")
-                        email = self.email_generator.generate_no_match_email()
-                        matches = []
+            multiple_strong_matches = []
+            if len(clean_parts) > 1:
+                seen_series_ids = set()
+                for part in clean_parts:
+                    part_matches = self.matcher.find_matches(part, top_n=1)
+                    if part_matches and part_matches[0].score >= self.match_threshold:
+                        match = part_matches[0]
+                        if match.series_id not in seen_series_ids:
+                            multiple_strong_matches.append(match)
+                            seen_series_ids.add(match.series_id)
+
+            if len(multiple_strong_matches) > 1:
+                logger.info(f"  MULTIPLE DISTINCT MATCHES: Found {len(multiple_strong_matches)} strong topic matches from parsed list: {[m.name for m in multiple_strong_matches]}")
+                logger.info(f"  Sending email with all choices for interviewee to select")
+                email = self.email_generator.generate_multiple_match_email(multiple_strong_matches)
+                matches = multiple_strong_matches
             else:
-                if is_fallback_reply:
-                    logger.info(f"  Extracted topic from fallback reply: '{extracted_topic}'")
+                # Check the full extracted topic string
+                matches = self.matcher.find_matches(extracted_topic, top_n=self.max_matches)
+                
+                if (not matches or matches[0].score < self.match_threshold) and len(multiple_strong_matches) == 1:
+                    match = multiple_strong_matches[0]
+                    logger.info(f"  Full string match was below threshold, but found 1 strong match from delimited parts: {match.name} ({match.score:.0f}%)")
+                    matches = multiple_strong_matches
+                    review_note = None
+                    if match.score < 95.0:
+                        review_note = f"[NOTE FOR REVIEW: Matched '{match.name}' with {match.score:.0f}% confidence ({match.match_type}). Please verify before sending.]"
+                    email = self.email_generator.generate_acceptance_email(
+                        series_name=match.name,
+                        interview_link=match.link,
+                        review_note=review_note
+                    )
+                elif not matches or matches[0].score < self.match_threshold:
+                    if len(clean_parts) > 1:
+                        logger.info(f"  No strong matches found for full string or delimited parts: {clean_parts}")
+                    else:
+                        logger.info(f"  No strong matches found for extracted topic: '{extracted_topic}'")
+                    email = self.email_generator.generate_no_match_email()
+                    matches = []
                 else:
-                    logger.info(f"  Extracted topic from form: '{extracted_topic}'")
+                    if is_fallback_reply:
+                        logger.info(f"  Extracted topic from fallback reply: '{extracted_topic}'")
+                    else:
+                        logger.info(f"  Extracted topic from form: '{extracted_topic}'")
         
         elif "What is the name of the interview topic" in content:
             # It IS a form, but extraction failed.

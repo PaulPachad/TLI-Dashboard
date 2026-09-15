@@ -561,6 +561,10 @@ class GmailClient:
                 body=draft_body
             ).execute()
             
+            if draft and thread_id:
+                self._draft_thread_cache.add(thread_id)
+            self.invalidate_draft_cache()
+            
             return draft
             
         except HttpError as error:
@@ -626,6 +630,7 @@ class GmailClient:
                 return False
         try:
             self.service.users().drafts().delete(userId='me', id=draft_id).execute()
+            self.invalidate_draft_cache()
             return True
         except HttpError as error:
             print(f"Gmail API error deleting draft {draft_id}: {error}")
