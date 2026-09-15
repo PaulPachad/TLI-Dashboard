@@ -140,6 +140,11 @@ class AutoResponder:
                 elif kind == "PHRASE" and val:
                     self.skip_phrases.append(val)
 
+        # Deduplicate safety lists
+        self.blocked_senders = list(dict.fromkeys(self.blocked_senders))
+        self.blocked_domains = list(dict.fromkeys(self.blocked_domains))
+        self.skip_phrases = list(dict.fromkeys(self.skip_phrases))
+
         template_map = {
             "pitch_acceptance": "ACCEPTANCE_TEMPLATE",
             "pitch_no_match": "NO_MATCH_TEMPLATE",
@@ -484,6 +489,17 @@ class AutoResponder:
         logger.info(f"  Using fallback email: {email}")
         return email
     
+    @staticmethod
+    def _matches_skip_phrase(phrase: str, text: str) -> bool:
+        """Match a phrase using whole-word boundaries so 'legal' doesn't match 'illegal' and 'confidential' doesn't match 'confidentially'."""
+        if not phrase or not text:
+            return False
+        phrase_clean = phrase.strip().lower()
+        if not phrase_clean:
+            return False
+        pattern = rf'\b{re.escape(phrase_clean)}\b'
+        return bool(re.search(pattern, text, re.IGNORECASE))
+
     def process_pitch(self, msg_id: str, subject: str, sender: str) -> bool:
         """
         Process a single pitch email.
@@ -494,7 +510,6 @@ class AutoResponder:
         logger.info(f"Processing: {subject}")
         
         sender_lower = (sender or "").lower()
-        subject_lower = subject.lower()
 
         # Check safety rules: blocked senders
         for bs in self.blocked_senders:
@@ -522,9 +537,9 @@ class AutoResponder:
                 )
                 return False
 
-        # Check safety rules: skip phrases in subject
+        # Check safety rules: skip phrases in subject (using word boundaries)
         for sp in self.skip_phrases:
-            if sp in subject_lower:
+            if self._matches_skip_phrase(sp, subject):
                 logger.info(f"  Skipping: subject contains skip phrase ({sp})")
                 self._bridge_log(
                     status="SKIPPED",
@@ -541,26 +556,12 @@ class AutoResponder:
             logger.error(f"Failed to get content for {msg_id}")
             return False
 
-        content_lower = content.lower()
-        # Check safety rules: skip phrases in body
-        for sp in self.skip_phrases:
-            if sp in content_lower:
-                logger.info(f"  Skipping: body contains skip phrase ({sp})")
-                self._bridge_log(
-                    status="SKIPPED",
-                    workflowType="PITCH_RESPONDER",
-                    recipient=sender,
-                    subject=subject,
-                    reason=f"Skip phrase in body: {sp}",
-                )
-                return False
-        
         # Get thread details for reply threading
         msg_details = self.gmail.get_message_details(msg_id)
         thread_id = msg_details.get('threadId') if msg_details else None
         message_id_header = msg_details.get('messageIdHeader') if msg_details else None
         reply_to_header = msg_details.get('replyTo') if msg_details else None
-        
+
         # 1. Determine if this is a structured form based on the email field
         parsed_pitch = PitchParser.parse_pitch(
             email_content=content,
@@ -568,6 +569,29 @@ class AutoResponder:
             sender=sender,
             reply_to=reply_to_header
         )
+        is_pitch_form = parsed_pitch.is_pitch_form or self._is_likely_pitch(content)
+
+        # Check safety rules: skip phrases in body
+        # Broad single words like 'legal' or 'confidential' are standard vocabulary in pitch forms
+        # (e.g. executives discussing compliance/legal exposure, confidential clients, or agency footers)
+        # and must NOT discard a legitimate pitch. They only apply to non-pitch / direct support emails.
+        PITCH_FORM_SAFE_EXCLUSIONS = {'legal', 'confidential'}
+        for sp in self.skip_phrases:
+            sp_clean = sp.strip().lower()
+            if is_pitch_form and sp_clean in PITCH_FORM_SAFE_EXCLUSIONS:
+                continue
+
+            if self._matches_skip_phrase(sp_clean, content):
+                logger.info(f"  Skipping: body contains skip phrase ({sp_clean}) [is_pitch_form={is_pitch_form}]")
+                self._bridge_log(
+                    status="SKIPPED",
+                    workflowType="PITCH_RESPONDER",
+                    recipient=sender,
+                    subject=subject,
+                    reason=f"Skip phrase in body: {sp_clean}",
+                )
+                return False
+
         if parsed_pitch.followup_email and 'authoritymag' not in parsed_pitch.followup_email:
             extracted_email = parsed_pitch.followup_email
             logger.info(f"  Found follow-up email in form: {extracted_email}")
