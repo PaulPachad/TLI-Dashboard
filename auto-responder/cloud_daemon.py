@@ -7,6 +7,7 @@ Handles:
 - Continuous dual-mailbox polling (Pitch + Collab)
 - Bi-directional sync with SaaS control plane (https://tli.authoritymag.co/admin/automation)
 - HTTP health check server on $PORT for cloud runners
+- Email alerts on worker crash / disconnection
 - Graceful shutdown handling
 """
 
@@ -31,6 +32,12 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger("cloud_daemon")
+
+# ── Alert Configuration ──────────────────────────────────────────────────────
+ALERT_EMAIL = os.getenv("ALERT_EMAIL", "rabbiweiner@gmail.com")
+ALERT_COOLDOWN_SECONDS = 3600  # 1 hour between duplicate alerts
+CONSECUTIVE_ERROR_THRESHOLD = 3  # send alert after this many back-to-back loop errors
+# ──────────────────────────────────────────────────────────────────────────────
 
 
 def restore_secret_file(filename: str, env_json_key: str, env_b64_key: str) -> bool:
@@ -93,6 +100,85 @@ class DaemonState:
 state = DaemonState()
 
 
+# ── Alert Manager ─────────────────────────────────────────────────────────────
+
+class AlertManager:
+    """
+    Sends email alerts when the cloud daemon encounters critical failures.
+    
+    Uses the existing Gmail API (support@authoritymag.co) to send alerts.
+    Enforces a per-type cooldown to prevent spam (default: 1 hour).
+    """
+    
+    def __init__(self, alert_email: str = ALERT_EMAIL, cooldown: int = ALERT_COOLDOWN_SECONDS):
+        self.alert_email = alert_email
+        self.cooldown = cooldown
+        self._last_alert_times: dict[str, float] = {}  # alert_type -> timestamp
+        self._lock = threading.Lock()
+        self._gmail = None  # lazy-initialized
+    
+    def _get_gmail(self):
+        """Lazy-init a Gmail client for sending alerts."""
+        if self._gmail is None:
+            try:
+                from gmail_client import GmailClient
+                self._gmail = GmailClient()
+                self._gmail.authenticate(interactive=False)
+                logger.info(f"AlertManager: Gmail client authenticated as {self._gmail.user_email}")
+            except Exception as e:
+                logger.error(f"AlertManager: Failed to initialize Gmail client: {e}")
+                self._gmail = None
+        return self._gmail
+    
+    def send_alert(self, alert_type: str, subject: str, body: str):
+        """
+        Send an alert email if the cooldown for this alert type has elapsed.
+        
+        Args:
+            alert_type: Unique key for cooldown tracking (e.g. 'pitch_worker_crash')
+            subject: Email subject line
+            body: Email body text
+        """
+        with self._lock:
+            now = time.time()
+            last_sent = self._last_alert_times.get(alert_type, 0)
+            if now - last_sent < self.cooldown:
+                logger.info(f"AlertManager: Suppressed '{alert_type}' alert (cooldown active, {int(self.cooldown - (now - last_sent))}s remaining)")
+                return
+            
+            gmail = self._get_gmail()
+            if gmail is None:
+                logger.error(f"AlertManager: Cannot send alert — Gmail client unavailable")
+                return
+            
+            try:
+                result = gmail.send_email(
+                    to=self.alert_email,
+                    subject=f"⚠️ Authority Mag Auto Responder: {subject}",
+                    body=(
+                        f"{body}\n\n"
+                        f"---\n"
+                        f"Cloud Runner: {os.getenv('RAILWAY_PUBLIC_DOMAIN', 'auto-responder-production.up.railway.app')}\n"
+                        f"Dashboard: https://tli.authoritymag.co/admin/automation\n"
+                        f"Uptime: {int(now - state.start_time)}s\n"
+                        f"Alert Type: {alert_type}\n"
+                        f"This is an automated alert from the Authority Magazine Auto Responder system."
+                    )
+                )
+                if result:
+                    self._last_alert_times[alert_type] = now
+                    logger.info(f"AlertManager: Sent '{alert_type}' alert to {self.alert_email}")
+                else:
+                    logger.error(f"AlertManager: send_email returned None for '{alert_type}'")
+            except Exception as e:
+                logger.error(f"AlertManager: Failed to send '{alert_type}' alert: {e}")
+
+
+alert_manager = AlertManager()
+
+# ──────────────────────────────────────────────────────────────────────────────
+
+
 class HealthHandler(BaseHTTPRequestHandler):
     """Lightweight HTTP server for cloud platform health checks."""
     def log_message(self, format, *args):
@@ -141,6 +227,7 @@ def start_health_server(port: int):
 
 def run_pitch_worker():
     """Background thread running the Pitch Auto Responder."""
+    consecutive_errors = 0
     try:
         from auto_responder import AutoResponder, CHECK_INTERVAL
         responder = AutoResponder()
@@ -156,8 +243,18 @@ def run_pitch_worker():
                 responder.check_reload_topics()
                 responder.check_master_doc_weekly_sync()
                 state.last_pitch_check = time.time()
+                consecutive_errors = 0  # reset on success
             except Exception as e:
-                logger.error(f"Error in Pitch Responder loop: {e}", exc_info=True)
+                consecutive_errors += 1
+                logger.error(f"Error in Pitch Responder loop ({consecutive_errors}x): {e}", exc_info=True)
+                if consecutive_errors >= CONSECUTIVE_ERROR_THRESHOLD:
+                    alert_manager.send_alert(
+                        "pitch_loop_errors",
+                        "Pitch Responder Repeated Errors",
+                        f"The Pitch Responder has hit {consecutive_errors} consecutive errors.\n\n"
+                        f"Latest error: {e}\n\n"
+                        f"The worker is still running but may not be processing pitches."
+                    )
 
             # Sleep in 1-second slices so shutdown is instant
             for _ in range(CHECK_INTERVAL):
@@ -167,6 +264,13 @@ def run_pitch_worker():
 
     except Exception as exc:
         logger.critical(f"Pitch Responder failed to start: {exc}", exc_info=True)
+        alert_manager.send_alert(
+            "pitch_worker_crash",
+            "Pitch Responder CRASHED",
+            f"The Pitch Responder worker has crashed and is no longer processing pitches.\n\n"
+            f"Error: {exc}\n\n"
+            f"Manual intervention required — check Railway logs and redeploy if needed."
+        )
     finally:
         state.pitch_running = False
         logger.info("Pitch Responder worker exited.")
@@ -174,6 +278,7 @@ def run_pitch_worker():
 
 def run_collab_worker():
     """Background thread running the Collaboration Auto Responder."""
+    consecutive_errors = 0
     try:
         from collab_responder.collab_auto_responder import CollabAutoResponder, COLLAB_CHECK_INTERVAL
         responder = CollabAutoResponder()
@@ -187,8 +292,18 @@ def run_collab_worker():
             try:
                 responder.check_inbox()
                 state.last_collab_check = time.time()
+                consecutive_errors = 0  # reset on success
             except Exception as e:
-                logger.error(f"Error in Collab Responder loop: {e}", exc_info=True)
+                consecutive_errors += 1
+                logger.error(f"Error in Collab Responder loop ({consecutive_errors}x): {e}", exc_info=True)
+                if consecutive_errors >= CONSECUTIVE_ERROR_THRESHOLD:
+                    alert_manager.send_alert(
+                        "collab_loop_errors",
+                        "Collab Responder Repeated Errors",
+                        f"The Collab Responder has hit {consecutive_errors} consecutive errors.\n\n"
+                        f"Latest error: {e}\n\n"
+                        f"The worker is still running but may not be processing collaboration emails."
+                    )
 
             for _ in range(COLLAB_CHECK_INTERVAL):
                 if state.is_shutting_down:
@@ -197,9 +312,66 @@ def run_collab_worker():
 
     except Exception as exc:
         logger.warning(f"Collab Responder not started or disabled: {exc}")
+        alert_manager.send_alert(
+            "collab_worker_crash",
+            "Collab Responder CRASHED",
+            f"The Collab Responder worker has crashed.\n\n"
+            f"Error: {exc}\n\n"
+            f"The Pitch Responder may still be running, but collaboration emails are not being processed."
+        )
     finally:
         state.collab_running = False
         logger.info("Collab Responder worker exited.")
+
+
+def run_watchdog():
+    """
+    Main-thread watchdog that periodically checks if workers are alive.
+    Sends an alert if a worker was running but is now stopped (not during shutdown).
+    """
+    WATCHDOG_INTERVAL = 60  # check every 60 seconds
+    # Wait for workers to have a chance to start
+    time.sleep(30)
+    
+    pitch_was_running = state.pitch_running
+    collab_was_running = state.collab_running
+    
+    while not state.is_shutting_down:
+        time.sleep(WATCHDOG_INTERVAL)
+        if state.is_shutting_down:
+            break
+        
+        # Check if pitch worker died unexpectedly
+        if pitch_was_running and not state.pitch_running:
+            alert_manager.send_alert(
+                "pitch_worker_stopped",
+                "Pitch Responder STOPPED",
+                "The Pitch Responder worker was running but has stopped unexpectedly.\n\n"
+                "Pitches are NOT being processed. Check Railway logs for details."
+            )
+        
+        # Check if collab worker died unexpectedly
+        if collab_was_running and not state.collab_running:
+            alert_manager.send_alert(
+                "collab_worker_stopped",
+                "Collab Responder STOPPED",
+                "The Collab Responder worker was running but has stopped unexpectedly.\n\n"
+                "Collaboration emails are NOT being processed. Check Railway logs for details."
+            )
+        
+        # Check for stale last-check timestamps (no successful poll in 10+ minutes)
+        now = time.time()
+        if state.pitch_running and state.last_pitch_check and (now - state.last_pitch_check > 600):
+            alert_manager.send_alert(
+                "pitch_stale",
+                "Pitch Responder STALLED",
+                f"The Pitch Responder has not completed a successful poll in "
+                f"{int(now - state.last_pitch_check)} seconds.\n\n"
+                f"It may be stuck or hanging. Check Railway logs for details."
+            )
+        
+        pitch_was_running = state.pitch_running
+        collab_was_running = state.collab_running
 
 
 def main():
@@ -228,14 +400,18 @@ def main():
 
     # 5. Start Collab Responder thread if credentials exist
     collab_cred = os.path.join(BASE_DIR, "credentials_collab.json")
-    if os.path.exists(collab_cred) or os.getenv("GMAIL_COLLAB_CREDENTIALS_JSON") or os.getenv("GMAIL_COLLAB_CREDENTIALS_B64"):
+    if os.path.exists(collab_cred) or os.getenv("GMAIL_COLLAB_CREDENTIALS_JSON"):
         collab_thread = threading.Thread(target=run_collab_worker, name="CollabWorker", daemon=True)
         collab_thread.start()
     else:
         logger.info("No Collab credentials found; running Pitch Responder only.")
 
-    # 6. Main thread keepalive
-    logger.info("Cloud Auto Responder is active and running 24/7.")
+    # 6. Start watchdog thread to monitor worker health
+    watchdog_thread = threading.Thread(target=run_watchdog, name="Watchdog", daemon=True)
+    watchdog_thread.start()
+
+    # 7. Main thread keepalive
+    logger.info(f"Cloud Auto Responder is active and running 24/7. Alerts → {ALERT_EMAIL}")
     while not state.is_shutting_down:
         time.sleep(2)
 
@@ -244,3 +420,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

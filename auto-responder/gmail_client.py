@@ -571,6 +571,46 @@ class GmailClient:
             return None
 
     @retry_on_transient_error()
+    def send_email(self, to: str, subject: str, body: str) -> Optional[dict]:
+        """
+        Send an email directly (not as a draft).
+        
+        Used for system alerts (e.g. worker crash notifications).
+        Requires gmail.modify or gmail.send scope.
+        
+        Args:
+            to: Recipient email address
+            subject: Email subject
+            body: Email body (plain text)
+            
+        Returns:
+            Sent message object if successful, None otherwise
+        """
+        if not self.service:
+            if not self.authenticate(interactive=False):
+                return None
+        
+        try:
+            message = MIMEText(body, 'plain')
+            message['to'] = to
+            message['from'] = self.user_email or 'me'
+            message['subject'] = subject
+            
+            raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+            
+            sent = self.service.users().messages().send(
+                userId='me',
+                body={'raw': raw_message}
+            ).execute()
+            
+            print(f"Alert email sent to {to}: {subject}")
+            return sent
+            
+        except Exception as e:
+            print(f"Error sending email to {to}: {e}")
+            return None
+
+    @retry_on_transient_error()
     def delete_draft(self, draft_id: str) -> bool:
         """
         Delete a draft by draft ID.
