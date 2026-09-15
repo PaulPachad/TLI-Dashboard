@@ -131,7 +131,7 @@ Yitzi"""
         interview_link: str,
         interviewee_name: Optional[str] = None,
         review_note: Optional[str] = None
-    ) -> EmailDraft:
+    ) -> Optional[EmailDraft]:
         """
         Generate an acceptance email with the interview questions link.
         
@@ -142,8 +142,11 @@ Yitzi"""
             review_note: Optional editorial review banner prepended to the draft body
             
         Returns:
-            EmailDraft with subject and body
+            EmailDraft with subject and body, or None if disabled
         """
+        if not self.ACCEPTANCE_TEMPLATE:
+            return None
+
         body = safe_format(
             self.ACCEPTANCE_TEMPLATE,
             series_name=series_name,
@@ -161,13 +164,16 @@ Yitzi"""
             is_acceptance=True
         )
     
-    def generate_no_match_email(self) -> EmailDraft:
+    def generate_no_match_email(self) -> Optional[EmailDraft]:
         """
         Generate an email asking the sender to choose a topic.
         
         Returns:
-            EmailDraft with subject and body
+            EmailDraft with subject and body, or None if disabled
         """
+        if not self.NO_MATCH_TEMPLATE:
+            return None
+
         return EmailDraft(
             subject="Authority Magazine - Please Select an Interview Series",
             body=safe_format(self.NO_MATCH_TEMPLATE),
@@ -175,8 +181,7 @@ Yitzi"""
         )
     
 
-    
-    def generate_multiple_match_email(self, matches: list) -> EmailDraft:
+    def generate_multiple_match_email(self, matches: list) -> Optional[EmailDraft]:
         """
         Generate an email listing multiple possible series matches with links.
         
@@ -184,8 +189,11 @@ Yitzi"""
             matches: List of match results with name, link, category, and score
             
         Returns:
-            EmailDraft with subject and body containing clickable links
+            EmailDraft with subject and body containing clickable links, or None if disabled
         """
+        if not self.MULTIPLE_MATCH_TEMPLATE:
+            return None
+
         series_lines = []
         for i, match in enumerate(matches, 1):
             # Include the link so they can click directly
@@ -205,13 +213,16 @@ Yitzi"""
         )
 
 
-    def generate_extension_email(self) -> EmailDraft:
+    def generate_extension_email(self) -> Optional[EmailDraft]:
         """
         Generate an email in response to a deadline extension request.
         
         Returns:
-            EmailDraft object designed for extension requests
+            EmailDraft object designed for extension requests, or None if disabled
         """
+        if not self.EXTENSION_TEMPLATE:
+            return None
+
         return EmailDraft(
             subject="Authority Magazine - Extension", # This gets replaced in auto_responder
             body=self.EXTENSION_TEMPLATE,

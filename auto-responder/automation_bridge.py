@@ -37,6 +37,12 @@ class BridgeConfig:
             return template
         return None
 
+    def is_template_enabled(self, key: str) -> bool:
+        template = self.templates.get(key)
+        if template is None:
+            return True
+        return bool(template.get("enabled", True))
+
 
 class AutomationBridge:
     """Small HTTP client for the SaaS bridge endpoints."""
@@ -59,6 +65,7 @@ class AutomationBridge:
         self._config: Optional[BridgeConfig] = None
         self._config_time = 0.0
         self._config_ttl = 60.0
+        self._config_max_stale_seconds = 300.0  # 5 minutes max stale age
 
     def is_configured(self) -> bool:
         return bool(self.base_url and self.token)
@@ -66,6 +73,14 @@ class AutomationBridge:
     def get_config(self, force: bool = False) -> Optional[BridgeConfig]:
         if not self.is_configured():
             return None
+
+        # Expire stale cache if older than max allowed stale duration
+        if self._config is not None and (time.time() - self._config_time > self._config_max_stale_seconds):
+            logger.warning(
+                "Cached SaaS bridge config is older than %ds; invalidating stale cache.",
+                self._config_max_stale_seconds,
+            )
+            self._config = None
 
         if (
             not force
@@ -95,7 +110,10 @@ class AutomationBridge:
             self._config_time = time.time()
             return config
         except Exception as exc:
-            logger.warning("SaaS bridge config unavailable; using local defaults: %s", exc)
+            logger.warning("SaaS bridge config unavailable: %s", exc)
+            if self._config is not None and (time.time() - self._config_time > self._config_max_stale_seconds):
+                logger.error("Cached SaaS bridge config has exceeded maximum stale age; blocking unmanaged work.")
+                self._config = None
             return self._config
 
     def post_status(
@@ -155,6 +173,122 @@ class AutomationBridge:
         except Exception as exc:
             logger.warning("Could not post templates to SaaS bridge: %s", exc)
             return False
+
+    def claim_workflow_run(
+        self,
+        workflow_key: str,
+        local_date: str,
+        lease_owner: str,
+    ) -> Optional[dict[str, Any]]:
+        """Atomically claim or resume a daily workflow run in the SaaS control plane."""
+        if not self.is_configured():
+            return None
+        try:
+            return self._request(
+                "POST",
+                "/api/automation/bridge/workflow",
+                {
+                    "action": "claim_run",
+                    "workflowKey": workflow_key,
+                    "localDate": local_date,
+                    "leaseOwner": lease_owner,
+                },
+            )
+        except Exception as exc:
+            logger.warning("Could not claim workflow run '%s' for %s: %s", workflow_key, local_date, exc)
+            return None
+
+    def enqueue_delivery_candidates(
+        self,
+        workflow_id: str,
+        run_id: str,
+        candidates: list[dict[str, Any]],
+    ) -> Optional[dict[str, Any]]:
+        """Enqueue discovered queue candidates into the durable audit ledger."""
+        if not self.is_configured() or not candidates:
+            return None
+        try:
+            return self._request(
+                "POST",
+                "/api/automation/bridge/workflow",
+                {
+                    "action": "enqueue_candidates",
+                    "workflowId": workflow_id,
+                    "runId": run_id,
+                    "candidates": candidates,
+                },
+            )
+        except Exception as exc:
+            logger.warning("Could not enqueue delivery candidates: %s", exc)
+            return None
+
+    def claim_delivery(
+        self,
+        workflow_id: str,
+        delivery_id: str,
+        lease_owner: str,
+    ) -> Optional[dict[str, Any]]:
+        """Atomically claim delivery right before sending (PREPARED -> SENDING)."""
+        if not self.is_configured():
+            return None
+        try:
+            return self._request(
+                "POST",
+                "/api/automation/bridge/workflow",
+                {
+                    "action": "claim_delivery",
+                    "workflowId": workflow_id,
+                    "deliveryId": delivery_id,
+                    "leaseOwner": lease_owner,
+                },
+            )
+        except Exception as exc:
+            logger.warning("Could not claim delivery %s: %s", delivery_id, exc)
+            return None
+
+    def record_delivery_outcome(
+        self,
+        delivery_id: str,
+        state: str,
+        gmail_sent_id: Optional[str] = None,
+        error_message: Optional[str] = None,
+    ) -> Optional[dict[str, Any]]:
+        """Record outcome (SENT, HELD, UNKNOWN, SUPPRESSED) in durable ledger."""
+        if not self.is_configured():
+            return None
+        try:
+            return self._request(
+                "POST",
+                "/api/automation/bridge/workflow",
+                {
+                    "action": "record_outcome",
+                    "deliveryId": delivery_id,
+                    "state": state,
+                    "gmailSentId": gmail_sent_id,
+                    "errorMessage": error_message,
+                },
+            )
+        except Exception as exc:
+            logger.warning("Could not record delivery outcome for %s: %s", delivery_id, exc)
+            return None
+
+    def complete_delivery_cleanup(self, delivery_id: str) -> Optional[dict[str, Any]]:
+        """Record completed label cleanup (SENT -> CLEANED)."""
+        if not self.is_configured():
+            return None
+        try:
+            return self._request(
+                "POST",
+                "/api/automation/bridge/workflow",
+                {
+                    "action": "complete_cleanup",
+                    "deliveryId": delivery_id,
+                },
+            )
+        except Exception as exc:
+            logger.warning("Could not record completed cleanup for %s: %s", delivery_id, exc)
+            return None
+
 
     def _request(self, method: str, path: str, body: Optional[dict[str, Any]] = None):
         url = f"{self.base_url}{path}"

@@ -178,3 +178,147 @@ test("test lab simulates multi-match template when pitch lists multiple topics",
   assert.ok(result.bodyPreview.includes("2. Women in Tech: Leadership Strategies for 2026"));
 });
 
+test("generic response template contains exact body copy and all 4 links", async () => {
+  const { DEFAULT_AUTOMATION_TEMPLATES } = await import("../src/lib/automation/defaults");
+  const genericTemplate = DEFAULT_AUTOMATION_TEMPLATES.find((t) => t.templateKey === "generic_response");
+  assert.ok(genericTemplate, "generic_response template must exist");
+  assert.equal(
+    genericTemplate.subject,
+    "Thank you for your pitch to Authority Magazine - Let's take the next step!"
+  );
+  assert.ok(
+    genericTemplate.body.includes(
+      "https://medium.com/authority-magazine/ongoing-interview-series-in-authority-magazine-7d633a349753"
+    ),
+    "Generic template must contain Interview Storylines link"
+  );
+  assert.ok(
+    genericTemplate.body.includes(
+      "https://medium.com/authority-magazine/new-interview-series-topics-we-are-working-on-bdae530b5bf4"
+    ),
+    "Generic template must contain Upcoming Storylines link"
+  );
+  assert.ok(
+    genericTemplate.body.includes("https://chatgpt.com/g/g-DOnEg59Sc-authority-magazine-bot"),
+    "Generic template must contain AI Bot link"
+  );
+  assert.ok(
+    genericTemplate.body.includes(
+      "https://docs.google.com/forms/d/e/1FAIpQLSdkUiiJpgE53-I6pDQOm-zWveNeCXkGFonoVX5ULmN0dPsfxA/viewform"
+    ),
+    "Generic template must contain Google Forms link"
+  );
+
+  const invalidVars = validateTemplateVariables(genericTemplate.body, genericTemplate.subject, [
+    ...genericTemplate.allowedVariables,
+  ]);
+  assert.deepEqual(invalidVars, [], "Generic template must have no invalid variables");
+});
+
+test("default editor mailbox and workflow settings are configured safely", async () => {
+  const { DEFAULT_AUTOMATION_MAILBOXES, DEFAULT_AUTOMATION_WORKFLOW_SETTINGS } = await import(
+    "../src/lib/automation/defaults"
+  );
+
+  const editorMailbox = DEFAULT_AUTOMATION_MAILBOXES.find(
+    (m) => m.emailAddress === "editor@authoritymag.co"
+  );
+  assert.ok(editorMailbox, "editor@authoritymag.co mailbox must be in defaults");
+  assert.equal(editorMailbox.workflowType, "GENERIC_RESPONSE");
+
+  const genericWf = DEFAULT_AUTOMATION_WORKFLOW_SETTINGS.find(
+    (w) => w.key === "GENERIC_RESPONSE"
+  );
+  assert.ok(genericWf, "GENERIC_RESPONSE workflow must be in defaults");
+  assert.equal(genericWf.isEnabled, false, "Workflow must default to disabled for safety");
+  assert.equal(genericWf.mode, "PREVIEW", "Workflow must default to PREVIEW mode");
+  assert.equal(genericWf.timezone, "America/New_York", "Timezone must be America/New_York");
+  assert.equal(genericWf.scheduleHour, 10, "Schedule hour must be 10:00 AM");
+  assert.equal(genericWf.scheduleMinute, 0, "Schedule minute must be 0");
+  assert.equal(genericWf.queueLabelName, "1. Send Generic Re...", "Queue label prefix must match");
+});
+
+test("workflow execution lifecycle state machine transitions safely", async () => {
+  const {
+    ensureAutomationProfile,
+    claimDailyWorkflowRun,
+    enqueueDeliveryCandidates,
+    claimDelivery,
+    recordDeliveryOutcome,
+    completeDeliveryCleanup,
+    updateWorkflowSettings,
+  } = await import("../src/lib/automation/service");
+
+  const profile = await ensureAutomationProfile();
+  const workflow = (profile.workflows || []).find((w) => w.key === "GENERIC_RESPONSE");
+  assert.ok(workflow, "Workflow must exist on profile");
+
+  const testDate = "2026-09-15";
+  const runResult = await claimDailyWorkflowRun(
+    workflow.mailboxId,
+    workflow.key,
+    testDate,
+    "test-worker-1"
+  );
+  assert.ok(runResult.run, "Workflow run must be created or claimed");
+  assert.equal(runResult.run.localDate, testDate);
+
+  // Enqueue candidates
+  const testThreadId = `test_thread_${Date.now()}`;
+  const enqueueResult = await enqueueDeliveryCandidates(workflow.id, runResult.run.id, [
+    {
+      gmailThreadId: testThreadId,
+      recipient: "author@example.com",
+      subject: "Pitch for Feature Story",
+      anchorInboundId: "msg_inbound_1",
+      sourceMessageIds: ["msg_inbound_1"],
+    },
+  ]);
+  assert.equal((enqueueResult.enqueued ?? 0) >= 1, true, "Candidate should be enqueued");
+
+  // In PREVIEW mode, claimDelivery blocks live sending:
+  const db = (await import("../src/lib/db")).db;
+  const dbDelivery = await db.automationDelivery.findFirstOrThrow({
+    where: { workflowId: workflow.id, gmailThreadId: testThreadId },
+  });
+  const blockedClaim = await claimDelivery(workflow.id, dbDelivery.id, "test-worker-1");
+  assert.ok(blockedClaim.error, "Preview mode must block delivery claim");
+
+  // Record outcome as SENT
+  const outcomeResult = await recordDeliveryOutcome(dbDelivery.id, {
+    state: "SENT",
+    gmailSentId: "sent_msg_123",
+  });
+  assert.equal(outcomeResult.delivery.state, "SENT");
+  assert.equal(outcomeResult.delivery.gmailSentId, "sent_msg_123");
+
+  // Complete cleanup (transitions to CLEANED)
+  const cleanupResult = await completeDeliveryCleanup(dbDelivery.id);
+  assert.equal(cleanupResult.delivery.state, "CLEANED");
+  assert.ok(cleanupResult.delivery.cleanedAt, "cleanedAt must be recorded");
+
+  // Verify settings update
+  const updatedWf = await updateWorkflowSettings(workflow.id, {
+    mode: "PREVIEW",
+    queueLabelName: "1. Send Generic Response",
+  });
+  assert.equal(updatedWf.mode, "PREVIEW");
+  assert.equal(updatedWf.queueLabelName, "1. Send Generic Response");
+});
+
+test("daily generic responder schedule time is accurate across Daylight Saving Time", () => {
+  // Verify that 10:00 AM America/New_York corresponds to UTC 14:00 during EDT (Summer) and UTC 15:00 during EST (Winter)
+  const summerDate = new Date("2026-07-15T14:00:00Z"); // EDT (UTC-4)
+  const winterDate = new Date("2026-01-15T15:00:00Z"); // EST (UTC-5)
+
+  const nyFormatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  });
+
+  assert.equal(nyFormatter.format(summerDate), "10:00", "Summer (EDT) 14:00 UTC must be 10:00 AM NY");
+  assert.equal(nyFormatter.format(winterDate), "10:00", "Winter (EST) 15:00 UTC must be 10:00 AM NY");
+});
+

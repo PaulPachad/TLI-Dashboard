@@ -82,6 +82,8 @@ def setup_cloud_secrets():
     restore_secret_file("token.json", "GMAIL_TOKEN_JSON", "GMAIL_TOKEN_B64")
     restore_secret_file("credentials_collab.json", "GMAIL_COLLAB_CREDENTIALS_JSON", "GMAIL_COLLAB_CREDENTIALS_B64")
     restore_secret_file("token_collab.json", "GMAIL_COLLAB_TOKEN_JSON", "GMAIL_COLLAB_TOKEN_B64")
+    restore_secret_file("credentials_editor.json", "GMAIL_EDITOR_CREDENTIALS_JSON", "GMAIL_EDITOR_CREDENTIALS_B64")
+    restore_secret_file("token_editor.json", "GMAIL_EDITOR_TOKEN_JSON", "GMAIL_EDITOR_TOKEN_B64")
 
 
 class DaemonState:
@@ -90,8 +92,10 @@ class DaemonState:
         self.start_time = time.time()
         self.pitch_running = False
         self.collab_running = False
+        self.generic_running = False
         self.last_pitch_check = 0.0
         self.last_collab_check = 0.0
+        self.last_generic_check = 0.0
         self.pitch_drafts_created = 0
         self.collab_drafts_created = 0
         self.is_shutting_down = False
@@ -186,11 +190,35 @@ class HealthHandler(BaseHTTPRequestHandler):
         pass
 
     def do_GET(self):
-        if self.path in ["/health", "/healthz", "/ping"]:
-            self.send_response(200)
+        if self.path in ["/healthz", "/ping"]:
+            # Liveness probe: returns 200 as long as process is alive and not shutting down
+            status_code = 200 if not state.is_shutting_down else 503
+            self.send_response(status_code)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(b'{"status": "healthy"}')
+            resp = b'{"status": "alive"}' if status_code == 200 else b'{"status": "shutting_down"}'
+            self.wfile.write(resp)
+            return
+
+        if self.path == "/health":
+            # Readiness probe: returns 200 only if workers are healthy and running
+            uptime = time.time() - state.start_time
+            is_ready = not state.is_shutting_down
+            # Allow 30s grace period during initialization
+            if uptime > 30 and not state.pitch_running:
+                is_ready = False
+
+            status_code = 200 if is_ready else 503
+            self.send_response(status_code)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            status_text = "healthy" if is_ready else "degraded"
+            self.wfile.write(json.dumps({
+                "status": status_text,
+                "pitch_running": state.pitch_running,
+                "collab_running": state.collab_running,
+                "uptime_seconds": int(uptime),
+            }).encode("utf-8"))
             return
 
         # Status dashboard endpoint
@@ -208,6 +236,10 @@ class HealthHandler(BaseHTTPRequestHandler):
                 "collab_responder": {
                     "running": state.collab_running,
                     "last_check_ago_seconds": int(time.time() - state.last_collab_check) if state.last_collab_check else None,
+                },
+                "generic_responder": {
+                    "running": state.generic_running,
+                    "last_check_ago_seconds": int(time.time() - state.last_generic_check) if state.last_generic_check else None,
                 }
             }
         }
@@ -324,6 +356,50 @@ def run_collab_worker():
         logger.info("Collab Responder worker exited.")
 
 
+def run_generic_worker():
+    """Background thread running the Daily Generic Response worker."""
+    consecutive_errors = 0
+    try:
+        from generic_responder import GenericAutoResponder
+        responder = GenericAutoResponder()
+        logger.info("Daily Generic Responder thread initialized.")
+        state.generic_running = True
+
+        while not state.is_shutting_down:
+            state.last_generic_check = time.time()
+            try:
+                responder.process_queue()
+                consecutive_errors = 0
+            except Exception as e:
+                consecutive_errors += 1
+                logger.error(f"Generic Responder error: {e}", exc_info=True)
+                if consecutive_errors >= CONSECUTIVE_ERROR_THRESHOLD:
+                    alert_manager.send_alert(
+                        "generic_worker_errors",
+                        "Generic Responder Repeated Errors",
+                        f"The Generic Responder has hit {consecutive_errors} consecutive errors.\n\n"
+                        f"Latest error: {e}\n\n"
+                        f"The daily generic responses may not be processing."
+                    )
+
+            for _ in range(30):
+                if state.is_shutting_down:
+                    break
+                time.sleep(1)
+
+    except Exception as exc:
+        logger.warning(f"Generic Responder not started: {exc}")
+        alert_manager.send_alert(
+            "generic_worker_crash",
+            "Generic Responder CRASHED",
+            f"The Generic Responder worker has crashed.\n\n"
+            f"Error: {exc}"
+        )
+    finally:
+        state.generic_running = False
+        logger.info("Generic Responder worker exited.")
+
+
 def run_watchdog():
     """
     Main-thread watchdog that periodically checks if workers are alive.
@@ -335,6 +411,7 @@ def run_watchdog():
     
     pitch_was_running = state.pitch_running
     collab_was_running = state.collab_running
+    generic_was_running = state.generic_running
     
     while not state.is_shutting_down:
         time.sleep(WATCHDOG_INTERVAL)
@@ -358,6 +435,15 @@ def run_watchdog():
                 "The Collab Responder worker was running but has stopped unexpectedly.\n\n"
                 "Collaboration emails are NOT being processed. Check Railway logs for details."
             )
+
+        # Check if generic worker died unexpectedly
+        if generic_was_running and not state.generic_running:
+            alert_manager.send_alert(
+                "generic_worker_stopped",
+                "Generic Responder STOPPED",
+                "The Generic Responder worker was running but has stopped unexpectedly.\n\n"
+                "Daily generic responses are NOT being processed. Check Railway logs for details."
+            )
         
         # Check for stale last-check timestamps (no successful poll in 10+ minutes)
         now = time.time()
@@ -372,6 +458,7 @@ def run_watchdog():
         
         pitch_was_running = state.pitch_running
         collab_was_running = state.collab_running
+        generic_was_running = state.generic_running
 
 
 def main():
@@ -406,11 +493,15 @@ def main():
     else:
         logger.info("No Collab credentials found; running Pitch Responder only.")
 
-    # 6. Start watchdog thread to monitor worker health
+    # 6. Start Daily Generic Responder thread
+    generic_thread = threading.Thread(target=run_generic_worker, name="GenericWorker", daemon=True)
+    generic_thread.start()
+
+    # 7. Start watchdog thread to monitor worker health
     watchdog_thread = threading.Thread(target=run_watchdog, name="Watchdog", daemon=True)
     watchdog_thread.start()
 
-    # 7. Main thread keepalive
+    # 8. Main thread keepalive
     logger.info(f"Cloud Auto Responder is active and running 24/7. Alerts → {ALERT_EMAIL}")
     while not state.is_shutting_down:
         time.sleep(2)

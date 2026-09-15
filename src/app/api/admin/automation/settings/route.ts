@@ -21,6 +21,14 @@ export async function PUT(request: NextRequest) {
     await requireApiAdmin();
     const body = await request.json();
     await updateAutomationSettings(body);
+    if (Array.isArray(body.workflows)) {
+      const { updateWorkflowSettings } = await import("@/lib/automation/service");
+      for (const wf of body.workflows) {
+        if (wf.id) {
+          await updateWorkflowSettings(wf.id, wf);
+        }
+      }
+    }
     const overview = await getAutomationOverview();
     return NextResponse.json({ success: true, ...overview });
   } catch (error: unknown) {

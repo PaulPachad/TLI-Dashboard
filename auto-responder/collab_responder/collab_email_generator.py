@@ -92,6 +92,10 @@ Looking forward to hearing from you!"""
         Returns:
             CollabEmailDraft ready for use as a Gmail draft.
         """
+        if not self.ACCEPTANCE_TEMPLATE:
+            logger.info("Collab acceptance template is disabled; skipping generation.")
+            return None
+
         body = safe_format(
             self.ACCEPTANCE_TEMPLATE,
             topic_name=topic_name,
@@ -117,13 +121,22 @@ Looking forward to hearing from you!"""
     def generate_no_match_email(
         self,
         original_subject: str = "",
-    ) -> CollabEmailDraft:
+    ) -> Optional[CollabEmailDraft]:
         """
-        Generate a fallback email asking the source to clarify their topic.
+        Generate the fallback email asking for more information.
+
+        Args:
+            original_subject: Subject line of the incoming pitch.
 
         Returns:
-            CollabEmailDraft with the fallback template.
+            CollabEmailDraft ready for use as a Gmail draft, or None if disabled.
         """
+        if not self.NO_MATCH_TEMPLATE:
+            logger.info("Collab no_match template is disabled; skipping generation.")
+            return None
+
+        body = safe_format(self.NO_MATCH_TEMPLATE)
+
         if original_subject:
             clean_subject = original_subject
             if not clean_subject.lower().startswith("re:"):
@@ -133,6 +146,6 @@ Looking forward to hearing from you!"""
 
         return CollabEmailDraft(
             subject=clean_subject,
-            body=safe_format(self.NO_MATCH_TEMPLATE),
+            body=body,
             is_acceptance=False,
         )

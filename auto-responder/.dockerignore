@@ -1,17 +1,17 @@
+﻿# Local OAuth secrets and tokens (loaded dynamically from environment variables in cloud runners)
+token*.json
+credentials*.json
+.env
+*.env
+.env.*
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Git and logs
 .git
 .gitignore
-.env*
-__pycache__
-*.pyc
-*.pyo
-*.pyd
-.venv
-venv
-env
 *.log
-*.log.*
-*.bat
-*.vbs
-tests/__pycache__
-scratch
-.system_generated

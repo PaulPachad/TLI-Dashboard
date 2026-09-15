@@ -155,6 +155,8 @@ class AutoResponder:
             template = config.template(key)
             if template and template.get("body"):
                 setattr(self.email_generator, attr, template["body"])
+            elif not config.is_template_enabled(key):
+                setattr(self.email_generator, attr, None)
 
         return config
 
@@ -845,6 +847,20 @@ class AutoResponder:
             logger.info("  No match found - using fallback template")
             email = self.email_generator.generate_no_match_email()
         
+        # Guard against disabled template
+        if not email or not getattr(email, 'body', None):
+            logger.info("  Template is disabled in SaaS; skipping draft creation")
+            self._bridge_log(
+                status="SKIPPED",
+                workflowType="PITCH_RESPONDER",
+                recipient=extracted_email,
+                reason="Template disabled in SaaS",
+                subject=subject,
+                gmailThreadId=thread_id,
+                gmailMessageId=message_id_header,
+            )
+            return False
+
         # Get reply-to address (re-run logic or use previously extracted)
         logger.info(f"  Reply to: {extracted_email}")
         

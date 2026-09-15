@@ -4,8 +4,33 @@ import {
   AUTOMATION_PROFILE_NAME,
   DEFAULT_AUTOMATION_MAILBOXES,
   DEFAULT_AUTOMATION_TEMPLATES,
+  DEFAULT_AUTOMATION_WORKFLOW_SETTINGS,
   DEFAULT_SUPPRESSIONS,
 } from "@/lib/automation/defaults";
+
+export interface WorkflowSettingsInput {
+  isEnabled?: boolean;
+  mode?: string;
+  timezone?: string;
+  scheduleHour?: number;
+  scheduleMinute?: number;
+  queueLabelId?: string | null;
+  queueLabelName?: string | null;
+  dailyCap?: number;
+  batchSize?: number;
+}
+
+export interface EnqueueCandidateInput {
+  gmailThreadId: string;
+  gmailMessageId?: string;
+  sourceMessageIds?: string[];
+  anchorInboundId?: string;
+  recipient: string;
+  subject?: string;
+  templateVersion?: number;
+  templateHash?: string;
+  deterministicMessageId?: string;
+}
 
 export interface AutomationSettingsInput {
   isEnabled?: boolean;
@@ -115,6 +140,7 @@ export async function ensureAutomationProfile() {
       mailboxes: { orderBy: { createdAt: "asc" } },
       templates: { orderBy: { createdAt: "asc" } },
       suppressions: { orderBy: { createdAt: "asc" } },
+      workflows: { include: { mailbox: true }, orderBy: { createdAt: "asc" } },
     },
   });
 
@@ -158,6 +184,7 @@ export async function ensureAutomationProfile() {
         mailboxes: { orderBy: { createdAt: "asc" } },
         templates: { orderBy: { createdAt: "asc" } },
         suppressions: { orderBy: { createdAt: "asc" } },
+        workflows: { include: { mailbox: true }, orderBy: { createdAt: "asc" } },
       },
     });
   }
@@ -170,6 +197,7 @@ export async function ensureAutomationProfile() {
       mailboxes: { orderBy: { createdAt: "asc" } },
       templates: { orderBy: { createdAt: "asc" } },
       suppressions: { orderBy: { createdAt: "asc" } },
+      workflows: { include: { mailbox: true }, orderBy: { createdAt: "asc" } },
     },
   });
 }
@@ -239,11 +267,54 @@ async function ensureMissingDefaults(profileId: string) {
       }
     }
   }
+
+  // Ensure default workflows for editor mailbox
+  const editorMailbox = await db.automationMailbox.findFirst({
+    where: {
+      profileId,
+      emailAddress: "editor@authoritymag.co",
+    },
+  });
+
+  if (editorMailbox) {
+    for (const wf of DEFAULT_AUTOMATION_WORKFLOW_SETTINGS) {
+      const existing = await db.automationWorkflow.findUnique({
+        where: {
+          mailboxId_key: {
+            mailboxId: editorMailbox.id,
+            key: wf.key,
+          },
+        },
+      });
+
+      if (!existing) {
+        await db.automationWorkflow.create({
+          data: {
+            profileId,
+            mailboxId: editorMailbox.id,
+            key: wf.key,
+            name: wf.name,
+            description: wf.description,
+            isEnabled: wf.isEnabled,
+            mode: wf.mode,
+            timezone: wf.timezone,
+            scheduleHour: wf.scheduleHour,
+            scheduleMinute: wf.scheduleMinute,
+            queueLabelName: wf.queueLabelName,
+            templateKey: wf.templateKey,
+            templateVersion: wf.templateVersion,
+            dailyCap: wf.dailyCap,
+            batchSize: wf.batchSize,
+          },
+        });
+      }
+    }
+  }
 }
 
 export async function getAutomationOverview() {
   const profile = await ensureAutomationProfile();
-  const [recentRuns, draftLogs, learnedRules] = await Promise.all([
+  const [recentRuns, draftLogs, learnedRules, recentWorkflowRuns, recentDeliveries] = await Promise.all([
     db.automationRun.findMany({
       where: { profileId: profile.id },
       orderBy: { startedAt: "desc" },
@@ -261,9 +332,21 @@ export async function getAutomationOverview() {
       orderBy: { updatedAt: "desc" },
       take: 80,
     }),
+    db.automationWorkflowRun.findMany({
+      where: { profileId: profile.id },
+      orderBy: { scheduledAt: "desc" },
+      take: 20,
+      include: { workflow: true, mailbox: true },
+    }),
+    db.automationDelivery.findMany({
+      where: { profileId: profile.id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: { workflow: true },
+    }),
   ]);
 
-  return { profile, recentRuns, draftLogs, learnedRules };
+  return { profile, recentRuns, draftLogs, learnedRules, recentWorkflowRuns, recentDeliveries };
 }
 
 export async function updateAutomationSettings(input: AutomationSettingsInput) {
@@ -374,7 +457,16 @@ export async function getMailboxForBridgeToken(token: string) {
   const hash = hashBridgeToken(token);
   const mailbox = await db.automationMailbox.findUnique({
     where: { bridgeTokenHash: hash },
-    include: { profile: { include: { templates: true, suppressions: true } } },
+    include: {
+      workflows: true,
+      profile: {
+        include: {
+          templates: true,
+          suppressions: true,
+          workflows: true,
+        },
+      },
+    },
   });
   if (!mailbox?.bridgeTokenHash || !isSameTokenHash(token, mailbox.bridgeTokenHash)) {
     return null;
@@ -562,16 +654,8 @@ export async function syncBridgeTemplates(
     });
 
     if (existing) {
-      await db.automationTemplate.update({
-        where: { id: existing.id },
-        data: {
-          body,
-          ...(item.subject ? { subject: String(item.subject).trim() } : {}),
-          ...(item.name ? { name: String(item.name).trim() } : {}),
-          version: { increment: 1 },
-        },
-      });
-      count++;
+      // SaaS is authoritative: preserve user edits in SaaS and do not overwrite with desktop defaults.
+      continue;
     } else {
       await db.automationTemplate.create({
         data: {
@@ -587,12 +671,286 @@ export async function syncBridgeTemplates(
     }
   }
 
-  await db.automationProfile.update({
-    where: { id: profileId },
-    data: { configVersion: { increment: 1 } },
-  });
+  if (count > 0) {
+    await db.automationProfile.update({
+      where: { id: profileId },
+      data: { configVersion: { increment: 1 } },
+    });
+  }
 
   return { success: true, count };
+}
+
+export async function claimDailyWorkflowRun(
+  mailboxId: string,
+  workflowKey: string,
+  localDate: string,
+  leaseOwner: string
+) {
+  const mailbox = await db.automationMailbox.findUnique({
+    where: { id: mailboxId },
+    include: { profile: true },
+  });
+  if (!mailbox) {
+    return { error: "Mailbox not found" };
+  }
+
+  const workflow = await db.automationWorkflow.findUnique({
+    where: {
+      mailboxId_key: {
+        mailboxId,
+        key: workflowKey,
+      },
+    },
+  });
+
+  if (!workflow) {
+    return { error: `Workflow '${workflowKey}' not found for this mailbox` };
+  }
+
+  const profile = mailbox.profile;
+  const isProfileActive = profile.isEnabled && !profile.globalKillSwitch;
+  const isWorkflowActive = workflow.isEnabled && mailbox.isEnabled && isProfileActive;
+
+  const now = new Date();
+  let run = await db.automationWorkflowRun.findUnique({
+    where: {
+      workflowId_localDate: {
+        workflowId: workflow.id,
+        localDate,
+      },
+    },
+  });
+
+  if (!run) {
+    run = await db.automationWorkflowRun.create({
+      data: {
+        profileId: profile.id,
+        mailboxId,
+        workflowId: workflow.id,
+        localDate,
+        scheduledAt: now,
+        status: "RUNNING",
+        leaseOwner,
+        leaseExpiresAt: new Date(now.getTime() + 10 * 60 * 1000),
+        leaseGeneration: 1,
+      },
+    });
+  } else {
+    if (
+      run.leaseExpiresAt &&
+      run.leaseExpiresAt > now &&
+      run.leaseOwner &&
+      run.leaseOwner !== leaseOwner
+    ) {
+      return {
+        status: "LEASE_BUSY",
+        message: `Run is claimed by '${run.leaseOwner}' until ${run.leaseExpiresAt.toISOString()}`,
+        run,
+        workflow,
+      };
+    }
+
+    run = await db.automationWorkflowRun.update({
+      where: { id: run.id },
+      data: {
+        status: run.status === "SCHEDULED" ? "RUNNING" : run.status,
+        leaseOwner,
+        leaseExpiresAt: new Date(now.getTime() + 10 * 60 * 1000),
+        leaseGeneration: { increment: 1 },
+      },
+    });
+  }
+
+  return {
+    success: true,
+    workflow: {
+      id: workflow.id,
+      key: workflow.key,
+      name: workflow.name,
+      mode: workflow.mode,
+      isEnabled: workflow.isEnabled,
+      active: isWorkflowActive,
+      queueLabelId: workflow.queueLabelId,
+      queueLabelName: workflow.queueLabelName,
+      templateKey: workflow.templateKey,
+      dailyCap: workflow.dailyCap,
+      batchSize: workflow.batchSize,
+    },
+    run: {
+      id: run.id,
+      localDate: run.localDate,
+      status: run.status,
+      leaseGeneration: run.leaseGeneration,
+    },
+  };
+}
+
+export async function enqueueDeliveryCandidates(
+  workflowId: string,
+  runId: string,
+  candidates: EnqueueCandidateInput[]
+) {
+  const workflow = await db.automationWorkflow.findUnique({
+    where: { id: workflowId },
+  });
+  if (!workflow) {
+    return { error: "Workflow not found" };
+  }
+
+  let enqueued = 0;
+  for (const candidate of candidates) {
+    const existing = await db.automationDelivery.findUnique({
+      where: {
+        workflowId_gmailThreadId: {
+          workflowId,
+          gmailThreadId: candidate.gmailThreadId,
+        },
+      },
+    });
+
+    if (!existing) {
+      await db.automationDelivery.create({
+        data: {
+          profileId: workflow.profileId,
+          workflowId,
+          runId,
+          gmailThreadId: candidate.gmailThreadId,
+          gmailMessageId: candidate.gmailMessageId || null,
+          sourceMessageIdsJson: jsonField(candidate.sourceMessageIds || []),
+          anchorInboundId: candidate.anchorInboundId || null,
+          recipient: candidate.recipient,
+          subject: candidate.subject || null,
+          templateVersion: candidate.templateVersion || workflow.templateVersion,
+          templateHash: candidate.templateHash || null,
+          deterministicMessageId: candidate.deterministicMessageId || null,
+          state: "PENDING",
+        } as never,
+      });
+      enqueued++;
+    }
+  }
+
+  await db.automationWorkflowRun.update({
+    where: { id: runId },
+    data: {
+      discoveryComplete: true,
+      emailsScanned: { increment: candidates.length },
+    },
+  });
+
+  return { success: true, enqueued };
+}
+
+export async function claimDelivery(
+  workflowId: string,
+  deliveryId: string,
+  leaseOwner: string
+) {
+  const delivery = await db.automationDelivery.findUnique({
+    where: { id: deliveryId },
+    include: { workflow: { include: { profile: true, mailbox: true } } },
+  });
+  if (!delivery || delivery.workflowId !== workflowId) {
+    return { error: "Delivery not found" };
+  }
+
+  const workflow = delivery.workflow;
+  const profile = workflow.profile;
+  const isProfileActive = profile.isEnabled && !profile.globalKillSwitch;
+  const isWorkflowActive = workflow.isEnabled && workflow.mailbox.isEnabled && isProfileActive;
+
+  if (workflow.mode !== "SEND") {
+    return { error: "Workflow is in PREVIEW mode; live sends are blocked" };
+  }
+
+  if (!isWorkflowActive) {
+    return { error: "Workflow or mailbox is currently paused/disabled in SaaS" };
+  }
+
+  if (delivery.state !== "PENDING" && delivery.state !== "RETRYABLE") {
+    return { error: `Delivery is in state '${delivery.state}', cannot claim for send` };
+  }
+
+  const updated = await db.automationDelivery.update({
+    where: { id: deliveryId },
+    data: {
+      state: "SENDING",
+      attempts: { increment: 1 },
+    },
+  });
+
+  return { success: true, delivery: updated };
+}
+
+export async function recordDeliveryOutcome(
+  deliveryId: string,
+  input: {
+    state: string;
+    gmailSentId?: string | null;
+    errorMessage?: string | null;
+  }
+) {
+  const updated = await db.automationDelivery.update({
+    where: { id: deliveryId },
+    data: {
+      state: input.state,
+      gmailSentId: input.gmailSentId || null,
+      errorMessage: input.errorMessage || null,
+      sentAt: input.state === "SENT" ? new Date() : undefined,
+    },
+  });
+
+  if (updated.runId) {
+    const counterField =
+      input.state === "SENT"
+        ? { sentCount: { increment: 1 } }
+        : input.state === "HELD"
+        ? { heldCount: { increment: 1 } }
+        : input.state === "SUPPRESSED"
+        ? { skippedCount: { increment: 1 } }
+        : { errorCount: { increment: 1 } };
+
+    await db.automationWorkflowRun.update({
+      where: { id: updated.runId },
+      data: counterField,
+    });
+  }
+
+  return { success: true, delivery: updated };
+}
+
+export async function completeDeliveryCleanup(deliveryId: string) {
+  const updated = await db.automationDelivery.update({
+    where: { id: deliveryId },
+    data: {
+      state: "CLEANED",
+      cleanedAt: new Date(),
+    },
+  });
+  return { success: true, delivery: updated };
+}
+
+export async function updateWorkflowSettings(
+  workflowId: string,
+  input: WorkflowSettingsInput
+) {
+  const updated = await db.automationWorkflow.update({
+    where: { id: workflowId },
+    data: {
+      isEnabled: input.isEnabled !== undefined ? Boolean(input.isEnabled) : undefined,
+      mode: input.mode || undefined,
+      timezone: input.timezone || undefined,
+      scheduleHour: input.scheduleHour !== undefined ? Number(input.scheduleHour) : undefined,
+      scheduleMinute: input.scheduleMinute !== undefined ? Number(input.scheduleMinute) : undefined,
+      queueLabelId: input.queueLabelId !== undefined ? input.queueLabelId : undefined,
+      queueLabelName: input.queueLabelName !== undefined ? input.queueLabelName : undefined,
+      dailyCap: input.dailyCap !== undefined ? Number(input.dailyCap) : undefined,
+      batchSize: input.batchSize !== undefined ? Number(input.batchSize) : undefined,
+      configVersion: { increment: 1 },
+    },
+  });
+  return updated;
 }
 
 

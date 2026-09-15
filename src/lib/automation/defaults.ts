@@ -3,6 +3,7 @@ export const AUTOMATION_PROFILE_NAME = "Authority Magazine Automation";
 export const AUTOMATION_WORKFLOWS = {
   pitch: "PITCH_RESPONDER",
   collaboration: "COLLAB_RESPONDER",
+  genericResponse: "GENERIC_RESPONSE",
 } as const;
 
 export const AUTOMATION_TEMPLATE_KEYS = {
@@ -12,6 +13,7 @@ export const AUTOMATION_TEMPLATE_KEYS = {
   extension: "pitch_extension",
   collaborationAcceptance: "collab_acceptance",
   collaborationNoMatch: "collab_no_match",
+  genericResponse: "generic_response",
 } as const;
 
 export const DEFAULT_AUTOMATION_TEMPLATES = [
@@ -131,6 +133,39 @@ Once we know more, we'll send you the correct submission form.
 
 Looking forward to hearing from you!`,
   },
+  {
+    templateKey: AUTOMATION_TEMPLATE_KEYS.genericResponse,
+    name: "Daily generic response",
+    subject: "Thank you for your pitch to Authority Magazine - Let's take the next step!",
+    allowedVariables: ["signature", "original_subject"],
+    body: `Hi There!
+
+Thank you so much for sending your press release or pitch to Authority Magazine. We appreciate your interest and would be happy to conduct an email interview with you.
+
+To get started, please review our available interview storylines below:
+
+[**Interview Storylines**](https://medium.com/authority-magazine/ongoing-interview-series-in-authority-magazine-7d633a349753)
+
+We're also excited to announce these upcoming storylines:
+
+[**Upcoming Storylines**](https://medium.com/authority-magazine/new-interview-series-topics-we-are-working-on-bdae530b5bf4)
+
+If you are unsure about which topic is best for you, you can ask our AI Bot to recommend a few ideas for you. All you have to do is add your bio to the link below.
+
+[**Add Your Bio Here**](https://chatgpt.com/g/g-DOnEg59Sc-authority-magazine-bot)
+
+Please take a moment to choose the best fit for your interview. Once you've made your selection, click the link below to provide your basic information, and we'll be in touch shortly with our interview questions.
+
+[**Add Your Basic Info Here**](https://docs.google.com/forms/d/e/1FAIpQLSdkUiiJpgE53-I6pDQOm-zWveNeCXkGFonoVX5ULmN0dPsfxA/viewform)
+
+Looking forward to learning more about you and your story!
+
+Best regards,
+
+    Yitzi Weiner
+    Editor-In-Chief,
+    Authority Magazine`,
+  },
 ] as const;
 
 export const DEFAULT_AUTOMATION_MAILBOXES = [
@@ -143,6 +178,29 @@ export const DEFAULT_AUTOMATION_MAILBOXES = [
     label: "Collaboration Inbox",
     emailAddress: "articlecollaborationteam@gmail.com",
     workflowType: AUTOMATION_WORKFLOWS.collaboration,
+  },
+  {
+    label: "Editor Inbox",
+    emailAddress: "editor@authoritymag.co",
+    workflowType: AUTOMATION_WORKFLOWS.genericResponse,
+  },
+] as const;
+
+export const DEFAULT_AUTOMATION_WORKFLOW_SETTINGS = [
+  {
+    key: AUTOMATION_WORKFLOWS.genericResponse,
+    name: "Daily Generic Response",
+    description: "Sends the approved storyline response daily at 10:00 AM NY time to pitches in the queue label.",
+    isEnabled: false,
+    mode: "PREVIEW",
+    timezone: "America/New_York",
+    scheduleHour: 10,
+    scheduleMinute: 0,
+    queueLabelName: "1. Send Generic Re...",
+    templateKey: AUTOMATION_TEMPLATE_KEYS.genericResponse,
+    templateVersion: 1,
+    dailyCap: 100,
+    batchSize: 25,
   },
 ] as const;
 

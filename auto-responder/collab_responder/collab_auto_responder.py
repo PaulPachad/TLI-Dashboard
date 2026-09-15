@@ -55,11 +55,22 @@ class CollabAutoResponder:
         self.gmail = CollabGmailClient()
         self.bridge = AutomationBridge(token=os.getenv("AUTHORITY_COLLAB_BRIDGE_TOKEN"))
         self.max_emails_per_run = COLLAB_MAX_RESULTS
+        self.blocked_senders: list[str] = []
+        self.blocked_domains: list[str] = []
+        self.skip_phrases: list[str] = []
         self._sync_bridge_config(force=True)
         logger.info(
             f"[CollabAutoResponder] Initialised with "
             f"{self.matcher.count()} form entries"
         )
+
+    @staticmethod
+    def _matches_skip_phrase(text: str, phrase: str) -> bool:
+        """Check if phrase matches using whole-word boundaries to avoid false positives."""
+        if not text or not phrase:
+            return False
+        pattern = r'\b' + re.escape(phrase.strip().lower()) + r'\b'
+        return bool(re.search(pattern, text.lower()))
 
     def _sync_bridge_config(self, force: bool = False):
         """Pull SaaS-managed collab settings/templates when configured."""
@@ -70,13 +81,39 @@ class CollabAutoResponder:
         profile = config.profile
         self.max_emails_per_run = int(profile.get("maxEmailsPerRun") or self.max_emails_per_run)
 
+        # Sync safety lists from SaaS profile
+        self.blocked_senders = list(profile.get("blockedSenders") or [])
+        self.blocked_domains = list(profile.get("blockedDomains") or [])
+        self.skip_phrases = list(profile.get("skipPhrases") or [])
+
+        # Merge suppression entries
+        for item in config.suppressions:
+            if isinstance(item, dict) and item.get("enabled", True):
+                kind = str(item.get("kind", "")).upper()
+                val = str(item.get("value", "")).strip()
+                if kind == "SENDER" and val:
+                    self.blocked_senders.append(val)
+                elif kind == "DOMAIN" and val:
+                    self.blocked_domains.append(val)
+                elif kind == "PHRASE" and val:
+                    self.skip_phrases.append(val)
+
+        # Deduplicate
+        self.blocked_senders = list(dict.fromkeys(self.blocked_senders))
+        self.blocked_domains = list(dict.fromkeys(self.blocked_domains))
+        self.skip_phrases = list(dict.fromkeys(self.skip_phrases))
+
         acceptance = config.template("collab_acceptance")
         if acceptance and acceptance.get("body"):
             self.email_generator.ACCEPTANCE_TEMPLATE = acceptance["body"]
+        elif not config.is_template_enabled("collab_acceptance"):
+            self.email_generator.ACCEPTANCE_TEMPLATE = None
 
         no_match = config.template("collab_no_match")
         if no_match and no_match.get("body"):
             self.email_generator.NO_MATCH_TEMPLATE = no_match["body"]
+        elif not config.is_template_enabled("collab_no_match"):
+            self.email_generator.NO_MATCH_TEMPLATE = None
 
         return config
 
@@ -198,6 +235,30 @@ class CollabAutoResponder:
         else:
             reply_to = target_sender
 
+        # Check blocked senders and domains
+        reply_to_lower = reply_to.lower()
+        if any(s.lower() in reply_to_lower for s in self.blocked_senders):
+            logger.info(f"[CollabAutoResponder] Skipping blocked sender: {reply_to}")
+            self._bridge_log(status="SKIPPED", workflowType="COLLAB_RESPONDER", recipient=reply_to, reason="Blocked sender", subject=subject)
+            return False
+
+        sender_domain = reply_to_lower.split("@")[1] if "@" in reply_to_lower else ""
+        if any(d.lower() == sender_domain for d in self.blocked_domains):
+            logger.info(f"[CollabAutoResponder] Skipping blocked domain: {sender_domain}")
+            self._bridge_log(status="SKIPPED", workflowType="COLLAB_RESPONDER", recipient=reply_to, reason=f"Blocked domain @{sender_domain}", subject=subject)
+            return False
+
+        # Check skip phrases in subject and content
+        for phrase in self.skip_phrases:
+            if self._matches_skip_phrase(subject, phrase):
+                logger.info(f"[CollabAutoResponder] Skipping email matching phrase '{phrase}' in subject")
+                self._bridge_log(status="SKIPPED", workflowType="COLLAB_RESPONDER", recipient=reply_to, reason=f"Skip phrase: {phrase}", subject=subject)
+                return False
+            if self._matches_skip_phrase(content, phrase):
+                logger.info(f"[CollabAutoResponder] Skipping email matching phrase '{phrase}' in body")
+                self._bridge_log(status="SKIPPED", workflowType="COLLAB_RESPONDER", recipient=reply_to, reason=f"Skip phrase in body: {phrase}", subject=subject)
+                return False
+
         # ------------------------------------------------------------------
         # Prepend the subject to the first 1000 characters of the clean body.
         # This focuses the matcher on where the topic is actually discussed,
@@ -225,6 +286,17 @@ class CollabAutoResponder:
             email = self.email_generator.generate_no_match_email(
                 original_subject=subject
             )
+
+        if not email:
+            logger.info(f"[CollabAutoResponder] Template is disabled in SaaS; skipping draft creation")
+            self._bridge_log(
+                status="SKIPPED",
+                workflowType="COLLAB_RESPONDER",
+                recipient=reply_to,
+                reason="Template disabled in SaaS",
+                subject=subject,
+            )
+            return False
 
         # ------------------------------------------------------------------
         # Create draft

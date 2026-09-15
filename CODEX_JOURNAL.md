@@ -520,3 +520,15 @@ Yitzi implemented automated smart column detection and a manual column mapping c
   - Background Sync API: [route.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/app/api/sync/route.ts)
   - UI Component: [sheet-import-form.tsx](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/src/components/admin/sheet-import-form.tsx)
   - Unit Tests: [google-sheets.test.ts](file:///c:/Users/Yitzi/OneDrive/Documents/Authority%20Mag%20SAAS/tli-leverage-dashboard/tests/google-sheets.test.ts)
+
+## 2026-09-15 - Daily Generic Reply Architecture and Autoresponder Audit
+
+Yitzi started planning a daily service that replies to pitches in the editor mailbox's red generic-response label at 10 a.m. New York time, including daylight saving time. The plan preserves his email copy and removes the queue label only after a successful send, keeping the original email.
+
+The review found several controls that need strengthening: paused settings can become stale, disabled templates can remain in use, collaboration filtering is incomplete, and the worker health check can look healthy after a worker stops. The proposed workflow keeps lasting send records so a restart or cleanup failure does not trigger a duplicate reply. It uses fixed email text without an AI call per message.
+
+Verification: all 11 existing automation tests passed within a broader run reporting 95 passes and one Google Sheets test-file failure caused by a dependency filesystem read error. Three cloud-daemon tests passed. Two parser tests passed; one was blocked by missing rapidfuzz. Live production behavior remains unverified. The connected Gmail account is support@authoritymag.co and does not contain the editor's pictured queue.
+
+What remains: switch to the user's preferred less expensive model, implement the documented fixes and workflow, verify the actual editor mailbox and cloud deployment, test recovery, and enable the daily schedule. No live emails were sent and no automation was activated during planning.
+
+Files: tli-leverage-dashboard/docs/generic-response-plan.md contains the architecture, findings, acceptance cases, and ready-to-use handoff prompt. tli-leverage-dashboard/docs/generic-response-template.md preserves the supplied email copy.

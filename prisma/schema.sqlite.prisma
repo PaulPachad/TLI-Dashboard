@@ -219,6 +219,9 @@ model AutomationProfile {
   draftLogs    AutomationDraftLog[]
   learnedRules LearnedRule[]
   suppressions SuppressionEntry[]
+  workflows    AutomationWorkflow[]
+  workflowRuns AutomationWorkflowRun[]
+  deliveries   AutomationDelivery[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -245,10 +248,12 @@ model AutomationMailbox {
   bridgeTokenPreview   String?
   bridgeTokenRotatedAt DateTime?
 
-  profile   AutomationProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  client    Client?           @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  runs      AutomationRun[]
-  draftLogs AutomationDraftLog[]
+  profile      AutomationProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  client       Client?           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  runs         AutomationRun[]
+  draftLogs    AutomationDraftLog[]
+  workflows    AutomationWorkflow[]
+  workflowRuns AutomationWorkflowRun[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -396,4 +401,113 @@ model SuppressionEntry {
 
   @@unique([profileId, kind, value])
   @@index([profileId])
+}
+
+model AutomationWorkflow {
+  id              String   @id @default(cuid())
+  profileId       String
+  mailboxId       String
+  key             String   // e.g. "GENERIC_RESPONSE"
+  name            String   @default("Daily Generic Response")
+  description     String?
+  isEnabled       Boolean  @default(false)
+  mode            String   @default("PREVIEW") // "PREVIEW" | "SEND"
+  timezone        String   @default("America/New_York")
+  scheduleHour    Int      @default(10)
+  scheduleMinute  Int      @default(0)
+  queueLabelId    String?
+  queueLabelName  String?
+  templateKey     String   @default("generic_response")
+  templateVersion Int      @default(1)
+  dailyCap        Int      @default(100)
+  batchSize       Int      @default(25)
+  configVersion   Int      @default(1)
+
+  profile         AutomationProfile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  mailbox         AutomationMailbox      @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  runs            AutomationWorkflowRun[]
+  deliveries      AutomationDelivery[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([mailboxId, key])
+  @@index([profileId])
+  @@index([mailboxId])
+}
+
+model AutomationWorkflowRun {
+  id                String    @id @default(cuid())
+  profileId         String
+  mailboxId         String?
+  workflowId        String
+  localDate         String    // e.g. "2026-09-15"
+  scheduledAt       DateTime
+  cutoffAt          DateTime?
+  status            String    @default("SCHEDULED") // "SCHEDULED" | "DISCOVERING" | "PROCESSING" | "SUCCESS" | "PARTIAL" | "FAILED" | "CANCELLED"
+  discoveryComplete Boolean   @default(false)
+  cursor            String?
+  emailsScanned     Int       @default(0)
+  sentCount         Int       @default(0)
+  heldCount         Int       @default(0)
+  skippedCount      Int       @default(0)
+  errorCount        Int       @default(0)
+  summary           String?
+  leaseOwner        String?
+  leaseExpiresAt    DateTime?
+  leaseGeneration   Int       @default(1)
+  metadataJson      String?
+
+  profile           AutomationProfile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  mailbox           AutomationMailbox?     @relation(fields: [mailboxId], references: [id], onDelete: SetNull)
+  workflow          AutomationWorkflow     @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  deliveries        AutomationDelivery[]
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([workflowId, localDate])
+  @@index([profileId])
+  @@index([workflowId])
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+model AutomationDelivery {
+  id                     String    @id @default(cuid())
+  profileId              String
+  workflowId             String
+  runId                  String?
+  gmailThreadId          String
+  gmailMessageId         String?
+  sourceMessageIdsJson   String?
+  anchorInboundId        String?
+  recipient              String
+  subject                String?
+  templateVersion        Int       @default(1)
+  templateHash           String?
+  deterministicMessageId String?
+  gmailDraftId           String?
+  gmailSentId            String?
+  state                  String    @default("PENDING") // "PENDING" | "PREPARED" | "SENDING" | "SENT" | "CLEANED" | "RETRYABLE" | "UNKNOWN" | "HELD" | "SUPPRESSED" | "CANCELLED"
+  attempts               Int       @default(0)
+  retryAt                DateTime?
+  errorMessage           String?
+  cleanedAt              DateTime?
+  sentAt                 DateTime?
+  metadataJson           String?
+
+  profile                AutomationProfile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  workflow               AutomationWorkflow     @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  run                    AutomationWorkflowRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
+
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@unique([workflowId, gmailThreadId])
+  @@index([workflowId, state])
+  @@index([runId])
+  @@index([profileId])
+  @@index([gmailThreadId])
+  @@index([createdAt])
 }

@@ -24,6 +24,25 @@ export async function GET(request: Request) {
       version: template.version,
     }));
 
+    const workflows = (mailbox.workflows || []).map((wf) => ({
+      id: wf.id,
+      key: wf.key,
+      name: wf.name,
+      description: wf.description,
+      enabled: wf.isEnabled && mailbox.isEnabled && profile.isEnabled && !profile.globalKillSwitch,
+      mode: wf.mode,
+      timezone: wf.timezone,
+      scheduleHour: wf.scheduleHour,
+      scheduleMinute: wf.scheduleMinute,
+      queueLabelId: wf.queueLabelId,
+      queueLabelName: wf.queueLabelName,
+      templateKey: wf.templateKey,
+      templateVersion: wf.templateVersion,
+      dailyCap: wf.dailyCap,
+      batchSize: wf.batchSize,
+      configVersion: wf.configVersion,
+    }));
+
     return NextResponse.json({
       profile: {
         id: profile.id,
@@ -53,6 +72,7 @@ export async function GET(request: Request) {
         enabled: mailbox.isEnabled && profile.isEnabled && !profile.globalKillSwitch,
       },
       templates,
+      workflows,
       suppressions: profile.suppressions.map((entry) => ({
         kind: entry.kind,
         value: entry.value,
