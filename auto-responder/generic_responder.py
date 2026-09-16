@@ -85,7 +85,7 @@ class EditorGmailClient(GmailClient):
 
         # Fall back to standard credentials if editor-specific files not present yet
         cred_path = credentials_editor if os.path.exists(credentials_editor) else os.path.join(_BASE_DIR, "credentials.json")
-        tok_path = token_editor if os.path.exists(token_editor) else os.path.join(_BASE_DIR, "token.json")
+        tok_path = token_editor
 
         super().__init__(credentials_path=cred_path, token_path=tok_path)
         logger.info("[EditorGmailClient] Initialized with credentials: %s, token: %s", os.path.basename(cred_path), os.path.basename(tok_path))
@@ -109,10 +109,11 @@ class GenericAutoResponder:
         token = (
             bridge_token
             or os.getenv("AUTHORITY_GENERIC_BRIDGE_TOKEN")
-            or os.getenv("AUTHORITY_PITCH_BRIDGE_TOKEN")
-            or os.getenv("AUTHORITY_AUTOMATION_BRIDGE_TOKEN")
         )
         self.bridge = bridge or AutomationBridge(token=token)
+        if bridge is None:
+            # Never inherit the support mailbox's bridge credentials.
+            self.bridge.token = token or ""
         self.gmail = gmail_client or EditorGmailClient()
 
         self.mode = "PREVIEW"  # Safe default: PREVIEW or SEND
@@ -135,6 +136,7 @@ class GenericAutoResponder:
     def sync_config(self, force: bool = False) -> Optional[dict]:
         """Fetch fresh workflow settings from SaaS control plane."""
         config = self.bridge.get_config(force=force)
+        self.is_enabled = False
         if not config:
             logger.warning("[GenericResponder] Bridge config unavailable; holding work.")
             return None
@@ -169,7 +171,7 @@ class GenericAutoResponder:
 
         if generic_wf:
             self.workflow_id = generic_wf.get("id")
-            self.is_enabled = bool(generic_wf.get("enabled"))
+            self.is_enabled = bool(config.enabled and generic_wf.get("enabled"))
             self.mode = generic_wf.get("mode", "PREVIEW").upper()
             self.timezone_str = generic_wf.get("timezone", DEFAULT_TIMEZONE)
             self.schedule_hour = int(generic_wf.get("scheduleHour", DEFAULT_SCHEDULE_HOUR))
@@ -228,7 +230,6 @@ class GenericAutoResponder:
                 name = lbl.get('name', '')
                 if self.queue_label_name and (
                     name.lower() == self.queue_label_name.lower()
-                    or name.lower().startswith(self.queue_label_name.lower()[:15])
                 ):
                     self.queue_label_id = lbl.get('id')
                     logger.info("[GenericResponder] Resolved label '%s' to ID: %s", name, self.queue_label_id)
@@ -274,9 +275,9 @@ class GenericAutoResponder:
                 page_token = res.get("nextPageToken")
                 if not page_token:
                     break
-            except Exception as exc:
-                logger.error("[GenericResponder] Error enumerating queue label pages: %s", exc)
-                break
+            except Exception:
+                # A failed scan must be retried, never recorded as an empty day.
+                raise
 
         logger.info("[GenericResponder] Discovered %d messages in queue label.", len(all_messages))
         return all_messages
@@ -379,9 +380,11 @@ class GenericAutoResponder:
         5. In SEND: atomically send, record sent ID, remove queue label
         """
         logger.info("[GenericResponder] Starting queue process cycle...")
-        self.sync_config(force=True)
+        workflow = self.sync_config(force=True)
+        if not workflow:
+            return {"status": "CONFIG_UNAVAILABLE"}
 
-        if not self.is_enabled and not force:
+        if not self.is_enabled:
             logger.info("[GenericResponder] Workflow is disabled in SaaS; skipping.")
             return {"status": "DISABLED"}
 
@@ -389,7 +392,12 @@ class GenericAutoResponder:
             logger.error("[GenericResponder] Editor Gmail authentication failed.")
             return {"status": "AUTH_ERROR"}
 
-        label_target = self.resolve_queue_label_id() or self.queue_label_name
+        if (self.gmail.user_email or "").lower() != "editor@authoritymag.co":
+            return {"status": "WRONG_MAILBOX"}
+
+        self.bridge.post_status()
+
+        label_target = self.resolve_queue_label_id()
         if not label_target:
             logger.error("[GenericResponder] Queue label ID/name could not be resolved.")
             return {"status": "LABEL_NOT_RESOLVED"}
@@ -411,6 +419,8 @@ class GenericAutoResponder:
 
         run_info = claim_res.get("run", {})
         wf_info = claim_res.get("workflow", {})
+        if not wf_info.get("active"):
+            return {"status": "DISABLED"}
         run_id = run_info.get("id")
         workflow_id = wf_info.get("id") or self.workflow_id
 
@@ -447,6 +457,7 @@ class GenericAutoResponder:
                     "subject": inspection.get("subject"),
                     "templateVersion": 1,
                     "deterministicMessageId": f"<{inspection.get('anchorInboundId')}@authoritymag.co>",
+                    "rfcMessageId": inspection.get("rfcMessageId", ""),
                 })
             else:
                 logger.info("[GenericResponder] Thread %s ineligible: %s", tid, inspection.get("reason"))
@@ -460,7 +471,7 @@ class GenericAutoResponder:
 
         # Step 5: Process candidates
         # In PREVIEW mode: do NOT send mail and do NOT modify labels!
-        if self.mode == "PREVIEW":
+        if self.mode != "SEND":
             logger.info(
                 "[GenericResponder] PREVIEW MODE: %d candidates cataloged in ledger. No emails sent and no labels touched.",
                 len(candidates),
@@ -482,10 +493,18 @@ class GenericAutoResponder:
             delivery_id = delivery_map.get(tid)
 
             # Verify config is still active before every send
-            config_check = self.bridge.get_config()
+            config_check = self.bridge.get_config(force=True)
             if not config_check or not config_check.enabled:
                 logger.warning("[GenericResponder] Global kill switch or pause detected; halting sends immediately.")
                 break
+
+            if not delivery_id:
+                error_count += 1
+                continue
+            claimed = self.bridge.claim_delivery(workflow_id, delivery_id, self.worker_id)
+            if not claimed or not claimed.get("success"):
+                error_count += 1
+                continue
 
             try:
                 # Format MIME message
@@ -493,8 +512,9 @@ class GenericAutoResponder:
                 msg["To"] = recipient
                 msg["From"] = self.gmail.user_email or "editor@authoritymag.co"
                 msg["Subject"] = subject
-                msg["In-Reply-To"] = candidate.get("deterministicMessageId", "")
-                msg["References"] = candidate.get("deterministicMessageId", "")
+                msg["Message-ID"] = candidate["deterministicMessageId"]
+                msg["In-Reply-To"] = candidate.get("rfcMessageId", "")
+                msg["References"] = candidate.get("rfcMessageId", "")
 
                 plain_text = self.gmail._format_plain_body(GENERIC_RESPONSE_BODY)
                 html_text = self.gmail._format_html_body(GENERIC_RESPONSE_BODY)
@@ -519,10 +539,13 @@ class GenericAutoResponder:
                 sent_count += 1
 
                 # Record sent outcome in SaaS ledger
-                if delivery_id:
-                    self.bridge.record_delivery_outcome(delivery_id, state="SENT", gmail_sent_id=sent_id)
+                recorded = self.bridge.record_delivery_outcome(delivery_id, state="SENT", gmail_sent_id=sent_id)
+                if not recorded or not recorded.get("success"):
+                    error_count += 1
+                    continue
 
                 # Message-level queue label removal
+                cleanup_ok = True
                 for mid in source_ids:
                     try:
                         self.gmail.service.users().messages().modify(
@@ -532,10 +555,11 @@ class GenericAutoResponder:
                         ).execute()
                         logger.debug("[GenericResponder] Removed queue label from message %s", mid)
                     except Exception as label_err:
+                        cleanup_ok = False
                         logger.error("[GenericResponder] Failed removing label from message %s: %s", mid, label_err)
 
                 # Mark cleaned in SaaS ledger
-                if delivery_id:
+                if cleanup_ok:
                     self.bridge.complete_delivery_cleanup(delivery_id)
 
             except Exception as send_err:

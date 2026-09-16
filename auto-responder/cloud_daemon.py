@@ -37,7 +37,7 @@ logger = logging.getLogger("cloud_daemon")
 ALERT_EMAIL = os.getenv("ALERT_EMAIL", "rabbiweiner@gmail.com")
 ALERT_COOLDOWN_SECONDS = 3600  # 1 hour between duplicate alerts
 CONSECUTIVE_ERROR_THRESHOLD = 3  # send alert after this many back-to-back loop errors
-BUILD_VERSION = "2026.09.15.2"
+BUILD_VERSION = "2026.09.16.1"
 # ──────────────────────────────────────────────────────────────────────────────
 
 
@@ -371,11 +371,14 @@ def run_generic_worker():
         while not state.is_shutting_down:
             state.last_generic_check = time.time()
             try:
-                responder.process_queue()
+                result = responder.process_queue()
+                if result.get("status") in {"CONFIG_UNAVAILABLE", "AUTH_ERROR", "WRONG_MAILBOX", "LABEL_NOT_RESOLVED", "CLAIM_FAILED"}:
+                    raise RuntimeError("Generic workflow blocked: " + result["status"])
                 consecutive_errors = 0
             except Exception as e:
                 consecutive_errors += 1
                 logger.error(f"Generic Responder error: {e}", exc_info=True)
+                responder.bridge.post_status(bridge_status="ERROR", last_error=str(e))
                 if consecutive_errors >= CONSECUTIVE_ERROR_THRESHOLD:
                     alert_manager.send_alert(
                         "generic_worker_errors",
@@ -514,4 +517,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

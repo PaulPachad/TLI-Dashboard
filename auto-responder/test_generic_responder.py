@@ -24,6 +24,69 @@ from automation_bridge import AutomationBridge, BridgeConfig
 
 
 class TestGenericResponder(unittest.TestCase):
+    def configured_worker(self):
+        bridge = MagicMock(spec=AutomationBridge)
+        wf = {"id": "wf", "key": "GENERIC_RESPONSE", "enabled": True,
+              "mode": "SEND", "queueLabelId": "queue"}
+        bridge.get_config.return_value = BridgeConfig(
+            enabled=True, profile={}, mailbox={"workflows": [wf]},
+            templates={}, suppressions=[], fetched_at=time.time())
+        bridge.claim_workflow_run.return_value = {
+            "workflow": {"id": "wf", "active": True}, "run": {"id": "run"}}
+        gmail = MagicMock()
+        gmail.user_email = "editor@authoritymag.co"
+        gmail._format_plain_body.return_value = "Test reply"
+        gmail._format_html_body.return_value = "<p>Test reply</p>"
+        worker = GenericAutoResponder(bridge=bridge, gmail_client=gmail)
+        worker.is_due = MagicMock(return_value=(True, "2026-09-16"))
+        worker.fetch_queued_messages = MagicMock(return_value=[{"id": "m", "threadId": "t"}])
+        worker.inspect_thread = MagicMock(return_value={"eligible": True,
+            "anchorInboundId": "m", "recipient": "pitch@example.com", "subject": "Re: Pitch",
+            "sourceMessageIds": ["m"], "rfcMessageId": "<original@example.com>"})
+        return worker, bridge, gmail
+
+    def test_config_outage_clears_previous_enabled_state(self):
+        worker, bridge, gmail = self.configured_worker()
+        worker.sync_config()
+        bridge.get_config.return_value = None
+        self.assertEqual(worker.process_queue()["status"], "CONFIG_UNAVAILABLE")
+        self.assertFalse(worker.is_enabled)
+        gmail.authenticate.assert_not_called()
+
+    def test_wrong_mailbox_never_sends(self):
+        worker, bridge, gmail = self.configured_worker()
+        gmail.user_email = "support@authoritymag.co"
+        self.assertEqual(worker.process_queue()["status"], "WRONG_MAILBOX")
+        bridge.claim_workflow_run.assert_not_called()
+
+    def test_missing_ledger_or_rejected_claim_never_sends(self):
+        for deliveries in [[], [{"id": "d", "gmailThreadId": "t"}]]:
+            worker, bridge, gmail = self.configured_worker()
+            bridge.enqueue_delivery_candidates.return_value = {"deliveries": deliveries}
+            bridge.claim_delivery.return_value = {"error": "Already sent"}
+            worker.process_queue()
+            gmail.service.users().messages().send.assert_not_called()
+
+    def test_confirmed_send_records_then_cleans(self):
+        worker, bridge, gmail = self.configured_worker()
+        bridge.enqueue_delivery_candidates.return_value = {"deliveries": [{"id": "d", "gmailThreadId": "t"}]}
+        bridge.claim_delivery.return_value = {"success": True}
+        bridge.record_delivery_outcome.return_value = {"success": True}
+        gmail.service.users().messages().send().execute.return_value = {"id": "sent"}
+        gmail.service.users().messages().send.reset_mock()
+        self.assertEqual(worker.process_queue()["sent"], 1)
+        bridge.claim_delivery.assert_called_once_with("wf", "d", worker.worker_id)
+        bridge.record_delivery_outcome.assert_called_once_with("d", state="SENT", gmail_sent_id="sent")
+        bridge.complete_delivery_cleanup.assert_called_once_with("d")
+
+    def test_failed_scan_is_not_empty_success(self):
+        worker, bridge, gmail = self.configured_worker()
+        del worker.fetch_queued_messages
+        gmail.service.users().messages().list().execute.side_effect = RuntimeError("Gmail unavailable")
+        with self.assertRaises(RuntimeError):
+            worker.process_queue()
+        self.assertIsNone(worker._last_processed_date)
+
     def test_generic_response_body_fixture_integrity(self):
         """Verify the exact required copy and all 4 links are present in GENERIC_RESPONSE_BODY."""
         self.assertIn("Hi There!", GENERIC_RESPONSE_BODY)
