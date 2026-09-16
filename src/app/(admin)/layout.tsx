@@ -66,6 +66,22 @@ function XIcon({ className }: { className?: string }) {
   );
 }
 
+function GlobeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+    </svg>
+  );
+}
+
+function ArrowTopRightOnSquareIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+    </svg>
+  );
+}
+
 /* ============================================================================
    Navigation
    ============================================================================ */
@@ -199,6 +215,23 @@ export default function AdminLayout({
             </Link>
           );
         })}
+
+        {/* Ecosystem Section */}
+        <p className="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          Ecosystem
+        </p>
+        <a
+          href="https://authoritymag.co/admin"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <GlobeIcon className="h-5 w-5 shrink-0 text-slate-400" />
+            <span>Editorial Site</span>
+          </div>
+          <ArrowTopRightOnSquareIcon className="h-4 w-4 text-slate-400" />
+        </a>
       </div>
 
       {/* User Info Footer */}
@@ -275,6 +308,16 @@ export default function AdminLayout({
           </div>
 
           <div className="flex items-center gap-4">
+            <a
+              href="https://authoritymag.co/admin"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
+            >
+              <GlobeIcon className="h-3.5 w-3.5 text-slate-500" />
+              <span>Editorial Portal</span>
+              <ArrowTopRightOnSquareIcon className="h-3 w-3 text-slate-400" />
+            </a>
             <span className="hidden text-sm text-slate-500 sm:inline">
               {session?.user?.email}
             </span>
