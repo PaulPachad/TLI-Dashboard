@@ -161,8 +161,7 @@ class GenericAutoResponder:
         self.blocked_domains = list(dict.fromkeys(self.blocked_domains))
         self.skip_phrases = list(dict.fromkeys(self.skip_phrases))
 
-        workflows = config.mailbox.get("workflows") or []
-        # If workflows not in mailbox dict, check if bridge returned it in payload
+        workflows = config.mailbox.get("workflows") or getattr(config, "workflows", []) or []
         generic_wf = None
         for wf in workflows:
             if wf.get("key") == WORKFLOW_KEY:
@@ -499,8 +498,18 @@ class GenericAutoResponder:
                 break
 
             if not delivery_id:
+                # If candidate was already enqueued in a previous cycle, retry enqueue to re-link ID
+                retry_res = self.bridge.enqueue_delivery_candidates(workflow_id, run_id, [candidate])
+                for d in (retry_res or {}).get("deliveries", []):
+                    if d.get("gmailThreadId") == tid:
+                        delivery_id = d.get("id")
+                        break
+
+            if not delivery_id:
+                logger.warning("[GenericResponder] Could not obtain delivery ID for thread %s; skipping.", tid)
                 error_count += 1
                 continue
+
             claimed = self.bridge.claim_delivery(workflow_id, delivery_id, self.worker_id)
             if not claimed or not claimed.get("success"):
                 error_count += 1
@@ -584,8 +593,20 @@ class GenericAutoResponder:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+    log_file = os.path.join(_BASE_DIR, "auto_responder.log")
+    handlers = [logging.FileHandler(log_file, encoding="utf-8")]
+    if sys.stdout:
+        handlers.append(logging.StreamHandler(sys.stdout))
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=handlers,
+    )
+    logger.info("==================================================")
+    logger.info("Starting GenericAutoResponder Scheduled Execution")
+    logger.info("==================================================")
     responder = GenericAutoResponder()
-    print("Running GenericAutoResponder in dry-run / preview check...")
     res = responder.process_queue(force=True)
-    print(f"Result: {res}")
+    logger.info("Execution complete. Result: %s", res)
+    if sys.stdout:
+        print(f"Result: {res}")

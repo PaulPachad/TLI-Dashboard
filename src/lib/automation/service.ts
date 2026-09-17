@@ -848,6 +848,15 @@ export async function enqueueDeliveryCandidates(
         } as never,
       });
       enqueued++;
+    } else if (existing.state !== "SENT" && existing.state !== "CLEANED") {
+      await db.automationDelivery.update({
+        where: { id: existing.id },
+        data: {
+          runId,
+          state: "PENDING",
+        },
+      });
+      enqueued++;
     }
   }
 
