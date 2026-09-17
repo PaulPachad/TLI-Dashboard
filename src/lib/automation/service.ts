@@ -474,7 +474,12 @@ export async function getMailboxForBridgeToken(token: string) {
   return mailbox;
 }
 
-export async function createBridgeRun(mailboxId: string, status = "RUNNING") {
+export async function createBridgeRun(
+  mailboxId: string,
+  status = "RUNNING",
+  summary?: string | null,
+  metadata?: Record<string, unknown>
+) {
   const mailbox = await db.automationMailbox.findUniqueOrThrow({ where: { id: mailboxId } });
   return db.automationRun.create({
     data: {
@@ -482,7 +487,9 @@ export async function createBridgeRun(mailboxId: string, status = "RUNNING") {
       mailboxId: mailbox.id,
       status,
       trigger: "BRIDGE",
-    },
+      summary: summary ? String(summary).slice(0, 1000) : null,
+      metadataJson: jsonField(metadata || {}),
+    } as never,
   });
 }
 
@@ -493,6 +500,7 @@ export async function recordBridgeStatus(
     bridgeStatus?: string;
     lastError?: string | null;
     run?: {
+      id?: string;
       status?: string;
       emailsScanned?: number;
       draftsCreated?: number;
@@ -516,21 +524,33 @@ export async function recordBridgeStatus(
 
   let run = null;
   if (input.run) {
-    run = await db.automationRun.create({
-      data: {
-        profileId: mailbox.profileId,
-        mailboxId: mailbox.id,
-        status: input.run.status || "SUCCESS",
-        finishedAt: new Date(),
-        emailsScanned: clampInt(input.run.emailsScanned, 0, 0, 10000),
-        draftsCreated: clampInt(input.run.draftsCreated, 0, 0, 10000),
-        skippedCount: clampInt(input.run.skippedCount, 0, 0, 10000),
-        warningCount: clampInt(input.run.warningCount, 0, 0, 10000),
-        errorCount: clampInt(input.run.errorCount, 0, 0, 10000),
-        summary: input.run.summary ? String(input.run.summary).slice(0, 1000) : null,
-        metadataJson: jsonField(input.run.metadata || {}),
-      } as never,
-    });
+    const runData = {
+      status: input.run.status || "SUCCESS",
+      finishedAt: new Date(),
+      emailsScanned: clampInt(input.run.emailsScanned, 0, 0, 100000),
+      draftsCreated: clampInt(input.run.draftsCreated, 0, 0, 100000),
+      skippedCount: clampInt(input.run.skippedCount, 0, 0, 100000),
+      warningCount: clampInt(input.run.warningCount, 0, 0, 100000),
+      errorCount: clampInt(input.run.errorCount, 0, 0, 100000),
+      summary: input.run.summary ? String(input.run.summary).slice(0, 1000) : null,
+      metadataJson: jsonField(input.run.metadata || {}),
+    };
+
+    if (input.run.id) {
+      run = await db.automationRun.update({
+        where: { id: input.run.id },
+        data: runData as never,
+      });
+    } else {
+      run = await db.automationRun.create({
+        data: {
+          profileId: mailbox.profileId,
+          mailboxId: mailbox.id,
+          trigger: "BRIDGE",
+          ...runData,
+        } as never,
+      });
+    }
     await db.automationMailbox.update({
       where: { id: mailbox.id },
       data: { lastRunAt: new Date() },

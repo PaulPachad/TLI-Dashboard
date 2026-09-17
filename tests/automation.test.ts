@@ -322,3 +322,70 @@ test("daily generic responder schedule time is accurate across Daylight Saving T
   assert.equal(nyFormatter.format(winterDate), "10:00", "Winter (EST) 15:00 UTC must be 10:00 AM NY");
 });
 
+test("master dashboard and friday marketing workflow keys and default mailboxes are configured", async () => {
+  const { AUTOMATION_WORKFLOWS, DEFAULT_AUTOMATION_MAILBOXES } = await import(
+    "../src/lib/automation/defaults"
+  );
+
+  assert.equal(AUTOMATION_WORKFLOWS.masterDashboard, "MASTER_DASHBOARD_UPDATER");
+  assert.equal(AUTOMATION_WORKFLOWS.authorityPressMarketing, "AUTHORITY_PRESS_MARKETING");
+
+  const masterMailbox = DEFAULT_AUTOMATION_MAILBOXES.find(
+    (m) => m.workflowType === "MASTER_DASHBOARD_UPDATER"
+  );
+  assert.ok(masterMailbox, "Master dashboard mailbox must exist in defaults");
+  assert.equal(masterMailbox?.emailAddress, "master-dashboard@authoritymag.co");
+
+  const fridayMailbox = DEFAULT_AUTOMATION_MAILBOXES.find(
+    (m) => m.workflowType === "AUTHORITY_PRESS_MARKETING"
+  );
+  assert.ok(fridayMailbox, "Friday marketing mailbox must exist in defaults");
+  assert.equal(fridayMailbox?.emailAddress, "friday-automation@authoritymag.co");
+});
+
+test("bridge run creation and status recording support run updating and rich metrics", async () => {
+  const { ensureAutomationProfile, createBridgeRun, recordBridgeStatus } = await import(
+    "../src/lib/automation/service"
+  );
+  const profile = await ensureAutomationProfile();
+  const mailbox = profile.mailboxes[0];
+  assert.ok(mailbox, "At least one mailbox must exist");
+
+  // Create initial run with status RUNNING
+  const initialRun = await createBridgeRun(
+    mailbox.id,
+    "RUNNING",
+    "Starting Master Queue sync",
+    { portalsScanned: 5 }
+  );
+  assert.ok(initialRun.id);
+  assert.equal(initialRun.status, "RUNNING");
+  assert.equal(initialRun.summary, "Starting Master Queue sync");
+
+  // Complete run by providing run.id to recordBridgeStatus
+  const statusResult = await recordBridgeStatus(mailbox.id, {
+    authStatus: "OK",
+    bridgeStatus: "CONNECTED",
+    run: {
+      id: initialRun.id,
+      status: "SUCCESS",
+      emailsScanned: 12,
+      draftsCreated: 4,
+      skippedCount: 0,
+      summary: "Master Queue sync complete: 4 drafts moved",
+      metadata: {
+        portalsScanned: 12,
+        rowsMoved: 4,
+        datesAssigned: 4,
+      },
+    },
+  });
+
+  assert.ok(statusResult.run);
+  assert.equal(statusResult.run?.id, initialRun.id, "Must update the same run ID without creating duplicate");
+  assert.equal(statusResult.run?.status, "SUCCESS");
+  assert.equal(statusResult.run?.emailsScanned, 12);
+  assert.equal(statusResult.run?.draftsCreated, 4);
+});
+
+

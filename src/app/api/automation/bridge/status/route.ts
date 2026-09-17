@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
 import {
   createBridgeRun,
   getMailboxForBridgeToken,
@@ -17,9 +18,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    let targetMailbox = mailbox;
+    if (body.workflowType && mailbox.profileId) {
+      const matchingMailbox = await db.automationMailbox.findFirst({
+        where: { profileId: mailbox.profileId, workflowType: body.workflowType },
+      });
+      if (matchingMailbox) {
+        targetMailbox = matchingMailbox;
+      }
+    }
+
     if (body.action === "start_run") {
-      const run = await createBridgeRun(mailbox.id, body.status || "RUNNING");
-      await recordBridgeStatus(mailbox.id, {
+      const run = await createBridgeRun(
+        targetMailbox.id,
+        body.status || "RUNNING",
+        body.summary || null,
+        body.metadata || {}
+      );
+      await recordBridgeStatus(targetMailbox.id, {
         authStatus: body.authStatus,
         bridgeStatus: "CONNECTED",
         lastError: body.lastError || null,
@@ -27,7 +43,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, run });
     }
 
-    const result = await recordBridgeStatus(mailbox.id, {
+    const result = await recordBridgeStatus(targetMailbox.id, {
       authStatus: body.authStatus,
       bridgeStatus: body.bridgeStatus,
       lastError: body.lastError || null,

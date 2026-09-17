@@ -4,6 +4,8 @@ export const AUTOMATION_WORKFLOWS = {
   pitch: "PITCH_RESPONDER",
   collaboration: "COLLAB_RESPONDER",
   genericResponse: "GENERIC_RESPONSE",
+  masterDashboard: "MASTER_DASHBOARD_UPDATER",
+  authorityPressMarketing: "AUTHORITY_PRESS_MARKETING",
 } as const;
 
 export const AUTOMATION_TEMPLATE_KEYS = {
@@ -183,6 +185,16 @@ export const DEFAULT_AUTOMATION_MAILBOXES = [
     label: "Editor Inbox",
     emailAddress: "editor@authoritymag.co",
     workflowType: AUTOMATION_WORKFLOWS.genericResponse,
+  },
+  {
+    label: "Master Dashboard Queue Updater",
+    emailAddress: "master-dashboard@authoritymag.co",
+    workflowType: AUTOMATION_WORKFLOWS.masterDashboard,
+  },
+  {
+    label: "Friday Marketing Automation",
+    emailAddress: "friday-automation@authoritymag.co",
+    workflowType: AUTOMATION_WORKFLOWS.authorityPressMarketing,
   },
 ] as const;
 

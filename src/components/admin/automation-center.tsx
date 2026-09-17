@@ -163,6 +163,7 @@ interface AutomationRun {
   warningCount: number;
   errorCount: number;
   summary: string | null;
+  metadataJson?: Record<string, unknown> | string | null;
   mailbox?: AutomationMailbox | null;
 }
 
@@ -173,10 +174,12 @@ interface AutomationDraftLog {
   recipient: string | null;
   subject: string | null;
   matchedTopic: string | null;
+  matchedUrl: string | null;
   matchScore: number | null;
   templateKey: string | null;
   reason: string | null;
   snippet: string | null;
+  metadataJson?: Record<string, unknown> | string | null;
   createdAt: string;
   mailbox?: AutomationMailbox | null;
 }
@@ -1194,54 +1197,201 @@ function TemplateEditor({
 }
 
 function ActivityPanel({ runs, draftLogs }: { runs: AutomationRun[]; draftLogs: AutomationDraftLog[] }) {
+  const [filter, setFilter] = useState<"ALL" | "MASTER" | "FRIDAY" | "INBOX">("ALL");
+
+  const filteredRuns = useMemo(() => {
+    if (filter === "ALL") return runs;
+    return runs.filter((run) => {
+      const type = run.mailbox?.workflowType || "";
+      const meta = typeof run.metadataJson === "object" && run.metadataJson ? (run.metadataJson as Record<string, unknown>) : {};
+      const runType = String(meta.workflowType || type);
+      if (filter === "MASTER") return runType === "MASTER_DASHBOARD_UPDATER";
+      if (filter === "FRIDAY") return runType === "AUTHORITY_PRESS_MARKETING";
+      if (filter === "INBOX") return !["MASTER_DASHBOARD_UPDATER", "AUTHORITY_PRESS_MARKETING"].includes(runType);
+      return true;
+    });
+  }, [runs, filter]);
+
+  const filteredLogs = useMemo(() => {
+    if (filter === "ALL") return draftLogs;
+    return draftLogs.filter((log) => {
+      const type = log.workflowType || "";
+      if (filter === "MASTER") return type === "MASTER_DASHBOARD_UPDATER";
+      if (filter === "FRIDAY") return type === "AUTHORITY_PRESS_MARKETING";
+      if (filter === "INBOX") return !["MASTER_DASHBOARD_UPDATER", "AUTHORITY_PRESS_MARKETING"].includes(type);
+      return true;
+    });
+  }, [draftLogs, filter]);
+
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
-      <section className="rounded-lg border border-slate-200 bg-white">
-        <div className="border-b border-slate-100 px-5 py-4">
-          <h2 className="text-lg font-semibold text-slate-900">Runs</h2>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Filter Activity:</span>
+          <div className="flex flex-wrap gap-1">
+            {[
+              { id: "ALL", label: "All Activity" },
+              { id: "MASTER", label: "Master Dashboard" },
+              { id: "FRIDAY", label: "Friday Marketing" },
+              { id: "INBOX", label: "Inbox Responders" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setFilter(tab.id as typeof filter)}
+                className={`rounded px-2.5 py-1 text-xs font-semibold transition-colors ${
+                  filter === tab.id
+                    ? "bg-slate-900 text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="divide-y divide-slate-100">
-          {runs.length === 0 ? (
-            <EmptyState text="No bridge runs have been logged yet." />
-          ) : (
-            runs.map((run) => (
-              <div key={run.id} className="px-5 py-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-slate-900">{run.mailbox?.label || "Automation run"}</p>
-                  <StatusPill label={run.status} tone={run.errorCount > 0 ? "rose" : "emerald"} />
-                </div>
-                <p className="mt-1 text-sm text-slate-500">
-                  {run.emailsScanned} scanned · {run.draftsCreated} drafts · {run.skippedCount} skipped · {formatDate(run.startedAt)}
-                </p>
-                {run.summary && <p className="mt-2 text-sm text-slate-700">{run.summary}</p>}
-              </div>
-            ))
-          )}
+        <div className="text-xs text-slate-500">
+          Showing {filteredRuns.length} runs · {filteredLogs.length} event logs
         </div>
-      </section>
-      <section className="rounded-lg border border-slate-200 bg-white">
-        <div className="border-b border-slate-100 px-5 py-4">
-          <h2 className="text-lg font-semibold text-slate-900">Draft Logs</h2>
-        </div>
-        <div className="divide-y divide-slate-100">
-          {draftLogs.length === 0 ? (
-            <EmptyState text="No drafts or skips have been logged yet." />
-          ) : (
-            draftLogs.map((log) => (
-              <div key={log.id} className="px-5 py-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="truncate text-sm font-semibold text-slate-900">{log.subject || log.recipient || log.workflowType}</p>
-                  <StatusPill label={log.status.replace(/_/g, " ")} tone={log.status === "DRAFT_CREATED" ? "emerald" : "amber"} />
-                </div>
-                <p className="mt-1 text-sm text-slate-500">
-                  {log.recipient || "No recipient"} · {log.matchedTopic || "No match"} · {formatDate(log.createdAt)}
-                </p>
-                {log.reason && <p className="mt-2 text-sm text-slate-700">{log.reason}</p>}
-              </div>
-            ))
-          )}
-        </div>
-      </section>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <section className="rounded-lg border border-slate-200 bg-white">
+          <div className="border-b border-slate-100 px-5 py-4">
+            <h2 className="text-lg font-semibold text-slate-900">Automation Runs</h2>
+          </div>
+          <div className="divide-y divide-slate-100 max-h-[700px] overflow-y-auto">
+            {filteredRuns.length === 0 ? (
+              <EmptyState text="No matching automation runs recorded." />
+            ) : (
+              filteredRuns.map((run) => {
+                const meta =
+                  typeof run.metadataJson === "object" && run.metadataJson
+                    ? (run.metadataJson as Record<string, unknown>)
+                    : {};
+                const isMaster =
+                  run.mailbox?.workflowType === "MASTER_DASHBOARD_UPDATER" ||
+                  meta.workflowType === "MASTER_DASHBOARD_UPDATER";
+                const isFriday =
+                  run.mailbox?.workflowType === "AUTHORITY_PRESS_MARKETING" ||
+                  meta.workflowType === "AUTHORITY_PRESS_MARKETING";
+
+                return (
+                  <div key={run.id} className="px-5 py-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-slate-900">
+                          {run.mailbox?.label || "Automation run"}
+                        </p>
+                        {isMaster && (
+                          <span className="rounded bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-700">
+                            Master Queue
+                          </span>
+                        )}
+                        {isFriday && (
+                          <span className="rounded bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
+                            Friday Run
+                          </span>
+                        )}
+                      </div>
+                      <StatusPill label={run.status} tone={run.errorCount > 0 ? "rose" : "emerald"} />
+                    </div>
+
+                    {isMaster ? (
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                        <span className="rounded bg-slate-100 px-2 py-0.5 text-slate-700">
+                          Portals: <strong className="font-semibold">{String(meta.portalsScanned ?? run.emailsScanned)}</strong>
+                        </span>
+                        <span className="rounded bg-emerald-50 px-2 py-0.5 text-emerald-800">
+                          Moved: <strong className="font-semibold">{String(meta.rowsMoved ?? run.draftsCreated)}</strong>
+                        </span>
+                        <span className="rounded bg-indigo-50 px-2 py-0.5 text-indigo-800">
+                          Dates Set: <strong className="font-semibold">{String(meta.datesAssigned ?? 0)}</strong>
+                        </span>
+                        {Number(meta.overdueCount || 0) > 0 && (
+                          <span className="rounded bg-amber-50 px-2 py-0.5 text-amber-800">
+                            Overdue: <strong className="font-semibold">{String(meta.overdueCount)}</strong>
+                          </span>
+                        )}
+                        <span className="text-slate-400 self-center">{formatDate(run.startedAt)}</span>
+                      </div>
+                    ) : isFriday ? (
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                        <span className="rounded bg-emerald-50 px-2 py-0.5 text-emerald-800">
+                          Live Emails: <strong className="font-semibold">{String(meta.liveEmailsSent ?? run.draftsCreated)}</strong>
+                        </span>
+                        <span className="rounded bg-indigo-50 px-2 py-0.5 text-indigo-800">
+                          Follow-ups: <strong className="font-semibold">{String(meta.followupsSent ?? 0)}</strong>
+                        </span>
+                        <span className="rounded bg-amber-50 px-2 py-0.5 text-amber-800">
+                          Waiting Mockup: <strong className="font-semibold">{String(meta.mockupsWaiting ?? run.skippedCount)}</strong>
+                        </span>
+                        <span className="rounded bg-teal-50 px-2 py-0.5 text-teal-800">
+                          Shopify: <strong className="font-semibold">{String(meta.shopifySynced ?? 0)}</strong>
+                        </span>
+                        <span className="text-slate-400 self-center">{formatDate(run.startedAt)}</span>
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-sm text-slate-500">
+                        {run.emailsScanned} scanned · {run.draftsCreated} drafts · {run.skippedCount} skipped · {formatDate(run.startedAt)}
+                      </p>
+                    )}
+
+                    {run.summary && <p className="mt-2 text-sm text-slate-700">{run.summary}</p>}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-slate-200 bg-white">
+          <div className="border-b border-slate-100 px-5 py-4">
+            <h2 className="text-lg font-semibold text-slate-900">Telemetry & Draft Logs</h2>
+          </div>
+          <div className="divide-y divide-slate-100 max-h-[700px] overflow-y-auto">
+            {filteredLogs.length === 0 ? (
+              <EmptyState text="No event or draft logs match current filter." />
+            ) : (
+              filteredLogs.map((log) => {
+                const statusTone = [
+                  "DRAFT_CREATED",
+                  "LIVE_EMAIL_SENT",
+                  "MOVED_TO_MASTER",
+                  "PUBLISH_DATE_SET",
+                  "SHOPIFY_SYNCED",
+                ].includes(log.status)
+                  ? "emerald"
+                  : ["ERROR", "QUOTA_EXCEEDED"].includes(log.status)
+                  ? "rose"
+                  : "amber";
+
+                return (
+                  <div key={log.id} className="px-5 py-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="truncate text-sm font-semibold text-slate-900">
+                        {log.subject || log.recipient || log.workflowType}
+                      </p>
+                      <StatusPill label={log.status.replace(/_/g, " ")} tone={statusTone} />
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {log.recipient || "No recipient"} {log.matchedTopic ? `· ${log.matchedTopic}` : ""} · {formatDate(log.createdAt)}
+                    </p>
+                    {log.matchedUrl && (
+                      <p className="mt-1 text-xs text-indigo-600 truncate">
+                        <a href={log.matchedUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                          {log.matchedUrl}
+                        </a>
+                      </p>
+                    )}
+                    {log.reason && <p className="mt-2 text-sm text-slate-700">{log.reason}</p>}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

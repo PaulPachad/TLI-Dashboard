@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
 import { getMailboxForBridgeToken, recordBridgeDraftLog } from "@/lib/automation/service";
 
 export async function POST(request: NextRequest) {
@@ -14,9 +15,20 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const entries = Array.isArray(body.entries) ? body.entries : [body];
+    const requestedWorkflow = body.workflowType || entries[0]?.workflowType;
+    let targetMailbox = mailbox;
+    if (requestedWorkflow && mailbox.profileId) {
+      const matchingMailbox = await db.automationMailbox.findFirst({
+        where: { profileId: mailbox.profileId, workflowType: requestedWorkflow },
+      });
+      if (matchingMailbox) {
+        targetMailbox = matchingMailbox;
+      }
+    }
+
     const logs = [];
     for (const entry of entries) {
-      logs.push(await recordBridgeDraftLog(mailbox.id, entry));
+      logs.push(await recordBridgeDraftLog(targetMailbox.id, entry));
     }
 
     return NextResponse.json({ success: true, count: logs.length, logs });
