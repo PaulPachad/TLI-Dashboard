@@ -18,24 +18,25 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    let targetMailbox = mailbox;
+    let targetMailboxId = mailbox.id;
     if (body.workflowType && mailbox.profileId) {
       const matchingMailbox = await db.automationMailbox.findFirst({
         where: { profileId: mailbox.profileId, workflowType: body.workflowType },
+        select: { id: true },
       });
       if (matchingMailbox) {
-        targetMailbox = matchingMailbox;
+        targetMailboxId = matchingMailbox.id;
       }
     }
 
     if (body.action === "start_run") {
       const run = await createBridgeRun(
-        targetMailbox.id,
+        targetMailboxId,
         body.status || "RUNNING",
         body.summary || null,
         body.metadata || {}
       );
-      await recordBridgeStatus(targetMailbox.id, {
+      await recordBridgeStatus(targetMailboxId, {
         authStatus: body.authStatus,
         bridgeStatus: "CONNECTED",
         lastError: body.lastError || null,
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, run });
     }
 
-    const result = await recordBridgeStatus(targetMailbox.id, {
+    const result = await recordBridgeStatus(targetMailboxId, {
       authStatus: body.authStatus,
       bridgeStatus: body.bridgeStatus,
       lastError: body.lastError || null,

@@ -16,19 +16,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const entries = Array.isArray(body.entries) ? body.entries : [body];
     const requestedWorkflow = body.workflowType || entries[0]?.workflowType;
-    let targetMailbox = mailbox;
+    let targetMailboxId = mailbox.id;
     if (requestedWorkflow && mailbox.profileId) {
       const matchingMailbox = await db.automationMailbox.findFirst({
         where: { profileId: mailbox.profileId, workflowType: requestedWorkflow },
+        select: { id: true },
       });
       if (matchingMailbox) {
-        targetMailbox = matchingMailbox;
+        targetMailboxId = matchingMailbox.id;
       }
     }
 
     const logs = [];
     for (const entry of entries) {
-      logs.push(await recordBridgeDraftLog(targetMailbox.id, entry));
+      logs.push(await recordBridgeDraftLog(targetMailboxId, entry));
     }
 
     return NextResponse.json({ success: true, count: logs.length, logs });
