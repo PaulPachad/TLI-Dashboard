@@ -12,6 +12,7 @@ export default auth((req) => {
   // Public routes — always accessible
   if (
     pathname.startsWith("/login") ||
+    pathname.startsWith("/sso") ||
     pathname.startsWith("/api/") ||
     pathname === "/"
   ) {
