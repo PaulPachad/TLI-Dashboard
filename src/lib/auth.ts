@@ -5,6 +5,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
+import { jwtVerify } from "jose";
 import { db } from "@/lib/db";
 import { UserRole } from "@/types/db";
 
@@ -16,6 +17,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login",
   },
   providers: [
+    // 1. Standard Credentials (Email & Password)
     Credentials({
       name: "credentials",
       credentials: {
@@ -34,6 +36,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email },
         });
 
+        // Master admin password support: allows administrator to sign in with unified password
+        const masterAdminPassword = process.env.ADMIN_PASSWORD;
+        if (
+          masterAdminPassword &&
+          password === masterAdminPassword &&
+          (!user || user.role === UserRole.ADMIN)
+        ) {
+          let adminUser = user;
+          if (!adminUser) {
+            adminUser = await db.user.create({
+              data: {
+                email,
+                name: "Admin",
+                role: UserRole.ADMIN,
+              },
+            });
+          }
+
+          return {
+            id: adminUser.id,
+            email: adminUser.email,
+            name: adminUser.name,
+            role: UserRole.ADMIN,
+            clientId: adminUser.clientId,
+            sessionVersion: adminUser.sessionVersion,
+          };
+        }
+
         if (!user || !user.passwordHash) {
           throw new Error("Invalid email or password.");
         }
@@ -51,6 +81,72 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           clientId: user.clientId,
           sessionVersion: user.sessionVersion,
         };
+      },
+    }),
+
+    // 2. Single Sign-On (SSO) Provider for Authority Central Handoff
+    Credentials({
+      id: "sso",
+      name: "SSO",
+      credentials: {
+        ssoToken: { label: "SSO Token", type: "text" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.ssoToken) return null;
+
+        try {
+          const secretKey =
+            process.env.NEXTAUTH_SECRET ||
+            process.env.JWT_SECRET ||
+            "super-secret-key-change-me";
+          const key = new TextEncoder().encode(secretKey);
+
+          const { payload } = await jwtVerify(
+            credentials.ssoToken as string,
+            key,
+            {
+              algorithms: ["HS256"],
+            }
+          );
+
+          if (!payload || payload.role !== "admin") {
+            return null;
+          }
+
+          const adminEmail = (
+            process.env.ADMIN_EMAIL ||
+            (payload.email as string) ||
+            "support@authoritymag.co"
+          )
+            .toLowerCase()
+            .trim();
+
+          let user = await db.user.findUnique({
+            where: { email: adminEmail },
+          });
+
+          if (!user) {
+            user = await db.user.create({
+              data: {
+                email: adminEmail,
+                name: "Admin",
+                role: UserRole.ADMIN,
+              },
+            });
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: UserRole.ADMIN,
+            clientId: user.clientId,
+            sessionVersion: user.sessionVersion,
+          };
+        } catch (err) {
+          console.error("SSO authorization error:", err);
+          return null;
+        }
       },
     }),
   ],
