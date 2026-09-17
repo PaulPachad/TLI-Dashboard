@@ -1,0 +1,75 @@
+{
+  "acronym_equivalences": {
+    "artificial intelligence": "ai",
+    "public relations": "pr",
+    "human resources": "hr",
+    "virtual reality": "vr",
+    "augmented reality": "ar",
+    "chief revenue officer": "cro",
+    "chief marketing officer": "cmo",
+    "chief executive officer": "ceo",
+    "chief financial officer": "cfo",
+    "chief technology officer": "cto",
+    "chief operating officer": "coo",
+    "employee stock ownership plan": "esop",
+    "employee stock ownership plans": "esops",
+    "software as a service": "saas"
+  },
+  "role_synonyms": {
+    "ceo": [
+      "c-suite executive",
+      "c-suite",
+      "chief executive"
+    ],
+    "c-suite": [
+      "c-suite executive",
+      "ceo"
+    ],
+    "filmmaker": [
+      "directors",
+      "producers"
+    ],
+    "film maker": [
+      "directors",
+      "producers",
+      "filmmaker"
+    ],
+    "director": [
+      "directors",
+      "producers"
+    ],
+    "producer": [
+      "directors",
+      "producers"
+    ],
+    "restauranteur": [
+      "restaurateur"
+    ],
+    "restaurateur": [
+      "chef",
+      "restaurant"
+    ],
+    "chef": [
+      "restaurateur",
+      "restaurant"
+    ],
+    "athlete": [
+      "professional athlete"
+    ],
+    "professional athlete": [
+      "athlete"
+    ],
+    "comedian": [
+      "professional comedian"
+    ],
+    "professional comedian": [
+      "comedian"
+    ],
+    "magician": [
+      "professional magician"
+    ],
+    "professional magician": [
+      "magician"
+    ]
+  }
+}

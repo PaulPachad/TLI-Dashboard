@@ -13,6 +13,7 @@ Features:
 import os
 import sys
 import time
+import json
 import base64
 import logging
 import re
@@ -187,11 +188,45 @@ class GenericAutoResponder:
         )
         return generic_wf
 
-    def is_due(self) -> tuple[bool, str]:
+    def load_last_completed_state(self) -> dict:
+        state_path = os.path.join(_BASE_DIR, "state_generic_responder.json")
+        if os.path.exists(state_path):
+            try:
+                with open(state_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.warning("[GenericResponder] Could not read state file: %s", e)
+        return {}
+
+    def record_completed_state(self, local_date: str, status: str, sent_count: int = 0, error_count: int = 0):
+        self._last_processed_date = local_date
+        state_path = os.path.join(_BASE_DIR, "state_generic_responder.json")
+        try:
+            payload = {
+                "last_completed_date": local_date,
+                "completed_at": datetime.now(ZoneInfo(DEFAULT_TIMEZONE)).isoformat(),
+                "status": status,
+                "sent_count": sent_count,
+                "error_count": error_count,
+            }
+            with open(state_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2)
+            logger.info("[GenericResponder] Recorded completion state for %s to %s", local_date, os.path.basename(state_path))
+        except Exception as e:
+            logger.warning("[GenericResponder] Could not write state file: %s", e)
+
+    def is_due(self, force: bool = False) -> tuple[bool, str, str]:
         """
         Check if today's run is due based on local time in America/New_York.
-        Returns (is_due, local_date_str).
+        Returns (is_due, local_date_str, reason).
         """
+        if force:
+            try:
+                tz = ZoneInfo(self.timezone_str)
+            except Exception:
+                tz = ZoneInfo(DEFAULT_TIMEZONE)
+            return True, datetime.now(tz).strftime("%Y-%m-%d"), "Forced execution"
+
         try:
             tz = ZoneInfo(self.timezone_str)
         except Exception:
@@ -206,12 +241,50 @@ class GenericAutoResponder:
         )
 
         if not scheduled_due:
-            return False, local_date
+            return False, local_date, f"Scheduled for {self.schedule_hour:02d}:{self.schedule_minute:02d} NY time; current time is {now.strftime('%H:%M:%S')}"
+
+        last_state = self.load_last_completed_state()
+        if last_state.get("last_completed_date") == local_date and last_state.get("sent_count", 0) > 0:
+            return False, local_date, f"Daily run for {local_date} already sent {last_state.get('sent_count')} emails at {last_state.get('completed_at')}"
 
         if self._last_processed_date == local_date:
-            return False, local_date
+            return False, local_date, f"Run already processed in this session for {local_date}"
 
-        return True, local_date
+        return True, local_date, "Due for execution"
+
+    def wait_for_connectivity_and_sync(self, timeout_seconds: int = 120, retry_interval: int = 5) -> Optional[dict]:
+        """
+        Wait for network connectivity, SaaS bridge sync, and Gmail authentication.
+        Essential when running as a scheduled task on system wake-up, where Wi-Fi
+        or network adapters take 3-15 seconds to associate and establish IP.
+        """
+        start_time = time.time()
+        attempt = 1
+        last_error = None
+        while time.time() - start_time < timeout_seconds:
+            try:
+                logger.info("[GenericResponder] Connectivity & SaaS sync check attempt %d (elapsed %.1fs)...", attempt, time.time() - start_time)
+                workflow = self.sync_config(force=True)
+                if workflow:
+                    # Also verify Gmail authentication
+                    if self.gmail.authenticate(interactive=False):
+                        logger.info("[GenericResponder] Network, SaaS bridge, and Gmail authentication verified successfully.")
+                        return workflow
+                    else:
+                        last_error = "Gmail authentication failed"
+                        logger.warning("[GenericResponder] Gmail authentication not ready: %s", last_error)
+                else:
+                    last_error = "SaaS bridge configuration returned empty/none"
+                    logger.warning("[GenericResponder] SaaS bridge not ready: %s", last_error)
+            except Exception as e:
+                last_error = str(e)
+                logger.warning("[GenericResponder] Connectivity check failed on attempt %d: %s", attempt, e)
+
+            attempt += 1
+            time.sleep(retry_interval)
+
+        logger.error("[GenericResponder] Timed out waiting for connectivity after %ds: %s", timeout_seconds, last_error)
+        return None
 
     def resolve_queue_label_id(self) -> Optional[str]:
         """Find the Gmail label ID for the queue label name if label_id not yet known."""
@@ -378,20 +451,24 @@ class GenericAutoResponder:
         4. In PREVIEW: audit candidates without sending
         5. In SEND: atomically send, record sent ID, remove queue label
         """
-        logger.info("[GenericResponder] Starting queue process cycle...")
-        workflow = self.sync_config(force=True)
+        logger.info("[GenericResponder] Starting queue process cycle (force=%s)...", force)
+
+        is_due, local_date, reason = self.is_due(force=force)
+        if not is_due:
+            logger.info("[GenericResponder] Skipping run: %s.", reason)
+            return {"status": "NOT_DUE", "localDate": local_date, "reason": reason}
+
+        workflow = self.wait_for_connectivity_and_sync(timeout_seconds=120, retry_interval=5)
         if not workflow:
-            return {"status": "CONFIG_UNAVAILABLE"}
+            logger.error("[GenericResponder] Could not obtain configuration or authenticate with Gmail after 120s.")
+            return {"status": "CONNECTIVITY_FAILED", "localDate": local_date}
 
         if not self.is_enabled:
             logger.info("[GenericResponder] Workflow is disabled in SaaS; skipping.")
-            return {"status": "DISABLED"}
-
-        if not self.gmail.authenticate(interactive=False):
-            logger.error("[GenericResponder] Editor Gmail authentication failed.")
-            return {"status": "AUTH_ERROR"}
+            return {"status": "DISABLED", "localDate": local_date}
 
         if (self.gmail.user_email or "").lower() != "editor@authoritymag.co":
+            logger.error("[GenericResponder] Wrong mailbox authenticated: %s", self.gmail.user_email)
             return {"status": "WRONG_MAILBOX"}
 
         self.bridge.post_status()
@@ -400,11 +477,6 @@ class GenericAutoResponder:
         if not label_target:
             logger.error("[GenericResponder] Queue label ID/name could not be resolved.")
             return {"status": "LABEL_NOT_RESOLVED"}
-
-        is_due, local_date = self.is_due()
-        if not is_due and not force:
-            logger.info("[GenericResponder] Run is not due yet for %s.", local_date)
-            return {"status": "NOT_DUE", "localDate": local_date}
 
         # Atomically claim the run in SaaS
         claim_res = self.bridge.claim_workflow_run(
@@ -431,7 +503,7 @@ class GenericAutoResponder:
         raw_messages = self.fetch_queued_messages(label_target)
         if not raw_messages:
             logger.info("[GenericResponder] No messages found in queue label.")
-            self._last_processed_date = local_date
+            self.record_completed_state(local_date, status="EMPTY_QUEUE", sent_count=0, error_count=0)
             return {"status": "EMPTY_QUEUE", "count": 0}
 
         # Group messages by thread
@@ -577,7 +649,7 @@ class GenericAutoResponder:
                 if delivery_id:
                     self.bridge.record_delivery_outcome(delivery_id, state="UNKNOWN", error_message=str(send_err))
 
-        self._last_processed_date = local_date
+        self.record_completed_state(local_date, status="SEND_COMPLETE", sent_count=sent_count, error_count=error_count)
         logger.info("[GenericResponder] Cycle finished. Sent: %d, Errors: %d", sent_count, error_count)
         return {"status": "SEND_COMPLETE", "sent": sent_count, "errors": error_count}
 
@@ -605,8 +677,16 @@ if __name__ == "__main__":
     logger.info("==================================================")
     logger.info("Starting GenericAutoResponder Scheduled Execution")
     logger.info("==================================================")
+    force_run = "--force" in sys.argv
     responder = GenericAutoResponder()
-    res = responder.process_queue(force=True)
+    res = responder.process_queue(force=force_run)
     logger.info("Execution complete. Result: %s", res)
     if sys.stdout:
         print(f"Result: {res}")
+
+    # Exit with non-zero code on failure to trigger Task Scheduler restart retry
+    if res.get("status") in ("CONNECTIVITY_FAILED", "CONFIG_UNAVAILABLE", "AUTH_ERROR", "CLAIM_FAILED") or res.get("errors", 0) > 0:
+        logger.error("Process queue terminated with error status: %s", res.get("status"))
+        sys.exit(1)
+
+    sys.exit(0)

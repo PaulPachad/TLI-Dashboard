@@ -1,0 +1,82 @@
+2026-09-17 11:35:32,073 [INFO] ==================================================
+2026-09-17 11:35:32,074 [INFO] Starting GenericAutoResponder Scheduled Execution
+2026-09-17 11:35:32,074 [INFO] ==================================================
+2026-09-17 11:35:32,076 [INFO] [EditorGmailClient] Initialized with credentials: credentials.json, token: token_editor.json
+2026-09-17 11:35:32,077 [INFO] [GenericResponder] Starting queue process cycle...
+2026-09-17 11:35:33,033 [INFO] [GenericResponder] Config synced. Mode: SEND, Enabled: True, Label: Label_392972760264160539, Schedule: 10:00 America/New_York
+2026-09-17 11:35:33,042 [INFO] file_cache is only supported with oauth2client<4.0.0
+2026-09-17 11:35:34,933 [INFO] [GenericResponder] Discovered 10 messages in queue label.
+2026-09-17 11:35:34,934 [INFO] [GenericResponder] Found 6 unique threads in queue.
+2026-09-17 11:35:35,212 [INFO] [GenericResponder] Thread 1a0afea21637f96f ineligible: HUMAN_REPLIED
+2026-09-17 11:35:35,566 [INFO] [GenericResponder] Thread 1a0a5b1a4bfa2ff2 ineligible: HUMAN_REPLIED
+2026-09-17 11:36:02,745 [INFO] [GenericResponder] Thread 1a0a59fbbf3b594d ineligible: HUMAN_REPLIED
+2026-09-17 11:36:03,999 [WARNING] [GenericResponder] Could not obtain delivery ID for thread 1a0ab10b01df8938; skipping.
+2026-09-17 11:36:04,512 [WARNING] [GenericResponder] Could not obtain delivery ID for thread 1a0a01e4c97607a7; skipping.
+2026-09-17 11:36:04,964 [WARNING] [GenericResponder] Could not obtain delivery ID for thread 1a09169ffea2c2e0; skipping.
+2026-09-17 11:36:04,965 [INFO] [GenericResponder] Cycle finished. Sent: 0, Errors: 3
+2026-09-17 11:36:04,965 [INFO] Execution complete. Result: {'status': 'SEND_COMPLETE', 'sent': 0, 'errors': 3}
+2026-09-17 11:39:55,189 [INFO] ==================================================
+2026-09-17 11:39:55,189 [INFO] Starting GenericAutoResponder Scheduled Execution
+2026-09-17 11:39:55,189 [INFO] ==================================================
+2026-09-17 11:39:55,192 [INFO] [EditorGmailClient] Initialized with credentials: credentials.json, token: token_editor.json
+2026-09-17 11:39:55,193 [INFO] [GenericResponder] Starting queue process cycle...
+2026-09-17 11:39:58,738 [INFO] [GenericResponder] Config synced. Mode: SEND, Enabled: True, Label: Label_392972760264160539, Schedule: 10:00 America/New_York
+2026-09-17 11:39:58,747 [INFO] file_cache is only supported with oauth2client<4.0.0
+2026-09-17 11:40:01,371 [INFO] [GenericResponder] Discovered 10 messages in queue label.
+2026-09-17 11:40:01,371 [INFO] [GenericResponder] Found 6 unique threads in queue.
+2026-09-17 11:40:01,595 [INFO] [GenericResponder] Thread 1a0afea21637f96f ineligible: HUMAN_REPLIED
+2026-09-17 11:40:01,951 [INFO] [GenericResponder] Thread 1a0a5b1a4bfa2ff2 ineligible: HUMAN_REPLIED
+2026-09-17 11:40:24,324 [INFO] [GenericResponder] Thread 1a0a59fbbf3b594d ineligible: HUMAN_REPLIED
+2026-09-17 11:40:28,141 [INFO] [GenericResponder] Sent generic reply to rsvp@archgrants.org for thread 1a0ab10b01df8938 (Sent ID: 1a0b006c0b8ccda9)
+2026-09-17 11:40:31,621 [INFO] [GenericResponder] Sent generic reply to lucy.chapman@unturnedagency.com for thread 1a0a01e4c97607a7 (Sent ID: 1a0b006ce1fbbf39)
+2026-09-17 11:40:33,635 [INFO] [GenericResponder] Sent generic reply to rosemary@cii.org for thread 1a09169ffea2c2e0 (Sent ID: 1a0b006d648c2335)
+2026-09-17 11:40:34,622 [INFO] [GenericResponder] Cycle finished. Sent: 3, Errors: 0
+2026-09-17 11:40:34,622 [INFO] Execution complete. Result: {'status': 'SEND_COMPLETE', 'sent': 3, 'errors': 0}
+2026-09-17 11:58:56,505 [INFO] ==================================================
+2026-09-17 11:58:56,505 [INFO] Starting GenericAutoResponder Scheduled Execution
+2026-09-17 11:58:56,506 [INFO] ==================================================
+2026-09-17 11:58:56,510 [INFO] [EditorGmailClient] Initialized with credentials: credentials.json, token: token_editor.json
+2026-09-17 11:58:56,510 [INFO] [GenericResponder] Starting queue process cycle (force=False)...
+2026-09-17 11:58:56,536 [INFO] [GenericResponder] Connectivity & SaaS sync check attempt 1 (elapsed 0.0s)...
+2026-09-17 11:58:57,566 [INFO] [GenericResponder] Config synced. Mode: SEND, Enabled: True, Label: Label_392972760264160539, Schedule: 10:00 America/New_York
+2026-09-17 11:58:57,580 [INFO] file_cache is only supported with oauth2client<4.0.0
+2026-09-17 11:58:58,791 [INFO] [GenericResponder] Network, SaaS bridge, and Gmail authentication verified successfully.
+2026-09-17 11:58:59,463 [INFO] [GenericResponder] Discovered 7 messages in queue label.
+2026-09-17 11:58:59,463 [INFO] [GenericResponder] Found 3 unique threads in queue.
+2026-09-17 11:58:59,750 [INFO] [GenericResponder] Thread 1a0afea21637f96f ineligible: HUMAN_REPLIED
+2026-09-17 11:59:00,115 [INFO] [GenericResponder] Thread 1a0a5b1a4bfa2ff2 ineligible: HUMAN_REPLIED
+2026-09-17 11:59:00,457 [INFO] [GenericResponder] Thread 1a0a59fbbf3b594d ineligible: HUMAN_REPLIED
+2026-09-17 11:59:00,459 [INFO] [GenericResponder] Recorded completion state for 2026-09-17 to state_generic_responder.json
+2026-09-17 11:59:00,459 [INFO] [GenericResponder] Cycle finished. Sent: 0, Errors: 0
+2026-09-17 11:59:00,460 [INFO] Execution complete. Result: {'status': 'SEND_COMPLETE', 'sent': 0, 'errors': 0}
+2026-09-17 11:59:05,350 [INFO] ==================================================
+2026-09-17 11:59:05,350 [INFO] Starting GenericAutoResponder Scheduled Execution
+2026-09-17 11:59:05,351 [INFO] ==================================================
+2026-09-17 11:59:05,354 [INFO] [EditorGmailClient] Initialized with credentials: credentials.json, token: token_editor.json
+2026-09-17 11:59:05,354 [INFO] [GenericResponder] Starting queue process cycle (force=False)...
+2026-09-17 11:59:05,376 [INFO] [GenericResponder] Connectivity & SaaS sync check attempt 1 (elapsed 0.0s)...
+2026-09-17 11:59:06,582 [INFO] [GenericResponder] Config synced. Mode: SEND, Enabled: True, Label: Label_392972760264160539, Schedule: 10:00 America/New_York
+2026-09-17 11:59:06,595 [INFO] file_cache is only supported with oauth2client<4.0.0
+2026-09-17 11:59:07,741 [INFO] [GenericResponder] Network, SaaS bridge, and Gmail authentication verified successfully.
+2026-09-17 11:59:08,501 [INFO] [GenericResponder] Discovered 7 messages in queue label.
+2026-09-17 11:59:08,502 [INFO] [GenericResponder] Found 3 unique threads in queue.
+2026-09-17 11:59:08,728 [INFO] [GenericResponder] Thread 1a0afea21637f96f ineligible: HUMAN_REPLIED
+2026-09-17 11:59:08,967 [INFO] [GenericResponder] Thread 1a0a5b1a4bfa2ff2 ineligible: HUMAN_REPLIED
+2026-09-17 11:59:09,216 [INFO] [GenericResponder] Thread 1a0a59fbbf3b594d ineligible: HUMAN_REPLIED
+2026-09-17 11:59:09,219 [INFO] [GenericResponder] Recorded completion state for 2026-09-17 to state_generic_responder.json
+2026-09-17 11:59:09,219 [INFO] [GenericResponder] Cycle finished. Sent: 0, Errors: 0
+2026-09-17 11:59:09,220 [INFO] Execution complete. Result: {'status': 'SEND_COMPLETE', 'sent': 0, 'errors': 0}
+2026-09-17 11:59:26,735 [INFO] ==================================================
+2026-09-17 11:59:26,736 [INFO] Starting GenericAutoResponder Scheduled Execution
+2026-09-17 11:59:26,737 [INFO] ==================================================
+2026-09-17 11:59:26,741 [INFO] [EditorGmailClient] Initialized with credentials: credentials.json, token: token_editor.json
+2026-09-17 11:59:26,741 [INFO] [GenericResponder] Starting queue process cycle (force=False)...
+2026-09-17 11:59:26,748 [INFO] [GenericResponder] Skipping run: Daily run for 2026-09-17 already sent 24 emails at 2026-09-17T11:59:09.216860-04:00.
+2026-09-17 11:59:26,748 [INFO] Execution complete. Result: {'status': 'NOT_DUE', 'localDate': '2026-09-17', 'reason': 'Daily run for 2026-09-17 already sent 24 emails at 2026-09-17T11:59:09.216860-04:00'}
+2026-09-17 11:59:43,151 [INFO] ==================================================
+2026-09-17 11:59:43,342 [INFO] Starting GenericAutoResponder Scheduled Execution
+2026-09-17 11:59:43,342 [INFO] ==================================================
+2026-09-17 11:59:43,346 [INFO] [EditorGmailClient] Initialized with credentials: credentials.json, token: token_editor.json
+2026-09-17 11:59:43,347 [INFO] [GenericResponder] Starting queue process cycle (force=False)...
+2026-09-17 11:59:43,405 [INFO] [GenericResponder] Skipping run: Daily run for 2026-09-17 already sent 24 emails at 2026-09-17T11:59:09.216860-04:00.
+2026-09-17 11:59:43,405 [INFO] Execution complete. Result: {'status': 'NOT_DUE', 'localDate': '2026-09-17', 'reason': 'Daily run for 2026-09-17 already sent 24 emails at 2026-09-17T11:59:09.216860-04:00'}

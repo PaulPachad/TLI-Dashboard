@@ -1,0 +1,1823 @@
+[
+  {
+    "id": "6830da92-e204-4a00-832a-902840129ad4",
+    "normalized_topic": "how to successfully scale a digital brand or ip into a full franchise",
+    "original_topic": "How to Successfully Scale a Digital Brand or IP Into a Full Franchise",
+    "correct_topic_name": "5 Things You Need To Know To Successfully Scale Your Business",
+    "correct_doc_id": "1_YjkD3IScc-OjhBcf82_0zcWLhIVb1ZT",
+    "created_at": "2026-01-19T14:43:19.269687Z",
+    "updated_at": "2026-01-20T13:56:17.737146Z"
+  },
+  {
+    "id": "9f44a970-db47-4a66-b32a-f95926596191",
+    "normalized_topic": "edtech anu vaid of parentsquare on how their technology will make an important positive impact on education",
+    "original_topic": "EdTech: Anu Vaid of ParentSquare On How Their Technology Will Make An Important Positive Impact On Education",
+    "correct_topic_name": "EdTech: Education Tech Leaders On How Their Technology Will Make An Important Positive Impact On Education",
+    "correct_doc_id": "15bKsVbPna8b4TbzbCyvPcx6ZkwBQZN6KfRw0rPVgpfI",
+    "created_at": "2026-01-20T01:20:57.356388Z"
+  },
+  {
+    "id": "ee69d81e-bc89-4af5-a88c-29e535407657",
+    "normalized_topic": "leading with heart the power of authentic women s leadership sports stars that are making a social impact",
+    "original_topic": "Leading with Heart: The Power of Authentic Women's Leadership; Sports Stars That Are Making A Social Impact",
+    "correct_topic_name": "Female Founders: Five Things You Need To Thrive and Succeed as a Woman Founder",
+    "correct_doc_id": "1tHq7wwwZ6Iq0SehaU-jtGfud9gPDYMVodWcPxYDCTB4",
+    "created_at": "2026-01-20T16:00:16.032255Z"
+  },
+  {
+    "id": "46c5f95a-a931-4b96-a18c-102fe95fe96d",
+    "normalized_topic": "how we leverage ai to take our company to the next level",
+    "original_topic": "How we leverage AI to take our company to the next level",
+    "correct_topic_name": "How We Leveraged AI To Take Our Company To The Next Level",
+    "correct_doc_id": "1WIVAg3B5MlWvrJEUmDYeHuNTPfQBm0ApQj8ULkYlcgw",
+    "created_at": "2026-01-20T19:34:55.309874Z"
+  },
+  {
+    "id": "1050b6fd-fcce-4e43-b135-34c0d919fa49",
+    "normalized_topic": "new topic slavik zorin of synchrony systems on application modernization turning monolithic legacy architectures into cloud microarchitectures",
+    "original_topic": "New Topic: Slavik Zorin of Synchrony Systems on Application Modernization: Turning Monolithic Legacy Architectures into Cloud Microarchitectures",
+    "correct_topic_name": "How To Use Digital Transformation To Take Your Company To The Next Level",
+    "correct_doc_id": "1pf5pGcQGnCfesprTPVuU-edXLC1u1qBXZ1jgoNIgPzs",
+    "created_at": "2026-01-21T13:31:31.558865Z"
+  },
+  {
+    "id": "7b11b98c-21dd-4635-a1ec-f373abd840c9",
+    "normalized_topic": "five things i wish someone told me when rebuilding life after trauma",
+    "original_topic": "Five Things I Wish Someone Told Me When Rebuilding Life After Trauma",
+    "correct_topic_name": "Practical Strategies To Rebuild Life After Trauma",
+    "correct_doc_id": "1G5707BMvvQV_JUYv6jxkNYis8ns72oa05ckOFS4uY-k",
+    "created_at": "2026-01-21T13:32:52.465763Z"
+  },
+  {
+    "id": "a73aef2d-62d2-4931-a69f-70a7969b2c5a",
+    "normalized_topic": "what it takes to become an award winning chef",
+    "original_topic": "What It Takes To Become An Award Winning Chef",
+    "correct_topic_name": "What It Takes To Become An Award Winning Chef Or Restaurateur",
+    "correct_doc_id": "1V3ZtMg2BZ-RaxXg252UAnX0cyKkNoJBgkIAoAK0xGnc",
+    "created_at": "2026-01-21T17:09:57.228107Z",
+    "updated_at": "2026-04-05T01:55:56.065391Z"
+  },
+  {
+    "id": "3c04ac22-611b-49a4-830a-ffc84d5ae15b",
+    "normalized_topic": "health tech series",
+    "original_topic": "Health-tech series",
+    "correct_topic_name": "Health Tech",
+    "correct_doc_id": "12qq8wIMDS7S2aWwwEv1Ur1ZUCQmFQnJWwEtLVijt2X4",
+    "created_at": "2026-01-21T22:30:25.114582Z"
+  },
+  {
+    "id": "69969a2d-f30e-4e64-82bc-302d1a0d3e72",
+    "normalized_topic": "purpose profit and personal brand the new ceo playbook",
+    "original_topic": "Purpose, Profit, and Personal Brand: The New CEO Playbook",
+    "correct_topic_name": "Purpose, Profit and Personal Brand: The New CEO Playbook",
+    "correct_doc_id": "1pozduauUjuZ3CA8IcOHl4DWUSjDp_ZqpVwoqUTiiv_U",
+    "created_at": "2026-01-22T15:04:32.235464Z",
+    "updated_at": "2026-02-19T21:31:05.931286Z"
+  },
+  {
+    "id": "e7643b34-be31-4a3a-8dd3-a8c2214183a3",
+    "normalized_topic": "10 an inside look at the benefits and impact of executive coaching",
+    "original_topic": "10. An Inside Look at the Benefits and Impact Of Executive Coaching",
+    "correct_topic_name": "An Inside Look at the Benefits and Impact Of Working With an Executive Coach",
+    "correct_doc_id": "1OENEI0IpYb36JTnRi8NLnkoZwqQ4GgK1zBCL8gZuoRM",
+    "created_at": "2026-01-25T00:37:22.647142Z",
+    "updated_at": "2026-01-25T00:37:24.475604Z"
+  },
+  {
+    "id": "5b4188ff-31c8-4750-936c-3425d11a9b19",
+    "normalized_topic": "changemakers using capital for good",
+    "original_topic": "Changemakers Using Capital for Good",
+    "correct_topic_name": "Meet The Social Impact Investors",
+    "correct_doc_id": "1-albQ8RS3dJMgYVkOKkBrFSc0ZY1ToI6x5f5L4ZPOHw",
+    "created_at": "2026-01-25T00:40:26.306282Z",
+    "updated_at": "2026-01-25T00:40:35.330852Z"
+  },
+  {
+    "id": "d8779457-df50-4296-956a-923e96072f76",
+    "normalized_topic": "53 5 tips for your b2b marketing strategy",
+    "original_topic": "53. 5 Tips for Your B2B Marketing Strategy",
+    "correct_topic_name": "5 Tips for Your B2B Marketing Strategy (Interviewer: Rachel Kline)",
+    "correct_doc_id": "1hQNPq_MGtB5_nu3CNfXVy0oAcFTBI4Q6dnEb-c7X_78",
+    "created_at": "2026-01-25T00:41:29.605957Z",
+    "updated_at": "2026-01-25T00:41:39.050047Z"
+  },
+  {
+    "id": "38225d1a-c388-4c7c-9253-05e36550f381",
+    "normalized_topic": "the hidden superpower of every great leader uncovering the traits that separate good leaders from exceptional ones",
+    "original_topic": "The Hidden Superpower of Every Great Leader — Uncovering the Traits That Separate Good Leaders from Exceptional Ones",
+    "correct_topic_name": "The Hidden Superpower of Every Great Leader - Uncovering the Traits That Separate Good Leaders from Exceptional Ones",
+    "correct_doc_id": "1LZtGrQEnmJt68yfDaTiNqyzIHLzxv0xDXo2N6dxp7Bo",
+    "created_at": "2026-01-25T00:57:56.579686Z",
+    "updated_at": "2026-02-01T19:03:27.464067Z"
+  },
+  {
+    "id": "b6da5d70-6bf3-4ff6-ac04-9fdf2173a325",
+    "normalized_topic": "sustainability leaders",
+    "original_topic": "Sustainability Leaders",
+    "correct_topic_name": "The Future Is Green: Leaders in Sustainability Share Their Top Strategies for a Cleaner Planet",
+    "correct_doc_id": "1VT-sd9aUQcozxS1VPJz5TUDNnw8uj6VXibUK8GVJlZE",
+    "created_at": "2026-01-27T02:17:31.694835Z"
+  },
+  {
+    "id": "c3e70941-3dc8-43ff-b7a9-7317feb56ee0",
+    "normalized_topic": "hr leaders share how to identify and retain fantastic talent",
+    "original_topic": "HR Leaders Share How to Identify and Retain Fantastic Talent",
+    "correct_topic_name": "HR Leaders On How To Identify and Engage The Best Talent For Your Organization",
+    "correct_doc_id": "1RY3xW-ki7YmEZ-S6Dh9T08crFy8uySKfWKrAt69JXwo",
+    "created_at": "2026-01-27T02:17:39.137971Z"
+  },
+  {
+    "id": "a9df591f-1fd5-47c0-8561-e56b07414066",
+    "normalized_topic": "the mind gut connection how healing your gut can transform your mental health",
+    "original_topic": "The Mind-Gut Connection: How Healing Your Gut Can Transform Your Mental Health",
+    "correct_topic_name": "Gut Health: What It Is, Why It's So Important And How To Optimize It",
+    "correct_doc_id": "192veJ6OKKab8ahgJHrpgDtNSeqecuWjUVuYZALI6_ek",
+    "created_at": "2026-01-27T02:18:14.425414Z",
+    "updated_at": "2026-01-27T17:32:29.534446Z"
+  },
+  {
+    "id": "82faf6f8-f8ed-4b8d-8aa8-d0f9bacfbfa6",
+    "normalized_topic": "5 things retireees wish they were told before they retired",
+    "original_topic": "5 things retireees wish they were told before they retired",
+    "correct_topic_name": "5 Things Retirees Say They Wish They Were Told Before They Began Retirement",
+    "correct_doc_id": "17KjTUFFKpdGrdJKz57yQ5dLrA7Ip8TwoMFPDaYB1sKg",
+    "created_at": "2026-01-27T22:39:24.813453Z"
+  },
+  {
+    "id": "0fe545fb-ad61-4bf8-8c87-4e0630cd6e53",
+    "normalized_topic": "i beat cancer and this is how i did it",
+    "original_topic": "I beat cancer and this is how I did it",
+    "correct_topic_name": "I Survived Cancer and Here Is How I Did It",
+    "correct_doc_id": "1_pmrdumNe8vGTiaiVO6fJfMNo9S2EHsVeM5RjsH2TVE",
+    "created_at": "2026-01-27T22:39:58.593549Z"
+  },
+  {
+    "id": "57566a21-a98a-420d-aa50-3a8fa30a21a1",
+    "normalized_topic": "five marketing strategies from a top cmo",
+    "original_topic": "Five Marketing Strategies from a Top CMO",
+    "correct_topic_name": "Marketing Strategies From Top CMOs",
+    "correct_doc_id": "1Z2RJCyNNtEmwj7Qr0fnVqhfiZUffTWXGSD7Bhl0msuA",
+    "created_at": "2026-01-27T22:42:28.678009Z"
+  },
+  {
+    "id": "d06c35f9-9d18-4b7d-b50e-cabea23cc5e9",
+    "normalized_topic": "the freedom framework how business owners are scaling without burnout using remote teams from latin america",
+    "original_topic": "The Freedom Framework: How Business Owners Are Scaling Without Burnout Using Remote Teams from Latin America",
+    "correct_topic_name": "How To Delegate Effectively and Be Completely Satisfied With the Results",
+    "correct_doc_id": "1FxEZkDfuOop1difd6zXuiTRduoq0OsVqs1gfZtCcS9w",
+    "created_at": "2026-01-28T17:51:23.731401Z"
+  },
+  {
+    "id": "2aaae9a1-4489-4a6e-a358-5fd91864ea6d",
+    "normalized_topic": "philanthropy and social impact",
+    "original_topic": "Philanthropy and Social Impact",
+    "correct_topic_name": "Social Impact Tech",
+    "correct_doc_id": "1aoIZWs81gd4LSoB_4wX4AHMI3dCm-k6prlw-8jE4dio",
+    "created_at": "2026-01-28T18:22:17.809931Z"
+  },
+  {
+    "id": "688dab9b-a3bf-4d4a-bb70-11d40ebdf722",
+    "normalized_topic": "rising stars in music",
+    "original_topic": "Rising Stars in Music",
+    "correct_topic_name": "Music Stars",
+    "correct_doc_id": "1CgOPtTgVhj6nq-uUAVbtnna9aDIdIDMw52Mm7KykrBw",
+    "created_at": "2026-01-29T18:39:07.447522Z",
+    "updated_at": "2026-02-09T22:53:18.532517Z"
+  },
+  {
+    "id": "f80d8bac-0355-4ef7-92b4-7a1f7a403efb",
+    "normalized_topic": "mental health in america",
+    "original_topic": "Mental Health in America",
+    "correct_topic_name": "Mental Health Champions",
+    "correct_doc_id": "1P1gAp5ojUZqipSjQj1bvCC7nFkSpJbaGgjrjXfNHB5w",
+    "created_at": "2026-02-01T18:10:21.466238Z",
+    "updated_at": "2026-02-01T18:10:28.385847Z"
+  },
+  {
+    "id": "f2ff410f-76df-44fc-80d2-807a0ba66006",
+    "normalized_topic": "leading from the c suite",
+    "original_topic": "Leading From the C-Suite",
+    "correct_topic_name": "Meet The Women Of The C-Suite",
+    "correct_doc_id": "1PVrYGpGMJFyU2rlkmvBrlqwhCLUkoe1SfBa8qQrqR2g",
+    "created_at": "2026-02-02T23:44:26.645575Z"
+  },
+  {
+    "id": "0fcd7df6-4d2e-438c-b97b-feac6cb66130",
+    "normalized_topic": "five things you need to create a highly successful franchise business",
+    "original_topic": "Five Things You Need To Create A Highly Successful Franchise Business",
+    "correct_topic_name": "Five Things I Wish I Knew Before Opening a Franchise",
+    "correct_doc_id": "1N3SX_60oxTfdPLlpU73a_uT-SDF6DOQbUGC8WFLVlU8",
+    "created_at": "2026-02-05T00:09:21.550628Z"
+  },
+  {
+    "id": "1d4a00f7-7572-4e47-b37e-9ade16517dce",
+    "normalized_topic": "women s leadership purpose driven impact",
+    "original_topic": "Women’s Leadership & Purpose-Driven Impact",
+    "correct_topic_name": "The New Portrait Of Leadership: Which Legacy Ideas About Leadership Need To Be Discarded, And Which New Approaches To Leadership Should Be Embraced",
+    "correct_doc_id": "1Ema6eLc2Pt1Q9jxXmkicREiGTMqMb6n_Z0fjXTR3Tws",
+    "created_at": "2026-02-05T00:09:24.294980Z"
+  },
+  {
+    "id": "0efd269b-cec5-4e55-832d-a3b005a24b21",
+    "normalized_topic": "how to build a resilient mindset during uncertain times",
+    "original_topic": "How to Build a Resilient Mindset During Uncertain Times",
+    "correct_topic_name": "Rising Through Resilience; Five Things You Can Do To Become More Resilient During Turbulent Times",
+    "correct_doc_id": "1aCjqktr-Zrj2_UUt4YAczxLfzlB7J4us9qoC_ltcAUE",
+    "created_at": "2026-02-05T00:09:36.858424Z"
+  },
+  {
+    "id": "03dc230b-83af-4c11-8782-ac0454f8570d",
+    "normalized_topic": "sleep longevity wellness",
+    "original_topic": "Sleep\\Longevity/Wellness",
+    "correct_topic_name": "Longevity: Daily Choices That Add Years to Life",
+    "correct_doc_id": "1ui7oLCVNNnfM0JkdU6DME1agCJXewLmbKBeaW14N3NQ",
+    "created_at": "2026-02-05T00:30:27.881958Z",
+    "updated_at": "2026-02-05T00:30:45.069835Z"
+  },
+  {
+    "id": "f2f82ede-8130-4e90-ad6c-b7ade822ae11",
+    "normalized_topic": "changemakers in arts culture",
+    "original_topic": "Changemakers in Arts & Culture",
+    "correct_topic_name": "Live Arts: 5 Things You Need To Create A Highly Successful Career in Broadway, Theater, or Live Performances",
+    "correct_doc_id": "180iv6-evpnfwbtVkxCQJwchg1YaDvjXw-t4j56qmQI4",
+    "created_at": "2026-02-05T00:30:38.274596Z"
+  },
+  {
+    "id": "c0260f8f-8ef1-411f-8012-488740c968a3",
+    "normalized_topic": "how their technological innovations will shake up the tech scene",
+    "original_topic": "How Their Technological Innovations Will Shake Up The Tech Scene",
+    "correct_topic_name": "Health Tech",
+    "correct_doc_id": "12qq8wIMDS7S2aWwwEv1Ur1ZUCQmFQnJWwEtLVijt2X4",
+    "created_at": "2026-02-05T17:14:11.165092Z"
+  },
+  {
+    "id": "ced7188f-185a-4cdb-9b08-53bf37d7fafc",
+    "normalized_topic": "lessons learned from scaling and transforming businesses",
+    "original_topic": "“Lessons Learned From Scaling and Transforming Businesses”",
+    "correct_topic_name": "5 Things You Need To Know To Successfully Scale Your Business",
+    "correct_doc_id": "1_YjkD3IScc-OjhBcf82_0zcWLhIVb1ZT",
+    "created_at": "2026-02-06T01:51:26.717190Z"
+  },
+  {
+    "id": "deb0fb6e-7c10-45f1-86b2-469855c4bbad",
+    "normalized_topic": "disruptors how our company is disrupting an industry",
+    "original_topic": "Disruptors (How Our Company Is Disrupting an Industry)",
+    "correct_topic_name": "Meet The Disruptors",
+    "correct_doc_id": "1IeUWKNClg4gGY_82R73n1aCN319Y5upQMkEQ0wZbv_U",
+    "created_at": "2026-02-06T01:51:29.129084Z",
+    "updated_at": "2026-02-06T01:52:09.280181Z"
+  },
+  {
+    "id": "1a76b30d-3998-4d34-a18d-5f313c0f3d0b",
+    "normalized_topic": "rising star meet the next generation of entertainment powerhouses",
+    "original_topic": "Rising Star: Meet The Next Generation Of Entertainment Powerhouses",
+    "correct_topic_name": "Meet The Rising Stars of TV and Film",
+    "correct_doc_id": "1OeC4OUq2FC889OhQjXwk92_Qd1bLj_qsu1CQCC4Hgb4",
+    "created_at": "2026-02-06T01:51:49.774956Z",
+    "updated_at": "2026-02-06T01:51:56.525357Z"
+  },
+  {
+    "id": "cef26340-ecb4-4eee-a404-35dead87f089",
+    "normalized_topic": "how social media influencers leverage their platform to make a significant social impact",
+    "original_topic": "How Social Media Influencers Leverage Their Platform To Make a Significant Social Impact",
+    "correct_topic_name": "Social Media Stars Making a Social Impact",
+    "correct_doc_id": "1SisvoOkrzLEhUVpOP_QYWm12J4eNgbXGQn6ZVOI-_C8",
+    "created_at": "2026-02-06T01:51:53.134910Z",
+    "updated_at": "2026-08-24T21:57:21.299661Z"
+  },
+  {
+    "id": "3379d6f4-ac15-4d1e-9a34-6e90691c43ec",
+    "normalized_topic": "future of retail",
+    "original_topic": "Future of Retail",
+    "correct_topic_name": "The Future Of Retail Over The Next Few Years",
+    "correct_doc_id": "1WdRL8YcxGmGLFZdO8BTPJRTVjdy25QCIeErza_cWWEw",
+    "created_at": "2026-02-06T02:22:35.513342Z"
+  },
+  {
+    "id": "2fe7a169-f8ff-48aa-aec2-ae10cc486d4b",
+    "normalized_topic": "5 things i need to see before making a vc investment",
+    "original_topic": "5 Things I Need To See Before Making A VC Investment",
+    "correct_topic_name": "VCs & Angels: 5 Things I Need to See Before Making an Investment",
+    "correct_doc_id": "1z-qsGzcamQro09c745BkZ2YvRiZiDxJ67i7ToRMgUCk",
+    "created_at": "2026-02-08T13:02:00.312574Z",
+    "updated_at": "2026-02-08T13:02:05.971708Z"
+  },
+  {
+    "id": "e30d76be-86c6-4306-93d4-b7029becb4e3",
+    "normalized_topic": "social impact leaders or inspirational founders",
+    "original_topic": "Social Impact Leaders or Inspirational Founders",
+    "correct_topic_name": "Social Impact Heroes",
+    "correct_doc_id": "1vJAt9NaXYe0wgVyVr-iKDdJTERw_Xo9zlgaExgmCEE0",
+    "created_at": "2026-02-11T01:53:10.295695Z"
+  },
+  {
+    "id": "4211e2ad-3a5c-4e9a-b857-f2fdd5cc4365",
+    "normalized_topic": "five things business owners need to know to successfully scale their business",
+    "original_topic": "five things business owners need to know to successfully scale their business",
+    "correct_topic_name": "5 Things You Need To Know To Successfully Scale Your Business",
+    "correct_doc_id": "1_YjkD3IScc-OjhBcf82_0zcWLhIVb1ZT",
+    "created_at": "2026-02-09T22:51:56.216394Z"
+  },
+  {
+    "id": "0d7dcb07-c926-4ee0-b124-ec58834c5dc9",
+    "normalized_topic": "women leaders of cannabis",
+    "original_topic": "Women Leaders Of Cannabis",
+    "correct_topic_name": "Meet the Women Founders & CEOs of the Cannabis Industry",
+    "correct_doc_id": "1mGFrRBT3DG8pks2U8rKm9Ur5dORl6NGCdsLuINCCKWY",
+    "created_at": "2026-02-11T23:29:25.292246Z",
+    "updated_at": "2026-02-11T23:33:06.480609Z"
+  },
+  {
+    "id": "ee9a2153-1bb5-4a8a-ad70-44f819e3aacc",
+    "normalized_topic": "5 things you need to create a highly successful career in public relations",
+    "original_topic": "5 Things You Need To Create A Highly Successful Career In Public Relations",
+    "correct_topic_name": "PR Pros: 5 Things You Need To Create A Highly Successful Career As A Public Relations Pro",
+    "correct_doc_id": "13JpniO9yHA2okxSQymw3Ud4u4CHgBIYwagPJmcD_U24",
+    "created_at": "2026-02-11T23:29:27.732633Z",
+    "updated_at": "2026-02-11T23:33:07.067053Z"
+  },
+  {
+    "id": "cc4c37a6-b84a-42aa-9a5d-1ba97c8378c6",
+    "normalized_topic": "https medium com authority magazine search q fresh founders 3a the unique challenges of building a business from scratch",
+    "original_topic": "https://medium.com/authority-magazine/search?q=Fresh+Founders%3A+The+Unique+Challenges+of+Building+a+Business+From+Scratch",
+    "correct_topic_name": "Fresh Founders: The Unique Challenges of Building a Business From Scratch",
+    "correct_doc_id": "1srSb-G-wcf59-4WJ2OvassC46L_mf67XC7MBH4J2lOw",
+    "created_at": "2026-02-11T23:29:36.350781Z"
+  },
+  {
+    "id": "a82e02f1-ec7f-4497-b28e-2e68b1935c7b",
+    "normalized_topic": "meet the founders pushing the boundries of ai",
+    "original_topic": "Meet the founders pushing the boundries of AI",
+    "correct_topic_name": "Meet the Entrepreneurs Pushing the Boundaries of AI",
+    "correct_doc_id": "1js--taJcQcbKBAocZzKclahuNjHiW0WF9ant9P3jE28",
+    "created_at": "2026-02-11T23:29:57.937982Z",
+    "updated_at": "2026-02-11T23:33:05.930237Z"
+  },
+  {
+    "id": "d14c2d25-651d-4b91-9f1c-29b065f2709b",
+    "normalized_topic": "five things i wish someone told me before i became a founder leader",
+    "original_topic": "Five Things I Wish Someone Told Me Before I Became a Founder / Leader",
+    "correct_topic_name": "5 Things I Wish Someone Told Me Before I Became a Founder",
+    "correct_doc_id": "1ITOofuiu82U0UQvsFExGC3ebIHD2AB65C4lYgH80E0s",
+    "created_at": "2026-02-11T23:32:55.447441Z"
+  },
+  {
+    "id": "10329177-92df-4277-b0eb-940e98efc4e4",
+    "normalized_topic": "top vcs in tech",
+    "original_topic": "Top VCs in Tech",
+    "correct_topic_name": "VCs & Angels: 5 Things I Need to See Before Making an Investment",
+    "correct_doc_id": "1z-qsGzcamQro09c745BkZ2YvRiZiDxJ67i7ToRMgUCk",
+    "created_at": "2026-02-12T16:03:08.012105Z",
+    "updated_at": "2026-02-12T16:08:18.357399Z"
+  },
+  {
+    "id": "3c10b510-7ea0-46c9-b959-4c359c28a5b2",
+    "normalized_topic": "women s history month leadership",
+    "original_topic": "Women's History Month - Leadership",
+    "correct_topic_name": "Woman Philanthropists",
+    "correct_doc_id": "1E2KZvvZKN_yXPqnCPHAb3QNviiM6yoP4Dc5BW_TIRRE",
+    "created_at": "2026-02-12T16:08:14.509154Z"
+  },
+  {
+    "id": "71ece631-b042-4730-a33d-0b7c11b33a59",
+    "normalized_topic": "the one decision that changed everything redefining my leadership identity",
+    "original_topic": "The One Decision That Changed Everything: Redefining My Leadership Identity",
+    "correct_topic_name": "The One Decision That Changed Everything: How a Single Choice Redefined My Leadership Journey",
+    "correct_doc_id": "1ydv7C-mJLjV3TRFZ_7fllWFv8eDe8KrUnFXFnfxhcRc",
+    "created_at": "2026-02-13T13:01:58.951354Z",
+    "updated_at": "2026-02-13T13:02:03.671948Z"
+  },
+  {
+    "id": "e809be52-09d9-4fb1-a1c5-b43415809b6b",
+    "normalized_topic": "emerging literary voices writing survival identity and reinvention across continents",
+    "original_topic": "Emerging Literary Voices: Writing Survival, Identity and Reinvention Across Continents",
+    "correct_topic_name": "Social Impact Authors",
+    "correct_doc_id": "1Ca2u29kmXtsYmfF9L1Z1OtJSZOK3zkSF6DKluWnwD18",
+    "created_at": "2026-02-18T23:53:49.565427Z"
+  },
+  {
+    "id": "aecd5101-53b5-4261-84ea-6a64fdb997ab",
+    "normalized_topic": "doctors dietitians nutritionists on why you should consider a whole food plant based diet",
+    "original_topic": "Doctors, Dietitians, & Nutritionists on Why You Should Consider a Whole-Food, Plant-Based Diet",
+    "correct_topic_name": "Doctors, Dietitians, Nutritionists, and  Naturopaths on Why You Should Consider a Whole-Food, Plant-Based Diet (WFPB)",
+    "correct_doc_id": "1sSnfTpD0UrLVsd1VMHOnm7MnY1vbOlyL1TE_fUamqpY",
+    "created_at": "2026-02-18T23:54:06.550616Z"
+  },
+  {
+    "id": "ee36abd1-da72-400f-b9e5-53d66e72ed80",
+    "normalized_topic": "authors 5 things i wish someone told me before i became an author",
+    "original_topic": "Authors: 5 Things I Wish Someone Told Me Before I Became An Author",
+    "correct_topic_name": "5 Things You Need To Be A Successful Author or Writer",
+    "correct_doc_id": "15L8T08Pcsvi3TSHBN9GM_aengiJJ3wKS",
+    "created_at": "2026-02-19T00:25:28.301037Z",
+    "updated_at": "2026-02-19T00:25:28.905054Z"
+  },
+  {
+    "id": "597d4486-7b09-4202-ae8f-f3952f7b668b",
+    "normalized_topic": "founders and ceos on building a successful e commerce business",
+    "original_topic": "Founders and CEOs on Building a Successful E-Commerce Business",
+    "correct_topic_name": "Founders And CEOs On How To Build A Successful E-Commerce Business In A Saturated Ecommerce Landscape",
+    "correct_doc_id": "19fR5OLnWIWp5LciN2ep9gYXD70EUZmvx1CM36XIlqM4",
+    "created_at": "2026-02-19T20:22:36.698990Z",
+    "updated_at": "2026-02-19T21:58:08.542981Z"
+  },
+  {
+    "id": "6426bae9-e772-4325-9e26-5c3f9aede47b",
+    "normalized_topic": "1 building company culture from the top down how the personal example of exceptional leaders shapes companies that thrive",
+    "original_topic": "1. Building Company Culture From the Top Down: How the Personal Example of Exceptional Leaders Shapes Companies That Thrive",
+    "correct_topic_name": "Building Company Culture From the Top Down: (Name & Company) On How the Personal Example of Exceptional Leaders Shapes Companies That Thrive",
+    "correct_doc_id": "1DCfNvZDM_6sHj-5LaDpB65gIwypkUJrxHee569A7YNI",
+    "created_at": "2026-02-19T20:22:39.830556Z",
+    "updated_at": "2026-02-19T21:58:05.434034Z"
+  },
+  {
+    "id": "5b9a804e-15fb-4612-8f49-70d1c6e0ca60",
+    "normalized_topic": "5 purpose profit and personal brand the new ceo playbook",
+    "original_topic": "5. Purpose, Profit, and Personal Brand: The New CEO Playbook",
+    "correct_topic_name": "Purpose, Profit and Personal Brand: The New CEO Playbook",
+    "correct_doc_id": "1pozduauUjuZ3CA8IcOHl4DWUSjDp_ZqpVwoqUTiiv_U",
+    "created_at": "2026-02-19T20:37:07.326675Z",
+    "updated_at": "2026-02-19T20:48:46.091873Z"
+  },
+  {
+    "id": "7b4504be-a4ed-4095-bdaa-325e24400b40",
+    "normalized_topic": "i can do business marketing travel",
+    "original_topic": "I can do business, marketing & travel",
+    "correct_topic_name": "Meet The Disruptors",
+    "correct_doc_id": "1IeUWKNClg4gGY_82R73n1aCN319Y5upQMkEQ0wZbv_U",
+    "created_at": "2026-02-19T20:48:51.758367Z"
+  },
+  {
+    "id": "bb18f633-a646-48ef-85ad-4b6f3f170ab1",
+    "normalized_topic": "building company culture from the top down how the personal example of exceptional leaders shapes companies that thrive",
+    "original_topic": "Building Company Culture From the Top Down: How the Personal Example of Exceptional Leaders Shapes Companies That Thrive",
+    "correct_topic_name": "Building Company Culture From the Top Down: (Name & Company) On How the Personal Example of Exceptional Leaders Shapes Companies That Thrive",
+    "correct_doc_id": "1DCfNvZDM_6sHj-5LaDpB65gIwypkUJrxHee569A7YNI",
+    "created_at": "2026-02-19T20:48:53.682122Z",
+    "updated_at": "2026-02-19T21:58:13.384453Z"
+  },
+  {
+    "id": "27c5d74f-72aa-48aa-8181-593430cdb233",
+    "normalized_topic": "turbo turnaround purpose profit and personal brand the new ceo playbook",
+    "original_topic": "Turbo Turnaround: Purpose, Profit, and Personal Brand: The New CEO Playbook",
+    "correct_topic_name": "Purpose, Profit and Personal Brand: The New CEO Playbook",
+    "correct_doc_id": "1pozduauUjuZ3CA8IcOHl4DWUSjDp_ZqpVwoqUTiiv_U",
+    "created_at": "2026-02-19T21:07:28.747322Z",
+    "updated_at": "2026-02-19T21:07:40.818253Z"
+  },
+  {
+    "id": "059b8932-c29b-42bf-bcb7-5bfea70c3190",
+    "normalized_topic": "entrepreneurship founding a business health wellness entrepreneurship women in business leadership",
+    "original_topic": "Entrepreneurship & Founding a Business, Health & Wellness Entrepreneurship, Women in Business / Leadership",
+    "correct_topic_name": "Female Disruptors",
+    "correct_doc_id": "1-z_b4YCzEqpOErq-f_BtNx6LpUe6j7-OhxAJctT96Z0",
+    "created_at": "2026-02-19T21:57:28.763793Z"
+  },
+  {
+    "id": "dddbd2e4-2db6-4317-b12a-f86c006d6d10",
+    "normalized_topic": "2 founders and ceos how my career journey has shaped how i lead today",
+    "original_topic": "2. Founders and CEOs: How My Career Journey Has Shaped How I Lead Today",
+    "correct_topic_name": "Founders and CEOs: How My Career Journey Has Shaped How I Lead Today",
+    "correct_doc_id": "1ybU_02Zle0NG3paP9ZZrbtoTGFo9iwvpvGVnoyNJR-4",
+    "created_at": "2026-02-19T21:57:37.277108Z",
+    "updated_at": "2026-02-19T21:57:56.027980Z"
+  },
+  {
+    "id": "3c086cb6-6238-4ce4-90d4-600676a0b07f",
+    "normalized_topic": "creativepreneurs 5 things you need to be successful",
+    "original_topic": "CreativePreneurs - 5 Things You Need To Be Successful",
+    "correct_topic_name": "CreativePreneurs: 5 Things You Need to Succeed as a Creative Entrepreneur",
+    "correct_doc_id": "1Oxidd_1RTMFthK8hg_T_sPKRVfztJoQn_--6QEef-1M",
+    "created_at": "2026-02-19T22:50:08.407867Z",
+    "updated_at": "2026-02-19T22:50:22.963003Z"
+  },
+  {
+    "id": "ccbdcf2a-721f-4175-a159-0743afbb9822",
+    "normalized_topic": "5 things you need to build a transformational education brand",
+    "original_topic": "5 Things You Need To Build A Transformational Education Brand",
+    "correct_topic_name": "Meet The Disruptors",
+    "correct_doc_id": "1IeUWKNClg4gGY_82R73n1aCN319Y5upQMkEQ0wZbv_U",
+    "created_at": "2026-02-20T16:48:28.672749Z"
+  },
+  {
+    "id": "5c758694-99f9-48c3-abf3-cd88f8451405",
+    "normalized_topic": "leadership from the top down the first topic on the fast list you sent me",
+    "original_topic": "Leadership from the top down, the first topic on the fast list you sent me",
+    "correct_topic_name": "Building Company Culture From the Top Down: (Name & Company) On How the Personal Example of Exceptional Leaders Shapes Companies That Thrive",
+    "correct_doc_id": "1DCfNvZDM_6sHj-5LaDpB65gIwypkUJrxHee569A7YNI",
+    "created_at": "2026-02-20T17:19:07.237788Z",
+    "updated_at": "2026-02-20T17:19:42.651513Z"
+  },
+  {
+    "id": "f91f24c6-8c29-4075-8fb3-068228945928",
+    "normalized_topic": "how to build a successful ecommerce business",
+    "original_topic": "How to build a successful eCommerce business",
+    "correct_topic_name": "Founders And CEOs On How To Build A Successful E-Commerce Business In A Saturated Ecommerce Landscape",
+    "correct_doc_id": "19fR5OLnWIWp5LciN2ep9gYXD70EUZmvx1CM36XIlqM4",
+    "created_at": "2026-02-20T17:19:07.926102Z",
+    "updated_at": "2026-02-20T17:19:30.196249Z"
+  },
+  {
+    "id": "03c6b90a-bc79-468b-99d3-0e9d287ffe3c",
+    "normalized_topic": "building company culture from the top down",
+    "original_topic": ". Building Company Culture From the Top Down",
+    "correct_topic_name": "Building Company Culture From the Top Down: (Name & Company) On How the Personal Example of Exceptional Leaders Shapes Companies That Thrive",
+    "correct_doc_id": "1DCfNvZDM_6sHj-5LaDpB65gIwypkUJrxHee569A7YNI",
+    "created_at": "2026-02-22T22:13:11.680867Z",
+    "updated_at": "2026-02-22T22:13:18.747193Z"
+  },
+  {
+    "id": "4006fef4-b517-43ea-a9b3-97f1887d38ca",
+    "normalized_topic": "self care routines of busy entrepreneurs leaders",
+    "original_topic": "Self-Care Routines of Busy Entrepreneurs & Leaders",
+    "correct_topic_name": "The Self-Care Routines & Practices Of Busy Entrepreneurs and Business Leaders",
+    "correct_doc_id": "1I1Gy0DxYqadgu0XP6QTwzvBDpD5vDB_W_Ue6W7F9lQg",
+    "created_at": "2026-02-22T22:13:15.741778Z",
+    "updated_at": "2026-02-22T22:13:19.353080Z"
+  },
+  {
+    "id": "f7d60aa1-fdb1-4197-b726-a358bda6b733",
+    "normalized_topic": "parul yadav founder communications strategist north wave media",
+    "original_topic": "Parul Yadav, Founder & Communications Strategist, North Wave Media",
+    "correct_topic_name": "CreativePreneurs: 5 Things You Need to Succeed as a Creative Entrepreneur",
+    "correct_doc_id": "1Oxidd_1RTMFthK8hg_T_sPKRVfztJoQn_--6QEef-1M",
+    "created_at": "2026-02-23T14:05:22.514618Z",
+    "updated_at": "2026-02-23T14:05:25.518624Z"
+  },
+  {
+    "id": "2e78d47a-2d68-4df2-9676-8a02d7702f1a",
+    "normalized_topic": "celeb bodyguard security business owner and actor",
+    "original_topic": "Celeb bodyguard, security business owner and actor",
+    "correct_topic_name": "TV & Film Stars That Are Making A Social Impact",
+    "correct_doc_id": "1zX3D1Oq-yUKF_UcWF75cQUuI8ceVNDbDAgg5k8rqVTs",
+    "created_at": "2026-02-23T14:36:13.883300Z"
+  },
+  {
+    "id": "907c65dd-abf8-43c5-8300-8d78e957f97e",
+    "normalized_topic": "5 things we must take to truly create an inclusive representative and equitable society this aligns strongly with the equity and access framing of the clinic",
+    "original_topic": "5 Things We Must Take To Truly Create An Inclusive, Representative, and Equitable Society This aligns strongly with the equity and access framing of the clinic.",
+    "correct_topic_name": "5 Steps We Must Take To Truly Create An Inclusive, Representative, and Equitable Society",
+    "correct_doc_id": "1pNQ7ofYx0C6JmorPa9tCiKtivs8QtFrYLYwsIjBYSao",
+    "created_at": "2026-02-24T13:00:52.673873Z"
+  },
+  {
+    "id": "ce69062c-a2ad-4446-9704-bd322ee23bcc",
+    "normalized_topic": "how culture confidence and community are built in real time and what it looks like to center black women while turning personal taste humor and self belief into a sustainable creative platform",
+    "original_topic": "How culture, confidence, and community are built in real time-and what it looks like to center Black women while turning personal taste, humor, and self-belief into a sustainable creative platform.",
+    "correct_topic_name": "Creating Powerful, Thriving Digital Communities: How To Cultivate Connection & Community In A Click-to-Connect World",
+    "correct_doc_id": "11UM7wrvlAfxgsREOKNyZde7efxCCxpUkMaWPgXoClGM",
+    "created_at": "2026-02-25T02:33:27.188152Z",
+    "updated_at": "2026-02-25T02:33:29.471308Z"
+  },
+  {
+    "id": "290ad638-9993-40e3-9c84-fb6f1f28b3fe",
+    "normalized_topic": "the psychology of identity transformation how women rebuild themselves through life transitions",
+    "original_topic": "The Psychology of Identity Transformation: How Women Rebuild Themselves Through Life Transitions",
+    "correct_topic_name": "Mental Health Champions",
+    "correct_doc_id": "1P1gAp5ojUZqipSjQj1bvCC7nFkSpJbaGgjrjXfNHB5w",
+    "created_at": "2026-02-25T02:33:27.938255Z"
+  },
+  {
+    "id": "5450854d-89cb-4902-9fa6-6e76218c1300",
+    "normalized_topic": "54 5 things you need to know to be a highly effictive c level leader of a fintech",
+    "original_topic": "54: 5 Things You Need to Know to be a Highly Effictive C-Level Leader of a FinTech",
+    "correct_topic_name": "5 Things You Need To Be A Highly Effective C-Level Leader Of A Fintech Company",
+    "correct_doc_id": "13lSkogxJAXXMS-cIN6t_85cro3C_Kn79nyxzUmvGNiM",
+    "created_at": "2026-02-26T00:34:43.662283Z",
+    "updated_at": "2026-02-26T00:34:49.688417Z"
+  },
+  {
+    "id": "d52224d4-0176-48f4-94a6-7d9884eb17b4",
+    "normalized_topic": "how leaders personal examples shape thriving companies",
+    "original_topic": "How Leaders Personal Examples Shape Thriving Companies",
+    "correct_topic_name": "Building Company Culture From the Top Down: (Name & Company) On How the Personal Example of Exceptional Leaders Shapes Companies That Thrive",
+    "correct_doc_id": "1DCfNvZDM_6sHj-5LaDpB65gIwypkUJrxHee569A7YNI",
+    "created_at": "2026-02-27T13:05:52.823559Z"
+  },
+  {
+    "id": "ec719e12-4133-48e1-a5ba-7406b23d6552",
+    "normalized_topic": "social impact women in tech or women of c suite",
+    "original_topic": "Social Impact, Women in Tech, or Women of C-Suite",
+    "correct_topic_name": "Meet The Women Of The C-Suite",
+    "correct_doc_id": "1PVrYGpGMJFyU2rlkmvBrlqwhCLUkoe1SfBa8qQrqR2g",
+    "created_at": "2026-02-27T19:14:24.103825Z",
+    "updated_at": "2026-02-27T19:14:42.220274Z"
+  },
+  {
+    "id": "1b0c58a3-ab58-4042-838d-08727f8334ea",
+    "normalized_topic": "5 things you need to create a highly successful restaurant or hospitality brand",
+    "original_topic": "5 Things You Need To Create a Highly Successful Restaurant or Hospitality Brand",
+    "correct_topic_name": "5 Things I Wish Someone Told Me Before I Became a Restaurateur",
+    "correct_doc_id": "1zG6lQ55t3CT_bHD56UBlIHep5oPmeeDSHZf-IdiPsp8",
+    "created_at": "2026-03-04T02:33:56.687122Z"
+  },
+  {
+    "id": "8afa0dc5-2408-4a7b-8ad3-6fffddc9145f",
+    "normalized_topic": "five things you need to know to successfully build a venture backed startup",
+    "original_topic": "Five Things You Need To Know To Successfully Build A Venture-Backed Startup",
+    "correct_topic_name": "Five Things You Need To Create A Highly Successful Startup",
+    "correct_doc_id": "1iIcHN8vhLl1KYtVzigIG75s1Rle3LfeZXeILT22L0Uk",
+    "created_at": "2026-03-04T02:33:58.546306Z"
+  },
+  {
+    "id": "33e83725-a2ed-4bb2-b23e-4db52ab0acc4",
+    "normalized_topic": "five things you need to successfully scale a consumer brand",
+    "original_topic": "Five Things You Need To Successfully Scale a Consumer Brand",
+    "correct_topic_name": "5 Things You Need To Know To Successfully Scale Your Business",
+    "correct_doc_id": "1_YjkD3IScc-OjhBcf82_0zcWLhIVb1ZT",
+    "created_at": "2026-03-08T01:05:39.967597Z",
+    "updated_at": "2026-03-08T01:06:08.614343Z"
+  },
+  {
+    "id": "948111b8-2135-49ef-83d8-5280bc85629c",
+    "normalized_topic": "five things you need to create a thriving local business ecosystem",
+    "original_topic": "Five Things You Need To Create a Thriving Local Business Ecosystem",
+    "correct_topic_name": "Leading with Heart: The Power of Authentic Women's Leadership",
+    "correct_doc_id": "1upjnWYMUieMFpRsQ0_5cSP8zhl6zBpVBXNemci-5QMA",
+    "created_at": "2026-03-08T01:06:27.694215Z"
+  },
+  {
+    "id": "aa5e499b-a393-462a-ad15-06cb13d4dcf8",
+    "normalized_topic": "power women how to succcessfully navigate",
+    "original_topic": "Power Women How to succcessfully navigate",
+    "correct_topic_name": "Power Women: How To Successfully Navigate Work, Love and Life As A Powerful Woman",
+    "correct_doc_id": "16mVePCzwenQhIzDHINqDWVfNjYE9g1ld34NmeDbVFQ4",
+    "created_at": "2026-03-08T01:06:48.862244Z"
+  },
+  {
+    "id": "f2d3047e-2dcd-4aef-8eef-04dc827bc376",
+    "normalized_topic": "big ideas that may change the world a new methodology to herald a more spiritual idealistic world",
+    "original_topic": "Big Ideas that May Change The World: a new methodology to herald a more spiritual, idealistic world",
+    "correct_topic_name": "Big Ideas That Might Change The World",
+    "correct_doc_id": "1KmMZZNBzF9vjHCktKqBJXo4QbL1913U4i4sa0cymi6E",
+    "created_at": "2026-03-08T01:06:49.404795Z"
+  },
+  {
+    "id": "17012bb2-1ebd-4f83-afd9-7d392e9e3da6",
+    "normalized_topic": "5 things to become a great dermatologist",
+    "original_topic": "5 things to become a great dermatologist",
+    "correct_topic_name": "5 Things You Need To Create A Successful Career As A Dermatologist",
+    "correct_doc_id": "11iHgjuL593_bds0z7TrpVbaVu8VGEGGDxzQZ1BsF5lo",
+    "created_at": "2026-03-08T02:18:58.489426Z",
+    "updated_at": "2026-03-08T02:19:03.715953Z"
+  },
+  {
+    "id": "9bacfff4-7e48-454e-bf4c-6d41224eec61",
+    "normalized_topic": "founders and ceos",
+    "original_topic": "Founders and CEOs",
+    "correct_topic_name": "Founders and CEOs: How My Career Journey Has Shaped How I Lead Today",
+    "correct_doc_id": "1ybU_02Zle0NG3paP9ZZrbtoTGFo9iwvpvGVnoyNJR-4",
+    "created_at": "2026-03-08T02:20:40.582461Z",
+    "updated_at": "2026-03-08T02:20:48.892325Z"
+  },
+  {
+    "id": "ea55dedc-74f9-41eb-a148-9a1e1eb7f0ce",
+    "normalized_topic": "weight loss that works use your brain lose the weight",
+    "original_topic": "Weight Loss That Works, Use your Brain, Lose the Weight",
+    "correct_topic_name": "5 Things You Need To Do To Achieve a Healthy Body Weight And Keep It Permanently",
+    "correct_doc_id": "1Hf4rv--oEZOSVDCalZZJv8p6k2F9wUZh",
+    "created_at": "2026-03-08T02:20:47.019327Z",
+    "updated_at": "2026-03-08T02:20:49.530638Z"
+  },
+  {
+    "id": "074c849c-92b8-4b80-bfea-d84fbf2576da",
+    "normalized_topic": "lessons learned from a 20 something founder",
+    "original_topic": "Lessons Learned from a 20-Something Founder",
+    "correct_topic_name": "Lessons I Learned as a Twenty-Something Founder",
+    "correct_doc_id": "1JtPcromLLZYkVlTlRBPusxhvooeutHYw1V-Y0Cl5Lyo",
+    "created_at": "2026-03-08T02:20:47.585330Z"
+  },
+  {
+    "id": "d24be37e-bdcd-4d09-9e77-ba871b7245fd",
+    "normalized_topic": "the five things we need to do to improve healthcare",
+    "original_topic": "The five things we need to do to improve healthcare",
+    "correct_topic_name": "Five Things We Must do to Improve the US Healthcare System",
+    "correct_doc_id": "1gcrwPrnBtR6VC-GOdVm6u_T65uvoftOswTc136a9UiY",
+    "created_at": "2026-03-08T02:49:32.752364Z",
+    "updated_at": "2026-03-08T02:49:40.186137Z"
+  },
+  {
+    "id": "9a585cdb-2203-44f6-8356-766d6be9c28c",
+    "normalized_topic": "lessons from building and mentoring e commerce entrepreneurs in the digital economy",
+    "original_topic": "Lessons From Building and Mentoring E-Commerce Entrepreneurs in the Digital Economy",
+    "correct_topic_name": "5 Things You Need To Know To Run A Very Successful Amazon Business",
+    "correct_doc_id": "1nq_kQ2RjZpi3bgm6EDexp_gSe2GJ4mAPJZG7HIThu78",
+    "created_at": "2026-03-08T02:49:33.642073Z",
+    "updated_at": "2026-03-08T02:49:37.564474Z"
+  },
+  {
+    "id": "73877520-b134-4539-b416-30a0ffb42387",
+    "normalized_topic": "5 things i wish someone told me before i became a filmmaker",
+    "original_topic": "5 Things I Wish Someone Told Me Before I Became a Filmmaker",
+    "correct_topic_name": "Directors & Producers: 5 Things I Wish Someone Told Me When I First Became A Filmmaker",
+    "correct_doc_id": "1uVuLamOkNGtNUHmtR5Jxzc0jKELuuTz1JmvqKUbcHjo",
+    "created_at": "2026-03-09T15:07:04.380409Z",
+    "updated_at": "2026-03-09T15:07:05.590101Z"
+  },
+  {
+    "id": "44460dc2-5924-4f35-8500-3b453790cc00",
+    "normalized_topic": "the future of ai",
+    "original_topic": "The Future of AI",
+    "correct_topic_name": "The Future Of Artificial Intelligence",
+    "correct_doc_id": "1uBHZ9soQZYdcgatw7BZ02lAgM8Nay8G2jQiPQn-1fj0",
+    "created_at": "2026-03-10T17:24:58.555822Z",
+    "updated_at": "2026-03-10T17:25:00.009587Z"
+  },
+  {
+    "id": "3030cc9c-1861-4015-b59b-05a80dc7118c",
+    "normalized_topic": "why how we need to redefine success now",
+    "original_topic": "Why & How We Need To Redefine Success Now",
+    "correct_topic_name": "Redefining Success",
+    "correct_doc_id": "1IzQVzLzEbkR_hyaZkMLaKQoIiQLMhnnanPNSjuQsLsc",
+    "created_at": "2026-03-10T17:25:00.640938Z"
+  },
+  {
+    "id": "7fa4ec52-af4f-49c1-966f-807cf02cfd28",
+    "normalized_topic": "creating a culture of courage",
+    "original_topic": "\"Creating A Culture Of Courage",
+    "correct_topic_name": "Creating a Culture of Courage: How to Create a Culture Where People Feel Safe to be Authentic & Why That Helps the Bottom Line",
+    "correct_doc_id": "12acTQBzG5yQNE7mAsQNPV0f-Jsx3wnfjTxdTffPXDvA",
+    "created_at": "2026-03-10T17:58:00.127525Z"
+  },
+  {
+    "id": "e27a9427-2206-4b23-a426-6dd5dd582cd4",
+    "normalized_topic": "5 things you need to create a successful career as an orthodontist",
+    "original_topic": "5 Things You Need To Create A Successful Career As An Orthodontist",
+    "correct_topic_name": "5 Things You Need To Create A Successful Career As An Orthodontist",
+    "correct_doc_id": "1RwastDX8gLFm-P51Y0qC5pbLYe3Omk6uVIlX88VJ9t8",
+    "created_at": "2026-03-10T18:58:51.765627Z"
+  },
+  {
+    "id": "bc7f9ab8-d4b4-45b4-bdd2-71af88fad527",
+    "normalized_topic": "medical simulation technology to help save lives in combat",
+    "original_topic": "Medical Simulation Technology to help save lives in combat",
+    "correct_topic_name": "Exciting Developments In US High Tech Manufacturing",
+    "correct_doc_id": "1UovQRx14ngF45OSCiOiXZaiM4E01RvUBNBwr_0Xiwg8",
+    "created_at": "2026-03-10T21:34:49.733092Z"
+  },
+  {
+    "id": "4e4c8e38-9a25-4368-baa5-ba091a40aa55",
+    "normalized_topic": "female founders how we built this",
+    "original_topic": "Female Founders: How We Built This",
+    "correct_topic_name": "Female Founders: Five Things You Need To Thrive and Succeed as a Woman Founder",
+    "correct_doc_id": "1tHq7wwwZ6Iq0SehaU-jtGfud9gPDYMVodWcPxYDCTB4",
+    "created_at": "2026-03-10T21:50:42.353110Z"
+  },
+  {
+    "id": "e4d37e73-eb1c-4684-a217-55db4c14590b",
+    "normalized_topic": "women in the c suite",
+    "original_topic": "Women in the C-Suite",
+    "correct_topic_name": "Meet The Women Of The C-Suite",
+    "correct_doc_id": "1PVrYGpGMJFyU2rlkmvBrlqwhCLUkoe1SfBa8qQrqR2g",
+    "created_at": "2026-03-11T01:23:51.948969Z",
+    "updated_at": "2026-03-11T01:23:53.218136Z"
+  },
+  {
+    "id": "7ef5409c-20a6-48e2-831e-23d40c8d5cb5",
+    "normalized_topic": "1 why and how we need to redefine success",
+    "original_topic": "1) Why and how we need to redefine success",
+    "correct_topic_name": "Redefining Success",
+    "correct_doc_id": "1IzQVzLzEbkR_hyaZkMLaKQoIiQLMhnnanPNSjuQsLsc",
+    "created_at": "2026-03-11T14:56:51.632098Z"
+  },
+  {
+    "id": "d1d8ac7d-5653-4623-98f9-cfaee6b9d5ef",
+    "normalized_topic": "how executives sustain performance when leadership pressure remains high",
+    "original_topic": "How executives sustain performance when leadership pressure remains high",
+    "correct_topic_name": "Optimal Performance Before High-Pressure Moments; How To Relieve Stress, Clear Your Head, and Prepare Yourself For High Stakes Business Encounters",
+    "correct_doc_id": "1hhZgyV6iVcGK4lc5r6-B1pBiWId_tfLhuGTtF-PdwZ8",
+    "created_at": "2026-03-12T15:37:07.706918Z"
+  },
+  {
+    "id": "a9d2028f-0701-43d3-9bef-ea5577f74e3c",
+    "normalized_topic": "five things i wish someone told me before i became a rabbi and teacher",
+    "original_topic": "Five Things I Wish Someone Told Me Before I Became a Rabbi and Teacher",
+    "correct_topic_name": "5 Things You Need To Know To Be A Highly Effective Educator or Teacher",
+    "correct_doc_id": "1-APZBP3R79x-Q9pBj7QfSJ0bKvy3GttU5U0-wiOKk-k",
+    "created_at": "2026-03-12T22:13:01.692661Z"
+  },
+  {
+    "id": "e710300a-3acb-44d1-aaab-f586761f29d4",
+    "normalized_topic": "5 things you need to do to improve your wellness",
+    "original_topic": "5 Things You Need To Do To Improve Your Wellness",
+    "correct_topic_name": "Women In Wellness",
+    "correct_doc_id": "1_EcSDHtrKwBmQroMjS-awOzYAy5KxPYAkhIVvjXXfSY",
+    "created_at": "2026-03-13T15:07:20.444160Z"
+  },
+  {
+    "id": "4970145b-e23a-48ae-ad1c-b00bc7076b26",
+    "normalized_topic": "five marketing lessons i wish i knew when i started",
+    "original_topic": "\"Five Marketing Lessons I Wish I Knew When I Started\"",
+    "correct_topic_name": "How AI Is Disrupting Our Industry, and What We Can Do About It",
+    "correct_doc_id": "1vLZLRq4yk6xnebG59yl3Ux5XllBXNnuXkIkqxnd1j-o",
+    "created_at": "2026-03-13T18:11:27.112012Z",
+    "updated_at": "2026-03-13T18:11:28.528877Z"
+  },
+  {
+    "id": "91fcfe9d-8776-4cd7-b980-a7957fca7129",
+    "normalized_topic": "five things you need to thrive and succeed as a woman in a male dominated industry",
+    "original_topic": "Five Things You Need To Thrive and Succeed as a Woman In a Male-Dominated Industry",
+    "correct_topic_name": "Thriving As A Woman In a Male Dominated Industry",
+    "correct_doc_id": "19WzUYawaS9mnAyMp0VdEsIHykSDCMME-C_3EmBfyMU8",
+    "created_at": "2026-03-17T18:49:14.159912Z",
+    "updated_at": "2026-03-20T15:21:54.700909Z"
+  },
+  {
+    "id": "92ab4c7a-6544-4ff9-9646-472bb8b31eaf",
+    "normalized_topic": "meet the women leading the ai industry",
+    "original_topic": "Meet the Women Leading the AI Industry",
+    "correct_topic_name": "Wisdom From The Women Leading the AI Industry",
+    "correct_doc_id": "1TiseNGTSXKx0ZZNPshjviZWpSILPpYJA9litL4fqwgU",
+    "created_at": "2026-03-18T18:43:08.983079Z",
+    "updated_at": "2026-03-24T23:24:27.078615Z"
+  },
+  {
+    "id": "29f4af81-b088-421a-ab0c-3133f3acb706",
+    "normalized_topic": "5 things i wish i knew about ivf",
+    "original_topic": "5 Things I Wish I Knew About IVF",
+    "correct_topic_name": "5 Things Everyone Should Know  About IVF",
+    "correct_doc_id": "1DybixMm4JnG7pXgzFBPHEm9us0JsFo0kGEF29M76bik",
+    "created_at": "2026-03-20T15:09:31.614194Z",
+    "updated_at": "2026-03-20T15:09:33.201249Z"
+  },
+  {
+    "id": "01a8010f-78f0-433b-bc1f-b887b8a26b4d",
+    "normalized_topic": "from mission to money nonprofits need to be sustainable too",
+    "original_topic": "From Mission to Money - Nonprofits need to be sustainable, too.",
+    "correct_topic_name": "High Impact Philanthropy: 5 Things You Need To Create A Successful & Effective Nonprofit That Leaves A Lasting Legacy",
+    "correct_doc_id": "1hQis9-JUdxzEZUPEYi9w4mlbwyrJhE6Ehbap5vIvzBU",
+    "created_at": "2026-03-20T18:28:58.455723Z"
+  },
+  {
+    "id": "8783f4ad-4956-47c4-a46b-21a579cbd403",
+    "normalized_topic": "meet the disruptors or meet nashville s rising stars",
+    "original_topic": "Meet The Disruptors OR Meet Nashville's Rising Stars",
+    "correct_topic_name": "Meet The Disruptors",
+    "correct_doc_id": "1IeUWKNClg4gGY_82R73n1aCN319Y5upQMkEQ0wZbv_U",
+    "created_at": "2026-03-22T13:09:22.729535Z"
+  },
+  {
+    "id": "a123bd35-7ec6-4dfb-b6aa-f4a501cfda4a",
+    "normalized_topic": "evolving a legacy business into a modern platform",
+    "original_topic": "Evolving a Legacy Business into a Modern Platform",
+    "correct_topic_name": "Lessons I Learned From Last Year To Take Our Organization to the Next Level in 2025",
+    "correct_doc_id": "144gb1WyF8xTG10PFYHb0a7G6LPUZsPIgfxfUTbsGv2A",
+    "created_at": "2026-03-23T16:35:50.861804Z",
+    "updated_at": "2026-03-23T16:35:51.915067Z"
+  },
+  {
+    "id": "1a21eeef-6c0f-4985-a570-9113f7ce77f0",
+    "normalized_topic": "how to create a life that is fulfilling beyond just financial success",
+    "original_topic": "How To Create A Life That Is Fulfilling Beyond Just Financial Success",
+    "correct_topic_name": "Female Disruptors",
+    "correct_doc_id": "1-z_b4YCzEqpOErq-f_BtNx6LpUe6j7-OhxAJctT96Z0",
+    "created_at": "2026-03-23T18:08:31.335339Z"
+  },
+  {
+    "id": "f1bb14c0-2d76-4d9a-aae0-7c5a203a1f14",
+    "normalized_topic": "how to have the toughest conversations at work without taking someone s dignity",
+    "original_topic": "How to Have the Toughest Conversations at Work Without Taking Someone's Dignity",
+    "correct_topic_name": "5 Tips For A Successful Performance Management Process (Interviewer: Rachel Kline)",
+    "correct_doc_id": "1IWecXw24FnkepHHsBoRmDDGBtzWP1Tx1rFMJjPIu9xU",
+    "created_at": "2026-03-25T12:01:42.086695Z"
+  },
+  {
+    "id": "3b965b16-3fe6-470c-87b3-37c299001482",
+    "normalized_topic": "franchise industry veteran jeff travitz retires after 30 years profile opportunity",
+    "original_topic": "Franchise Industry Veteran, Jeff Travitz, Retires After 30 Years: Profile Opportunity",
+    "correct_topic_name": "Five Things You Need to Know to Successfully Franchise Your Business",
+    "correct_doc_id": "1QdL45TED6DsaDl3XALo_jSbgXG7vO66VaiNL1j0s088",
+    "created_at": "2026-03-25T17:11:18.989012Z"
+  },
+  {
+    "id": "b80311ef-6402-4722-a2f0-d1ed8ee8e087",
+    "normalized_topic": "how ai turns today s cfo challenges into opportunities",
+    "original_topic": "How AI Turns Today's CFO Challenges into Opportunities",
+    "correct_topic_name": "How Artificial Intelligence Can Solve Business Problems",
+    "correct_doc_id": "1kiaGUq2V6NAceYnnHZkSMA9qhTkNMlPqN9-L5iLQ30g",
+    "created_at": "2026-03-25T21:51:10.300527Z"
+  },
+  {
+    "id": "17dbc055-08b2-42f0-9987-5e863da2da6c",
+    "normalized_topic": "how we built a product that reached 1 on product hunt",
+    "original_topic": "\"How We Built A Product That Reached #1 On Product Hunt\"",
+    "correct_topic_name": "How AI Is Disrupting Our Industry, and What We Can Do About It",
+    "correct_doc_id": "1vLZLRq4yk6xnebG59yl3Ux5XllBXNnuXkIkqxnd1j-o",
+    "created_at": "2026-03-26T19:53:07.796348Z"
+  },
+  {
+    "id": "c27164a7-e076-43b9-9f21-5ee260057d7a",
+    "normalized_topic": "ldquo how we built a product that reached 1 on product hunt rdquo",
+    "original_topic": "&ldquo;How We Built A Product That Reached #1 On Product Hunt&rdquo;",
+    "correct_topic_name": "How AI Is Disrupting Our Industry, and What We Can Do About It",
+    "correct_doc_id": "1vLZLRq4yk6xnebG59yl3Ux5XllBXNnuXkIkqxnd1j-o",
+    "created_at": "2026-03-26T19:53:10.189824Z"
+  },
+  {
+    "id": "5781430e-b4f8-4dda-9e46-437764430393",
+    "normalized_topic": "5 things i wish someone told me before i became a chef",
+    "original_topic": "5 Things I Wish Someone Told Me Before I Became a Chef",
+    "correct_topic_name": "5 Things I Wish Someone Told Me Before I Became a Chef",
+    "correct_doc_id": "132fd4ZM4iaUEuNAy-A7wztxuXqaFWUPiB1QAkh6X7UI",
+    "created_at": "2026-03-29T01:45:09.144973Z",
+    "updated_at": "2026-03-29T01:45:14.271772Z"
+  },
+  {
+    "id": "e238c7f7-c556-46de-8953-09dce9c3da28",
+    "normalized_topic": "2 messages in conversationeducator mother of son with down syndrome helping families navigate ai",
+    "original_topic": "]2 messages in conversationEducator & Mother of Son with Down Syndrome Helping Families Navigate AI",
+    "correct_topic_name": "Education Revolution: Innovative Approaches That Are Transforming Education",
+    "correct_doc_id": "1g5KWKdLCe77lwryW8vhMvOXXKkkUTZYTSMFsuyXsHJA",
+    "created_at": "2026-03-29T14:48:41.441043Z",
+    "updated_at": "2026-03-29T14:48:42.292782Z"
+  },
+  {
+    "id": "3a8a747f-85f9-4495-8983-c8442f2b997b",
+    "normalized_topic": "meet the pnw rising star",
+    "original_topic": "Meet the PNW Rising Star",
+    "correct_topic_name": "Meet The Rising Stars of TV and Film",
+    "correct_doc_id": "1OeC4OUq2FC889OhQjXwk92_Qd1bLj_qsu1CQCC4Hgb4",
+    "created_at": "2026-03-30T14:02:05.301954Z",
+    "updated_at": "2026-03-30T14:02:06.085791Z"
+  },
+  {
+    "id": "0c606876-fe5e-4b97-8655-c0138e8f634e",
+    "normalized_topic": "5 things i wish someone told me before i became a founder the future of money and banking 5 things you need to succeed in the modern world of finance fintech",
+    "original_topic": "5 Things I Wish Someone Told Me Before I Became a Founder, The Future Of Money And Banking 5 Things You Need To Succeed In The Modern World Of Finance & Fintech",
+    "correct_topic_name": "The Future of Money and Banking",
+    "correct_doc_id": "1VwYscmFjX-oEJUeLLp_cdbmcqXk8bSQ0YwN3rIJVbSw",
+    "created_at": "2026-03-30T14:34:05.919081Z"
+  },
+  {
+    "id": "00f6cdd0-2376-40ce-9b5e-784b997dc702",
+    "normalized_topic": "meet rising musical star",
+    "original_topic": "Meet rising musical star",
+    "correct_topic_name": "Music Stars",
+    "correct_doc_id": "1CgOPtTgVhj6nq-uUAVbtnna9aDIdIDMw52Mm7KykrBw",
+    "created_at": "2026-03-30T15:04:50.178552Z"
+  },
+  {
+    "id": "4e941623-ff7f-4005-9597-140846dbe237",
+    "normalized_topic": "5 lessons from rebuilding after addiction",
+    "original_topic": "5 Lessons from Rebuilding After Addiction",
+    "correct_topic_name": "How to Go Beyond Your Comfort Zone to Grow Both Personally and Professionally",
+    "correct_doc_id": "1nWDOqy1QHiDJ1qloG9k77T5LNqOEuM6qC7O_rED3K1s",
+    "created_at": "2026-03-31T12:58:47.026938Z"
+  },
+  {
+    "id": "be77ccb4-c537-49bf-8b45-ed64bafa2eb6",
+    "normalized_topic": "5 things i wish someone told me before i became a restauranteur",
+    "original_topic": "5 Things I Wish Someone Told Me Before I Became a Restauranteur",
+    "correct_topic_name": "5 Things I Wish Someone Told Me Before I Became a Restaurateur",
+    "correct_doc_id": "1zG6lQ55t3CT_bHD56UBlIHep5oPmeeDSHZf-IdiPsp8",
+    "created_at": "2026-03-31T16:37:25.703715Z",
+    "updated_at": "2026-03-31T16:37:26.514384Z"
+  },
+  {
+    "id": "d23fc699-0138-475c-94c7-7ec04a46043c",
+    "normalized_topic": "the future of beauty",
+    "original_topic": "The Future Of Beauty",
+    "correct_topic_name": "The Future Of Beauty: How Technology Will Be Changing The Beauty Industry Over The Next Five Years",
+    "correct_doc_id": "1d8zWccOUQc2ii5BXk-hi_1GCd2FbMI5APb4mZr1Pc1Q",
+    "created_at": "2026-03-31T20:51:34.259206Z",
+    "updated_at": "2026-09-03T18:34:55.378830Z"
+  },
+  {
+    "id": "d61de9fe-cc0d-4858-953a-e67c4e6a2f0c",
+    "normalized_topic": "women in wellness wellness focused founders helping others improve wellbeing",
+    "original_topic": "Women In Wellness (wellness-focused founders helping others improve wellbeing)",
+    "correct_topic_name": "Women In Wellness",
+    "correct_doc_id": "1_EcSDHtrKwBmQroMjS-awOzYAy5KxPYAkhIVvjXXfSY",
+    "created_at": "2026-04-01T13:08:26.731146Z"
+  },
+  {
+    "id": "f30cb153-ab85-4e98-928f-ff3c8b8ce0b4",
+    "normalized_topic": "black entrepreneurs stories of resilience success representation",
+    "original_topic": "Black Entrepreneurs: Stories of Resilience, Success & Representation",
+    "correct_topic_name": "Celebrating Diversity: How To Build Inclusive Communities",
+    "correct_doc_id": "1gsj0VdkbO20FszDWqUl-FgaZfj-Lg_CB_U0Mwve-6qA",
+    "created_at": "2026-04-05T18:39:58.263727Z"
+  },
+  {
+    "id": "1f5e1f76-968d-4ed4-9fc1-3e20734eaa6b",
+    "normalized_topic": "social impact heros and documentary film",
+    "original_topic": "Social Impact heros and documentary film",
+    "correct_topic_name": "Social Impact Heroes",
+    "correct_doc_id": "1vJAt9NaXYe0wgVyVr-iKDdJTERw_Xo9zlgaExgmCEE0",
+    "created_at": "2026-04-07T13:24:27.556363Z"
+  },
+  {
+    "id": "a874bf0d-306c-4c1d-bf19-bc8e2afc194e",
+    "normalized_topic": "minimizing security threats from ai",
+    "original_topic": "Minimizing Security Threats From AI",
+    "correct_topic_name": "Cybersecurity To Protect From Malicious AI",
+    "correct_doc_id": "1Z0kBhALBf0FUNnRXMYah1pAkOR5d_zY-BZwrpzFhxAk",
+    "created_at": "2026-04-07T13:24:29.659138Z",
+    "updated_at": "2026-04-07T13:24:55.628070Z"
+  },
+  {
+    "id": "efb2959f-e055-46c5-b046-bd934fc010f7",
+    "normalized_topic": "purpose before profit leaders who lead mission driven businesses that make an important social impact",
+    "original_topic": "Purpose Before Profit: Leaders Who Lead Mission-Driven Businesses That Make an Important Social Impact",
+    "correct_topic_name": "Purpose Before Profit: Leaders Who Lead Purpose-Driven Businesses On The Benefits Of Running A Purpose-Driven Business",
+    "correct_doc_id": "1QzFr5DJySIK_RUk6sl4RBWI3Z4DNWtF8Ull629p7xcc",
+    "created_at": "2026-04-07T13:24:37.437060Z",
+    "updated_at": "2026-06-23T01:09:49.177401Z"
+  },
+  {
+    "id": "5e4cde2a-c96b-465a-b171-b4315fce1f33",
+    "normalized_topic": "five things i wish someone told me before i started",
+    "original_topic": "Five Things I Wish Someone Told Me Before I Started…",
+    "correct_topic_name": "Directors & Producers: 5 Things I Wish Someone Told Me When I First Became A Filmmaker",
+    "correct_doc_id": "1uVuLamOkNGtNUHmtR5Jxzc0jKELuuTz1JmvqKUbcHjo",
+    "created_at": "2026-04-07T19:43:08.018026Z"
+  },
+  {
+    "id": "9dfe1c9a-85cd-4b09-bf91-3788662cc97e",
+    "normalized_topic": "turning youth into it professionals across africa",
+    "original_topic": "Turning youth into IT professionals across Africa",
+    "correct_topic_name": "Female Disruptors",
+    "correct_doc_id": "1-z_b4YCzEqpOErq-f_BtNx6LpUe6j7-OhxAJctT96Z0",
+    "created_at": "2026-04-07T20:13:45.420618Z"
+  },
+  {
+    "id": "1e775f6f-9c62-4f50-9171-31d65ce03a79",
+    "normalized_topic": "top 3 recommendations from your bot based on",
+    "original_topic": "Top 3 recommendations from your BOT, based on",
+    "correct_topic_name": "How Artificial Intelligence Can Solve Business Problems",
+    "correct_doc_id": "1kiaGUq2V6NAceYnnHZkSMA9qhTkNMlPqN9-L5iLQ30g",
+    "created_at": "2026-04-10T17:11:10.211490Z",
+    "updated_at": "2026-04-10T17:11:10.948833Z"
+  },
+  {
+    "id": "23fad39d-eb58-42bf-b289-55cea3af9c5d",
+    "normalized_topic": "social impact heroes",
+    "original_topic": "Social Impact Heroes",
+    "correct_topic_name": "Social Impact Heroes",
+    "correct_doc_id": "1vJAt9NaXYe0wgVyVr-iKDdJTERw_Xo9zlgaExgmCEE0",
+    "created_at": "2026-04-10T20:32:51.932895Z",
+    "updated_at": "2026-04-13T18:40:49.965440Z"
+  },
+  {
+    "id": "2b13d10b-4018-429a-97d3-e5575b7c3339",
+    "normalized_topic": "early alzheimer s detection bridging the gap between breakthrough diagnostics and real world adoption",
+    "original_topic": "Early Alzheimer's Detection: Bridging the Gap Between Breakthrough Diagnostics and Real-World Adoption",
+    "correct_topic_name": "Health Tech",
+    "correct_doc_id": "12qq8wIMDS7S2aWwwEv1Ur1ZUCQmFQnJWwEtLVijt2X4",
+    "created_at": "2026-04-13T18:40:52.700280Z",
+    "updated_at": "2026-04-13T18:40:53.744859Z"
+  },
+  {
+    "id": "c4d72227-29da-4e65-b416-5695b260a3a5",
+    "normalized_topic": "gabriella ferlita idea farm",
+    "original_topic": "Gabriella Ferlita, Idea Farm",
+    "correct_topic_name": "Meet the Entrepreneurs Pushing the Boundaries of AI",
+    "correct_doc_id": "1js--taJcQcbKBAocZzKclahuNjHiW0WF9ant9P3jE28",
+    "created_at": "2026-04-14T13:04:44.513639Z",
+    "updated_at": "2026-04-14T13:04:53.619130Z"
+  },
+  {
+    "id": "caea8097-57af-4e8e-81ef-6d687d65c753",
+    "normalized_topic": "5 reasons you keep repeating the same patterns and how to break them",
+    "original_topic": "5 Reasons You Keep Repeating the Same Patterns (And How to Break Them)",
+    "correct_topic_name": "Redefining Success",
+    "correct_doc_id": "1IzQVzLzEbkR_hyaZkMLaKQoIiQLMhnnanPNSjuQsLsc",
+    "created_at": "2026-04-14T13:04:47.722244Z",
+    "updated_at": "2026-04-14T13:04:48.810082Z"
+  },
+  {
+    "id": "1f285f1d-4eff-4a07-bfaa-a94ec19257b2",
+    "normalized_topic": "leadership in hostile ecosystems",
+    "original_topic": "Leadership in hostile ecosystems",
+    "correct_topic_name": "Driving Disruption: The Innovative Approaches C-Suite Executives Are Taking To Disrupt Their Industries",
+    "correct_doc_id": "1YLte_dLVo7ZHCY6IqYeNDaZ4IcuVD9nvN-9b-Y1LHaU",
+    "created_at": "2026-04-14T16:43:05.274238Z",
+    "updated_at": "2026-04-14T16:43:07.662363Z"
+  },
+  {
+    "id": "a192e896-d82b-4dba-9000-ac625dee8e8e",
+    "normalized_topic": "what geometry reveals about the limits of ai and why hybrid systems are the future",
+    "original_topic": "What Geometry Reveals About the Limits of AI, and Why Hybrid Systems Are the Future",
+    "correct_topic_name": "C-Suite Perspectives on Where to Use AI and Where to Rely Only on Humans",
+    "correct_doc_id": "1srBAtKZiZ7-x_s6oXg91Sj76f6zHepvK7Ef0EMicqRA",
+    "created_at": "2026-04-14T20:21:12.313056Z"
+  },
+  {
+    "id": "2c8075b5-9579-44ee-8b2f-27ad4d23e17d",
+    "normalized_topic": "5 things i ve learned building a magazine that celebrates latino culture in the u s",
+    "original_topic": "5 Things I've Learned Building a Magazine That Celebrates Latino Culture in the U.S.",
+    "correct_topic_name": "The Power of Personal Branding: How Publicists Shape Influential Leaders",
+    "correct_doc_id": "1-TgdS1BqwyT87I-839t5dVvI1ZN6aGLKxEaYZKkqIIU",
+    "created_at": "2026-04-15T16:13:56.243850Z"
+  },
+  {
+    "id": "2103c93d-8562-43d6-b328-c4ac44a10562",
+    "normalized_topic": "healed men heal families",
+    "original_topic": "Healed Men Heal Families",
+    "correct_topic_name": "Second Chapters; How I Reinvented Myself In The Second Chapter Of My Life",
+    "correct_doc_id": "1WXHG3LHPuQZ2y0f66zWlrJ5jJOClV8nL3HkGLouNRD8",
+    "created_at": "2026-04-15T19:24:21.775390Z"
+  },
+  {
+    "id": "77be07e1-3f23-4754-89f8-6918736b36f9",
+    "normalized_topic": "entrepreneurship business funding financial strategy select the closest match from their list such as five things you need to know to successfully start a business or similar",
+    "original_topic": "Entrepreneurship / Business Funding & Financial Strategy (Select the closest match from their list, such as \"Five Things You Need To Know To Successfully Start A Business\" or similar.)",
+    "correct_topic_name": "Five Things You Need To Create A Highly Successful Startup",
+    "correct_doc_id": "1iIcHN8vhLl1KYtVzigIG75s1Rle3LfeZXeILT22L0Uk",
+    "created_at": "2026-04-16T15:21:24.319544Z"
+  },
+  {
+    "id": "4e7cb41e-bd98-4c4f-b9f3-5dd76c0f3494",
+    "normalized_topic": "art tech the real story isn t novelty it s trust",
+    "original_topic": "Art & Tech_ The Real Story Isn't Novelty-It's Trust",
+    "correct_topic_name": "Inspirational Women In Hollywood",
+    "correct_doc_id": "1sCalk_QNvJSgVeopBkIZWYU9611Aba0x7dzNGGwPxM8",
+    "created_at": "2026-04-19T12:00:38.723998Z"
+  },
+  {
+    "id": "eaaefc20-434c-4149-8635-dfa8c519c715",
+    "normalized_topic": "business leaders",
+    "original_topic": "Business Leaders",
+    "correct_topic_name": "Five Things You Need To Know To Succeed In The Modern Beauty Industry",
+    "correct_doc_id": "1qFCJde_DG-QVhsET_A1LtCdwKewS2HHV5ptyG0F6ZPM",
+    "created_at": "2026-04-21T01:06:32.540096Z"
+  },
+  {
+    "id": "64c7f877-0b78-4983-829d-205fd88f634e",
+    "normalized_topic": "turning a gym into a platform for discipline growth and community impact",
+    "original_topic": "Turning a Gym Into a Platform for Discipline, Growth, and Community Impact",
+    "correct_topic_name": "Fitness Champions",
+    "correct_doc_id": "1RmTE4Y0-58ymEqJLhT8-tTT-LQbyKA3lR_aW52iXK2M",
+    "created_at": "2026-04-21T01:06:40.582952Z",
+    "updated_at": "2026-04-21T01:06:59.826089Z"
+  },
+  {
+    "id": "12c05f78-4857-4852-935b-a75c8951c812",
+    "normalized_topic": "how i m redefining luxury beauty by bringing faith into a secular industry",
+    "original_topic": "How I'm Redefining Luxury Beauty by Bringing Faith Into a Secular Industry",
+    "correct_topic_name": "5 Things I Wish Someone Told Me Before I Became a Founder",
+    "correct_doc_id": "1ITOofuiu82U0UQvsFExGC3ebIHD2AB65C4lYgH80E0s",
+    "created_at": "2026-04-21T01:06:49.380517Z",
+    "updated_at": "2026-04-21T01:07:02.524266Z"
+  },
+  {
+    "id": "3ff132c8-15c9-4a54-b0db-68b67788b7e4",
+    "normalized_topic": "from living room startup to 15 stores",
+    "original_topic": "From Living Room Startup to 15+ Stores",
+    "correct_topic_name": "Female Disruptors",
+    "correct_doc_id": "1-z_b4YCzEqpOErq-f_BtNx6LpUe6j7-OhxAJctT96Z0",
+    "created_at": "2026-04-22T13:12:40.795233Z",
+    "updated_at": "2026-04-22T13:12:49.254305Z"
+  },
+  {
+    "id": "2ffde990-7c75-4498-9c48-d3ff82484881",
+    "normalized_topic": "how jennie yoon turned loss into the foundation of kinn studio",
+    "original_topic": "How Jennie Yoon Turned Loss Into the Foundation of Kinn Studio",
+    "correct_topic_name": "Female Founders: Five Things You Need To Thrive and Succeed as a Woman Founder",
+    "correct_doc_id": "1tHq7wwwZ6Iq0SehaU-jtGfud9gPDYMVodWcPxYDCTB4",
+    "created_at": "2026-04-22T13:12:42.341544Z",
+    "updated_at": "2026-04-22T13:12:47.955951Z"
+  },
+  {
+    "id": "5065f531-ef4f-462d-b79e-04ae9ca16694",
+    "normalized_topic": "recovery and arts home happening in nyc",
+    "original_topic": "Recovery and Arts Home Happening in NYC",
+    "correct_topic_name": "Heroes Of The Addiction Crisis",
+    "correct_doc_id": "1Sy21RWaj3eJ4NsUDbJkTyu9WGkmS2Ic6LDSVJ0wReI4",
+    "created_at": "2026-04-22T13:12:53.362376Z"
+  },
+  {
+    "id": "8a44b114-0b11-46a8-b19b-53f44845ea7c",
+    "normalized_topic": "ai that protects money modern fraud detection with graphs gpus and governance",
+    "original_topic": "AI That Protects Money: Modern Fraud Detection with Graphs, GPUs, and Governance",
+    "correct_topic_name": "How Artificial Intelligence Can Solve Business Problems",
+    "correct_doc_id": "1kiaGUq2V6NAceYnnHZkSMA9qhTkNMlPqN9-L5iLQ30g",
+    "created_at": "2026-04-24T12:00:20.744212Z"
+  },
+  {
+    "id": "347da0ea-6031-425a-b207-a978f446f116",
+    "normalized_topic": "women in business power women how i am leading my company to success",
+    "original_topic": "Women In Business: \"Power Women: How I Am Leading My Company To Success\"",
+    "correct_topic_name": "Female Founders: Five Things You Need To Thrive and Succeed as a Woman Founder",
+    "correct_doc_id": "1tHq7wwwZ6Iq0SehaU-jtGfud9gPDYMVodWcPxYDCTB4",
+    "created_at": "2026-04-24T19:49:23.998135Z"
+  },
+  {
+    "id": "165dfaea-2706-4923-ab4d-b20e40b06928",
+    "normalized_topic": "from an athlete with 14 medals to a 1 amazon music chart singer",
+    "original_topic": "From an athlete with 14 medals to a #1 Amazon Music chart singer",
+    "correct_topic_name": "Music Stars",
+    "correct_doc_id": "1CgOPtTgVhj6nq-uUAVbtnna9aDIdIDMw52Mm7KykrBw",
+    "created_at": "2026-04-27T20:57:06.731070Z"
+  },
+  {
+    "id": "fec54868-d1eb-4327-8098-c73616ecbc5d",
+    "normalized_topic": "how ai powered self healing data pipelines are transforming enterprise reliability",
+    "original_topic": "How AI-Powered Self-Healing Data Pipelines Are Transforming Enterprise Reliability",
+    "correct_topic_name": "The Future Is Now",
+    "correct_doc_id": "16eFyQqKGTE9yG5OxWrC2k0dtVVLcdgPxnRvh_LzMOWM",
+    "created_at": "2026-04-30T00:59:20.958327Z",
+    "updated_at": "2026-04-30T00:59:21.841011Z"
+  },
+  {
+    "id": "20f64217-13c5-415d-bcd1-5cfae14e5279",
+    "normalized_topic": "meet the rising stars of tv film and your ceo series",
+    "original_topic": "Meet the Rising Stars of TV & Film AND Your CEO Series",
+    "correct_topic_name": "Meet The Rising Stars of TV and Film",
+    "correct_doc_id": "1OeC4OUq2FC889OhQjXwk92_Qd1bLj_qsu1CQCC4Hgb4",
+    "created_at": "2026-05-01T16:42:06.155209Z"
+  },
+  {
+    "id": "cd719ad1-e52f-4fe4-872a-828203dec661",
+    "normalized_topic": "music stars social impact",
+    "original_topic": "music stars social impact",
+    "correct_topic_name": "Music Stars Making A Social Impact",
+    "correct_doc_id": "1xCY5hVOqIB35IV8OWZv1VT1cWkHf0y1jGZCSNgr3hBM",
+    "created_at": "2026-05-03T14:49:59.647090Z",
+    "updated_at": "2026-05-03T14:51:12.903279Z"
+  },
+  {
+    "id": "16e943cb-fe01-4370-b7a6-fe2714b82ce2",
+    "normalized_topic": "ceo raising 6 kids",
+    "original_topic": "CEO raising 6 kids",
+    "correct_topic_name": "C-Suite Moms: Woman Executives On How To Successfully Juggle Motherhood and Work",
+    "correct_doc_id": "1bxx4mmmm2dLYNWqEbk5PsWOJW8z0eQUzGKkNlD1ai2E",
+    "created_at": "2026-05-03T14:50:23.396647Z",
+    "updated_at": "2026-05-03T14:51:09.734384Z"
+  },
+  {
+    "id": "b1bfa1ee-48de-4ac9-9771-81e8d571bb2a",
+    "normalized_topic": "5 things you can do to thrive at work during menopause",
+    "original_topic": "5 Things You Can Do To Thrive at Work During Menopause",
+    "correct_topic_name": "Menopause in the Workplace: How Employers can be More Supportive of  Women's Needs",
+    "correct_doc_id": "1Iw9WL8NVCFQ24rJCoTxUgRd0px4Pmhwm_miMdR4NMsw",
+    "created_at": "2026-05-03T14:50:39.505520Z",
+    "updated_at": "2026-05-03T14:50:58.512690Z"
+  },
+  {
+    "id": "7d7582ea-379a-4bef-9783-a8485f81fd6c",
+    "normalized_topic": "five things you need to know to succeed in the entertainment industry",
+    "original_topic": "Five Things You Need To Know To Succeed In The Entertainment Industry",
+    "correct_topic_name": "TV and Film Stars: 5 Things You Need To Create A Highly Successful Career in TV and Film",
+    "correct_doc_id": "1b2x_0qKXxeOSD0xUaHdz1OURbP_JNaYUhTQ9vifSaWQ",
+    "created_at": "2026-05-03T14:50:55.032269Z",
+    "updated_at": "2026-05-03T14:50:57.323291Z"
+  },
+  {
+    "id": "ae7f14cc-1d26-4971-a8e3-3617286a1148",
+    "normalized_topic": "how to use emotional intelligence to improve leadership effectiveness",
+    "original_topic": "\"How To Use Emotional Intelligence To Improve Leadership Effectiveness\"",
+    "correct_topic_name": "How to Build a Purpose-Driven Culture That Attracts Top Talent",
+    "correct_doc_id": "1Lf6pxc4b4P-JQbjrR2nD_EFOuyvhe2BcVZM_bYm0B_A",
+    "created_at": "2026-05-03T16:54:39.862205Z",
+    "updated_at": "2026-05-03T16:54:43.255005Z"
+  },
+  {
+    "id": "fbcec009-2592-4088-9462-ae5ba622dbda",
+    "normalized_topic": "how i overcame adversity",
+    "original_topic": "How I Overcame Adversity",
+    "correct_topic_name": "Unstoppable: How I Overcame A Disability, Illness Or A Physical Limitation To Achieve Success",
+    "correct_doc_id": "1V44tOg25SqeBh3AI5daI2m9HntdtGFKUKnIiczDTA_k",
+    "created_at": "2026-05-03T16:54:46.308484Z"
+  },
+  {
+    "id": "070ce0ad-9929-497a-bc96-b9facc3bb892",
+    "normalized_topic": "why every writer needs a coach",
+    "original_topic": "Why Every Writer Needs a Coach",
+    "correct_topic_name": "5 Things You Need To Be A Successful Writer Or Author",
+    "correct_doc_id": "1ZOfKUaMtFJARRU8kQzAUPHoKTvXZ6tRcLETeROTBn9M",
+    "created_at": "2026-05-04T17:14:03.826808Z"
+  },
+  {
+    "id": "6d076f90-5dac-44ae-8482-1800dd792433",
+    "normalized_topic": "five things you need to thrive succeed as a journalist",
+    "original_topic": "Five Things You Need To Thrive & Succeed As A Journalist",
+    "correct_topic_name": "Five Things You Need To Create A Successful Career As A Journalist",
+    "correct_doc_id": "1f1AtUmvjzMwWZmgjOA7MtHZwgjgI4tvvpHmqt623v28",
+    "created_at": "2026-05-04T18:15:16.260253Z"
+  },
+  {
+    "id": "bfeabf2d-d272-4d9d-a63b-6b52306c5053",
+    "normalized_topic": "mental health and wellness",
+    "original_topic": "Mental Health and Wellness",
+    "correct_topic_name": "Behavioral Health Leaders on Fixing A Broken Mental Health System",
+    "correct_doc_id": "1Y8Pe2fH51y17Kz5bbpsMcY9F9WUkZ6-kGMOJDMPksUA",
+    "created_at": "2026-05-05T00:26:15.026676Z"
+  },
+  {
+    "id": "488c009c-011f-4a35-9287-be2f0b801224",
+    "normalized_topic": "from beehive to global cart",
+    "original_topic": "From Beehive to Global Cart",
+    "correct_topic_name": "Meet The Disruptors",
+    "correct_doc_id": "1IeUWKNClg4gGY_82R73n1aCN319Y5upQMkEQ0wZbv_U",
+    "created_at": "2026-05-05T15:18:16.305808Z",
+    "updated_at": "2026-05-05T15:18:21.137199Z"
+  },
+  {
+    "id": "9048a51d-1ea4-477f-bd01-16d2258d2441",
+    "normalized_topic": "health tech how technology can make an important impact on our overall wellness",
+    "original_topic": "HEALTH TECH - How Technology Can Make An Important Impact On Our Overall Wellness",
+    "correct_topic_name": "Health Tech",
+    "correct_doc_id": "12qq8wIMDS7S2aWwwEv1Ur1ZUCQmFQnJWwEtLVijt2X4",
+    "created_at": "2026-05-05T16:52:22.083525Z"
+  },
+  {
+    "id": "1c70029d-f217-4b2f-abfe-331980f5da4e",
+    "normalized_topic": "8 the future of payments in logistics insights from a ceo focus paycargo and industry transformation why it works positions him as a forward looking thought leader",
+    "original_topic": "8. \"The Future of Payments in Logistics: Insights from a CEO\" Focus: PayCargo and industry transformation. Why it works: Positions him as a forward-looking thought leader.",
+    "correct_topic_name": "The Top 5 Future Payment Processing Trends (Interviewer: Rachel Kline)",
+    "correct_doc_id": "1MfieKg2ZGec3JOzSBUN8joYmgQTUKDPlB9uN94CMElA",
+    "created_at": "2026-05-05T22:33:41.719781Z"
+  },
+  {
+    "id": "0db9665a-540e-4bfc-be6b-bf77bb234c5e",
+    "normalized_topic": "founders and ceo s",
+    "original_topic": "Founders and CEO's",
+    "correct_topic_name": "Founders And CEOs: How My Career Journey Has Shaped How I Lead Today",
+    "correct_doc_id": "1ybU_02Zle0NG3paP9ZZrbtoTGFo9iwvpvGVnoyNJR-4",
+    "created_at": "2026-05-07T12:53:57.299987Z"
+  },
+  {
+    "id": "cbe4eeab-0d51-4c1e-82c1-aab35f3889f1",
+    "normalized_topic": "top european ai private equity leaders",
+    "original_topic": "Top European AI & Private Equity Leaders",
+    "correct_topic_name": "Driving Disruption: The Innovative Approaches C-Suite Executives Are Taking To Disrupt Their Industries",
+    "correct_doc_id": "1YLte_dLVo7ZHCY6IqYeNDaZ4IcuVD9nvN-9b-Y1LHaU",
+    "created_at": "2026-05-08T14:02:50.209194Z"
+  },
+  {
+    "id": "1c067a8f-899e-4b3a-a59d-5ad32253c306",
+    "normalized_topic": "from single mother to seven figure exit",
+    "original_topic": "From Single Mother to Seven-Figure Exit",
+    "correct_topic_name": "5 Things I Wish Someone Told Me Before I Became a Founder",
+    "correct_doc_id": "1ITOofuiu82U0UQvsFExGC3ebIHD2AB65C4lYgH80E0s",
+    "created_at": "2026-05-14T15:02:03.480895Z",
+    "updated_at": "2026-05-14T15:02:07.358502Z"
+  },
+  {
+    "id": "f58c933c-9793-47aa-9a98-5343632b4a87",
+    "normalized_topic": "how to use art to heal and inspire",
+    "original_topic": "How To Use Art To Heal And Inspire",
+    "correct_topic_name": "Second Chapters; How I Reinvented Myself In The Second Chapter Of My Life",
+    "correct_doc_id": "1WXHG3LHPuQZ2y0f66zWlrJ5jJOClV8nL3HkGLouNRD8",
+    "created_at": "2026-05-14T15:32:05.594347Z",
+    "updated_at": "2026-05-14T15:32:08.035925Z"
+  },
+  {
+    "id": "d4972296-49b4-4417-8429-791571cce49f",
+    "normalized_topic": "it would be interesting to speak about 5 things i wish someone told me before i became a founder",
+    "original_topic": "It would be interesting to speak about 5 things I wish someone told me before I became a founder.",
+    "correct_topic_name": "5 Things I Wish Someone Told Me Before I Became a Founder",
+    "correct_doc_id": "1ITOofuiu82U0UQvsFExGC3ebIHD2AB65C4lYgH80E0s",
+    "created_at": "2026-05-14T15:32:06.276704Z",
+    "updated_at": "2026-05-14T15:32:10.116084Z"
+  },
+  {
+    "id": "4c9cfd8d-99fa-429f-9ce1-1c30bd297da1",
+    "normalized_topic": "mental health heroes",
+    "original_topic": "Mental Health Heroes",
+    "correct_topic_name": "Mental Health Champions",
+    "correct_doc_id": "1P1gAp5ojUZqipSjQj1bvCC7nFkSpJbaGgjrjXfNHB5w",
+    "created_at": "2026-05-14T15:32:06.953124Z",
+    "updated_at": "2026-05-14T15:32:09.461048Z"
+  },
+  {
+    "id": "03cedacb-275f-4a7d-9181-bf08f21538c9",
+    "normalized_topic": "why and how to redefine success now",
+    "original_topic": "Why and How to Redefine Success Now",
+    "correct_topic_name": "Redefining Success",
+    "correct_doc_id": "1IzQVzLzEbkR_hyaZkMLaKQoIiQLMhnnanPNSjuQsLsc",
+    "created_at": "2026-05-14T15:32:10.787354Z"
+  },
+  {
+    "id": "bbdde2fa-8b2a-4b44-a52c-a26e889c2f3a",
+    "normalized_topic": "i wanted to introduce you to joe k a defining voice in the los angeles wellness space who has quietly built one of the most dedicated yoga communities in the city and is now entering a new chapter with the launch of yoga by joe k",
+    "original_topic": "I wanted to introduce you to Joe K, a defining voice in the Los Angeles wellness space who has quietly built one of the most dedicated yoga communities in the city - and is now entering a new chapter with the launch of Yoga by Joe K.",
+    "correct_topic_name": "5 Things You Need To Create A Highly Successful Career In The Health and Wellness Industry",
+    "correct_doc_id": "1_y9mlNOHUqQiCZ-QaTx7ki0jEcmDH6Gclo4yjpHwlns",
+    "created_at": "2026-05-14T19:07:25.692028Z",
+    "updated_at": "2026-05-14T19:07:28.854156Z"
+  },
+  {
+    "id": "4198859a-9bad-4f07-9504-2db20a5a35c0",
+    "normalized_topic": "leadership and organizational transformation social impact and community leadership",
+    "original_topic": "Leadership and organizational transformation/Social impact and community leadership",
+    "correct_topic_name": "Purpose Before Profit: Leaders Who Lead Purpose-Driven Businesses On The Benefits Of Running A Purpose-Driven Business",
+    "correct_doc_id": "1QzFr5DJySIK_RUk6sl4RBWI3Z4DNWtF8Ull629p7xcc",
+    "created_at": "2026-05-14T19:39:32.434369Z"
+  },
+  {
+    "id": "c1b70a68-e0c1-40cf-8884-35753187f10c",
+    "normalized_topic": "business restaurants",
+    "original_topic": "Business / Restaurants",
+    "correct_topic_name": "5 Things I Wish Someone Told Me Before I Became a Restaurateur",
+    "correct_doc_id": "1zG6lQ55t3CT_bHD56UBlIHep5oPmeeDSHZf-IdiPsp8",
+    "created_at": "2026-05-15T00:50:11.042763Z",
+    "updated_at": "2026-05-15T00:50:16.305021Z"
+  },
+  {
+    "id": "6ff4ca30-2366-49f4-abdf-567d24f34ff4",
+    "normalized_topic": "men s emotional health",
+    "original_topic": "Men's Emotional Health",
+    "correct_topic_name": "Midlife Crisis to Midlife Reset: How To Use A Midlife Crisis as an Opportunity to Embrace Change and Unlock New Possibilities",
+    "correct_doc_id": "141NuhWnfagwcquGwCPoSVEJoHmZOufQjqzxtjrkIX14",
+    "created_at": "2026-05-15T17:23:26.055068Z"
+  },
+  {
+    "id": "e686f146-2d0a-4da9-b2f0-ddba2481d59b",
+    "normalized_topic": "health tech how caremetric hub is fixing the last mile of value based care",
+    "original_topic": "Health Tech: How Caremetric Hub Is Fixing the \"Last Mile\" of Value‑Based Care",
+    "correct_topic_name": "Health Tech",
+    "correct_doc_id": "12qq8wIMDS7S2aWwwEv1Ur1ZUCQmFQnJWwEtLVijt2X4",
+    "created_at": "2026-05-18T12:00:33.460813Z"
+  },
+  {
+    "id": "c621eacc-0b33-444c-838a-0d733a42fe1a",
+    "normalized_topic": "lessons from inspirational business leaders",
+    "original_topic": "Lessons From Inspirational Business Leaders",
+    "correct_topic_name": "The Future is Faster Than You Think: How Leaders Are Preparing for The Innovations, Disruptions, and Strategies That Will Define Tomorrow",
+    "correct_doc_id": "1lzTQWWM2_Bhx2wY-HXw5t4FqTr2V5rICBY6K69WX3sY",
+    "created_at": "2026-05-18T19:55:08.121914Z"
+  },
+  {
+    "id": "8e8ec10f-2ecd-4ee7-b3b5-36f617db8362",
+    "normalized_topic": "the art of conflict and why it mattes in higher education",
+    "original_topic": "The Art of Conflict - And Why it Mattes in Higher Education",
+    "correct_topic_name": "How To Write A Book That Sparks A Movement",
+    "correct_doc_id": "1EF82nouyPAH4MI6DwvTV2f7kBYpGMoAQ1FDjHhuH5_0",
+    "created_at": "2026-05-19T18:56:50.702603Z"
+  },
+  {
+    "id": "65c20ae8-574d-4889-b4b1-6f448db76fd9",
+    "normalized_topic": "why human connection still matters in digital health",
+    "original_topic": "Why Human Connection Still Matters in Digital Health",
+    "correct_topic_name": "The Future is Faster Than You Think: How Leaders Are Preparing for The Innovations, Disruptions, and Strategies That Will Define Tomorrow",
+    "correct_doc_id": "1lzTQWWM2_Bhx2wY-HXw5t4FqTr2V5rICBY6K69WX3sY",
+    "created_at": "2026-05-20T12:01:23.595919Z",
+    "updated_at": "2026-05-20T12:01:27.272450Z"
+  },
+  {
+    "id": "f302ab02-e1a2-4143-8678-9e36a6ee9c65",
+    "normalized_topic": "how to create more inclusive workspaces",
+    "original_topic": "How to create more inclusive workspaces",
+    "correct_topic_name": "How To Create More Inclusive Workplaces (Interviewer: Rachel Kline)",
+    "correct_doc_id": "1nuQhxqMWgx8Dvo_UsU3os0HOaqtocVSe3-WlPGQ9tIw",
+    "created_at": "2026-05-21T12:02:14.912134Z"
+  },
+  {
+    "id": "8253c255-8357-4208-a784-40f6ce868763",
+    "normalized_topic": "how to get castings as a couple",
+    "original_topic": "How to get castings as a couple",
+    "correct_topic_name": "Meet The Rising Stars of TV and Film",
+    "correct_doc_id": "1OeC4OUq2FC889OhQjXwk92_Qd1bLj_qsu1CQCC4Hgb4",
+    "created_at": "2026-05-25T12:51:42.285283Z"
+  },
+  {
+    "id": "64e5c75c-90ef-4198-a9fa-df09319c6a32",
+    "normalized_topic": "252 lessons from the military",
+    "original_topic": "252 - Lessons from the Military",
+    "correct_topic_name": "Life And Leadership Lessons I Learned In The Military",
+    "correct_doc_id": "1eUYHVhUW1n0EZVMfac7BRNg6WEPeVP0LAWCXLyfOLjQ",
+    "created_at": "2026-05-27T17:13:03.236800Z"
+  },
+  {
+    "id": "09e6c049-cf8c-4512-a7c1-7259b1681711",
+    "normalized_topic": "5 things we wish someone told us when starting our business or start up",
+    "original_topic": "5 things we wish someone told us when starting our business or start up",
+    "correct_topic_name": "Five Things I Wish Someone Told Me When I First Launched My Business or Startup",
+    "correct_doc_id": "1Ck6SJBSimdyDM-eEuTK_gNXT6rSUJ_6lAEWzd9fdT8Y",
+    "created_at": "2026-06-02T21:20:54.304167Z"
+  },
+  {
+    "id": "79180f73-87be-4b02-a600-83010e08dd2f",
+    "normalized_topic": "the future of green m a",
+    "original_topic": "The Future of Green M&A",
+    "correct_topic_name": "The Future Is Green: Leaders in Sustainability Share Their Top Strategies for a Cleaner Planet",
+    "correct_doc_id": "1VT-sd9aUQcozxS1VPJz5TUDNnw8uj6VXibUK8GVJlZE",
+    "created_at": "2026-06-03T16:11:50.184248Z"
+  },
+  {
+    "id": "6f833489-b58f-4fb8-a5bd-f8c1f6cae5a4",
+    "normalized_topic": "the broader shift from ai experimentation to real world operational deployment",
+    "original_topic": "the broader shift from AI experimentation to real-world operational deployment.",
+    "correct_topic_name": "How We Leveraged AI To Take Our Company To The Next Level",
+    "correct_doc_id": "1WIVAg3B5MlWvrJEUmDYeHuNTPfQBm0ApQj8ULkYlcgw",
+    "created_at": "2026-06-04T18:20:45.661476Z"
+  },
+  {
+    "id": "729d9973-5338-408f-a5e2-5f4d0252ada7",
+    "normalized_topic": "leading a 50 year legacy",
+    "original_topic": "Leading a 50-Year Legacy",
+    "correct_topic_name": "Leading with Heart: The Power of Authentic Women's Leadership",
+    "correct_doc_id": "1upjnWYMUieMFpRsQ0_5cSP8zhl6zBpVBXNemci-5QMA",
+    "created_at": "2026-06-09T18:12:49.361261Z"
+  },
+  {
+    "id": "678d7efe-6e3a-45e5-9521-1f9876c1e688",
+    "normalized_topic": "celebrate america s 250th with heirloom gifts from danbury mint",
+    "original_topic": "Celebrate America's 250th with heirloom gifts from Danbury Mint",
+    "correct_topic_name": "Top 5 Ecommerce Trends Shaping the Future of Online Shopping (interviewer: Rachel Kline",
+    "correct_doc_id": "16rpPFKy4DKD1W4ks-ogZy9UiOFMrEwqkyGIIPyK_a38",
+    "created_at": "2026-06-10T12:00:52.521845Z",
+    "updated_at": "2026-06-10T12:00:54.907445Z"
+  },
+  {
+    "id": "d07d2821-b402-4db8-a854-69e320bb4c9e",
+    "normalized_topic": "the 5 lessons i learned being a 20 something founder",
+    "original_topic": "The 5 Lessons I Learned Being a 20-Something Founder",
+    "correct_topic_name": "Five Things I Learned As A Twenty-Something Founder",
+    "correct_doc_id": "1JtPcromLLZYkVlTlRBPusxhvooeutHYw1V-Y0Cl5Lyo",
+    "created_at": "2026-06-11T16:07:35.542506Z"
+  },
+  {
+    "id": "970e751e-58e8-41bc-a5f9-015286f985b5",
+    "normalized_topic": "5 things you need to know before franchising your business",
+    "original_topic": "5 things you need to know before franchising your business",
+    "correct_topic_name": "Five Things You Need to Know to Successfully Franchise Your Business",
+    "correct_doc_id": "1QdL45TED6DsaDl3XALo_jSbgXG7vO66VaiNL1j0s088",
+    "created_at": "2026-06-11T16:07:36.285251Z"
+  },
+  {
+    "id": "501d89c9-4b7a-4cbf-b06b-23d24b55b569",
+    "normalized_topic": "topic 115 on combatting loneliness",
+    "original_topic": "Topic 115 on combatting loneliness",
+    "correct_topic_name": "5 Things We Can Each Do To Help Solve The Loneliness Epidemic",
+    "correct_doc_id": "11U8AA7qCW2C8mx9-c8IbGoFRE43KHsaS-Pdy4Gmghqk",
+    "created_at": "2026-06-12T16:01:40.930839Z"
+  },
+  {
+    "id": "00c7c6a6-5900-4069-85e0-f2094fadecd8",
+    "normalized_topic": "meet the rising music star",
+    "original_topic": "\"Meet The Rising Music Star\"",
+    "correct_topic_name": "Music Stars",
+    "correct_doc_id": "1CgOPtTgVhj6nq-uUAVbtnna9aDIdIDMw52Mm7KykrBw",
+    "created_at": "2026-06-12T23:34:43.468185Z"
+  },
+  {
+    "id": "cd90343b-5a00-4eb0-8ba2-516e5db77bad",
+    "normalized_topic": "https docs google com document d 1 z8jxeivxwtw7bvz nrl75dkf7khbmlq9hrl4mrnztg edit usp sharing",
+    "original_topic": "https://docs.google.com/document/d/1-z8jXEivXWtw7BVz-NRl75dkF7kHBmLq9hrL4MRnZtg/edit?usp=sharing",
+    "correct_topic_name": "Music Stars",
+    "correct_doc_id": "1CgOPtTgVhj6nq-uUAVbtnna9aDIdIDMw52Mm7KykrBw",
+    "created_at": "2026-06-12T23:34:48.078776Z"
+  },
+  {
+    "id": "2d510eae-7dda-412c-99eb-f7eec451807e",
+    "normalized_topic": "rising star on the 5 things you need to succeed in the entertainment industry",
+    "original_topic": "Rising Star on the 5 Things You Need To Succeed in the Entertainment Industry",
+    "correct_topic_name": "Meet The Rising Stars of TV and Film",
+    "correct_doc_id": "1OeC4OUq2FC889OhQjXwk92_Qd1bLj_qsu1CQCC4Hgb4",
+    "created_at": "2026-06-19T12:00:32.721049Z",
+    "updated_at": "2026-06-19T12:00:36.673752Z"
+  },
+  {
+    "id": "acc705c0-7d73-4fe0-8a4f-12cef504637a",
+    "normalized_topic": "women disruptors",
+    "original_topic": "Women Disruptors",
+    "correct_topic_name": "Female Disruptors",
+    "correct_doc_id": "1-z_b4YCzEqpOErq-f_BtNx6LpUe6j7-OhxAJctT96Z0",
+    "created_at": "2026-06-21T12:00:54.318535Z",
+    "updated_at": "2026-06-21T12:01:11.870714Z"
+  },
+  {
+    "id": "ad73e1be-332f-4da2-93e6-b84498f624a7",
+    "normalized_topic": "building a legacy while raising a family",
+    "original_topic": "Building a Legacy While Raising a Family",
+    "correct_topic_name": "5 Reasons Why Women Build Great Companies",
+    "correct_doc_id": "1F0CV25LD402MI8OorsAtgoesNEp_MEEIM_RkAadIDKM",
+    "created_at": "2026-06-23T00:06:21.853522Z"
+  },
+  {
+    "id": "3b378125-d699-469b-96af-86a421b7be07",
+    "normalized_topic": "five things i wish every professional knew before moving abroad for work",
+    "original_topic": "Five Things I Wish Every Professional Knew Before Moving Abroad for Work",
+    "correct_topic_name": "The One Decision That Changed Everything - How a Single Choice Redefined My Leadership Journey",
+    "correct_doc_id": "1ydv7C-mJLjV3TRFZ_7fllWFv8eDe8KrUnFXFnfxhcRc",
+    "created_at": "2026-06-23T12:33:03.509303Z",
+    "updated_at": "2026-06-23T12:33:07.759861Z"
+  },
+  {
+    "id": "fd333428-06a0-4833-96c5-55fc76bd1f3b",
+    "normalized_topic": "the book shifts the conversation about ai from one of tools and technology to one of thinking understanding and judgment the book opens the door to timely conversations about leadership technology overdependence decision making and what it means to stay human when machines increasingly shape how",
+    "original_topic": "The book shifts the conversation about AI from one of tools and technology to one of thinking, understanding, and judgment. The book opens the door to timely conversations about leadership, technology, overdependence, decision-making, and what it means to stay human when machines increasingly shape how",
+    "correct_topic_name": "How Artificial Intelligence Can Solve Business Problems",
+    "correct_doc_id": "1kiaGUq2V6NAceYnnHZkSMA9qhTkNMlPqN9-L5iLQ30g",
+    "created_at": "2026-06-23T23:31:05.349445Z",
+    "updated_at": "2026-06-23T23:31:11.595973Z"
+  },
+  {
+    "id": "5fc2008a-3e1e-4aa5-9cb4-20036f7b6daa",
+    "normalized_topic": "what ceos need to know about their healthcare plans",
+    "original_topic": "What CEOs need to know about their healthcare plans",
+    "correct_topic_name": "Five Things We Must do to Improve the US Healthcare System",
+    "correct_doc_id": "1gcrwPrnBtR6VC-GOdVm6u_T65uvoftOswTc136a9UiY",
+    "created_at": "2026-06-24T01:04:07.673383Z",
+    "updated_at": "2026-06-24T01:04:10.433510Z"
+  },
+  {
+    "id": "3b447688-6add-49bd-9cd3-10bd012610ab",
+    "normalized_topic": "brain fog mood swings can t focus it s not just menopause it might be adhd",
+    "original_topic": "Brain Fog, Mood Swings, Can't Focus - It's Not Just Menopause. It Might Be ADHD",
+    "correct_topic_name": "Understanding Perimenopause: How to Recognize It, and How to Thrive Through It",
+    "correct_doc_id": "1B28r8U2SO0I8WOfRoIEXY6Of6aFL7FSLamFnngm4tXg",
+    "created_at": "2026-06-24T12:32:26.863046Z"
+  },
+  {
+    "id": "88bfd791-adc0-4646-850a-3600fcb92de5",
+    "normalized_topic": "alkaline eating tips and tricks for everyday living",
+    "original_topic": "Alkaline Eating Tips and Tricks for Everyday Living",
+    "correct_topic_name": "Nutrition for Optimal Well-Being",
+    "correct_doc_id": "1g1MmP6aAoI39V6LfZlSw_stjErra2Amoiti4vk4Vhks",
+    "created_at": "2026-06-30T15:41:22.470197Z"
+  },
+  {
+    "id": "6f37f594-a5dc-4899-84ef-dac1da0760e4",
+    "normalized_topic": "the selection that i picked was number 25 how social media influencers leverage their platform to make a significant social impact it has a lot to do with me being a social media influencer as being a content creator which i am an digital graphic editor and how i create a major impact in the youtube community because i have a whole christian channel sent from the all new aol app for ios",
+    "original_topic": "The selection that I picked was Number 25: - How Social Media Influencers Leverage Their Platform To Make a Significant Social Impact It has a lot to do with me being a social media influencer as being a content creator which I am an digital graphic editor and how I create a major impact in the YouTube community because I have a whole Christian channel Sent from the all new AOL app for iOS",
+    "correct_topic_name": "Social Media Stars Making a Social Impact",
+    "correct_doc_id": "1SisvoOkrzLEhUVpOP_QYWm12J4eNgbXGQn6ZVOI-_C8",
+    "created_at": "2026-07-01T14:39:30.275653Z"
+  },
+  {
+    "id": "bfe9e365-794c-4aaa-bf7d-05c6cf02c339",
+    "normalized_topic": "can i submit all my questions and answers through here sent from the all new aol app for ios",
+    "original_topic": "Can I submit all my questions and answers through here Sent from the all new AOL app for iOS",
+    "correct_topic_name": "Social Media Stars Making a Social Impact",
+    "correct_doc_id": "1SisvoOkrzLEhUVpOP_QYWm12J4eNgbXGQn6ZVOI-_C8",
+    "created_at": "2026-07-01T16:44:05.781855Z"
+  },
+  {
+    "id": "3b0bf65c-4cbe-419e-81ca-ab02515c0c57",
+    "normalized_topic": "the future of pr",
+    "original_topic": "The Future of PR",
+    "correct_topic_name": "How AI Is Disrupting Our Industry, and What We Can Do About It",
+    "correct_doc_id": "1vLZLRq4yk6xnebG59yl3Ux5XllBXNnuXkIkqxnd1j-o",
+    "created_at": "2026-07-02T13:04:07.944327Z"
+  },
+  {
+    "id": "5afe7905-3b54-41dd-97dd-bdc8f8546e54",
+    "normalized_topic": "5 reasons your business needs pr right now visibility trust ai readiness",
+    "original_topic": "5 Reasons Your Business Needs PR Right Now: Visibility, Trust & AI Readiness",
+    "correct_topic_name": "Publicists and PR Pros: 5 Ways To Leverage Media Coverage To Dramatically Grow Your Business",
+    "correct_doc_id": "1mROeo7F6hsaOK2ol2Q0PrUVL0OKuFhiKJ8bCeow5a0Q",
+    "created_at": "2026-07-02T13:04:09.297029Z"
+  },
+  {
+    "id": "429777bb-3d19-4a5b-839a-9720463872f9",
+    "normalized_topic": "album review feature for the cabo sessions",
+    "original_topic": "Album review Feature for 'The Cabo Sessions'",
+    "correct_topic_name": "Music Stars",
+    "correct_doc_id": "1CgOPtTgVhj6nq-uUAVbtnna9aDIdIDMw52Mm7KykrBw",
+    "created_at": "2026-07-02T18:46:21.694119Z"
+  },
+  {
+    "id": "dc49a1c7-f435-488b-bcda-5dccf0bb6d3e",
+    "normalized_topic": "five things you need to know to build a successful esports brand",
+    "original_topic": "Five Things You Need To Know To Build A Successful Esports Brand",
+    "correct_topic_name": "5 Things You Need To Create A Highly Successful Career In eSports",
+    "correct_doc_id": "1ccc0xNc-Qqf8L2GklB9Mb8djw7Cpn_S0LMg7VfSXhS4",
+    "created_at": "2026-07-02T21:50:45.544953Z",
+    "updated_at": "2026-07-02T21:50:46.797334Z"
+  },
+  {
+    "id": "2fb4310b-6ac0-422b-9ee4-feaff6df5014",
+    "normalized_topic": "fresh founders young entrepreneurs or your wellness vertical whichever fits best",
+    "original_topic": "Fresh Founders / Young Entrepreneurs, or your Wellness vertical, whichever fits best",
+    "correct_topic_name": "Guardians of AI: How AI Leaders Are Keeping AI Safe, Ethical, Responsible, and True",
+    "correct_doc_id": "1efJyZG5aXA_wdiWZ7CjY5TZVBU7fu9tNqvMKEPToUTw",
+    "created_at": "2026-08-07T12:02:05.777228Z",
+    "updated_at": "2026-08-07T12:02:06.646111Z"
+  },
+  {
+    "id": "f1bd42d0-5392-4fad-b339-48b0a7000355",
+    "normalized_topic": "wellness 122 i can t get no satisfaction",
+    "original_topic": "Wellness #122 I Can't Get No Satisfaction",
+    "correct_topic_name": "I Can't Get No Satisfaction: Why So Many Of Us Are Feeling Unsatisfied & What We Can Do About It",
+    "correct_doc_id": "1N9wtvwM6Mu_Pg5Q0oqAzRNQYoxkovcQjt5No3FZIrv4",
+    "created_at": "2026-08-07T12:02:31.352323Z",
+    "updated_at": "2026-08-07T12:04:38.953244Z"
+  },
+  {
+    "id": "1df4ce7e-938c-463e-b65a-ee5ff0bdc160",
+    "normalized_topic": "the fallacy of the follower count",
+    "original_topic": "The Fallacy of the Follower Count",
+    "correct_topic_name": "Creating Powerful, Thriving Digital Communities: How To Cultivate Connection & Community In A Click-to-Connect World",
+    "correct_doc_id": "11UM7wrvlAfxgsREOKNyZde7efxCCxpUkMaWPgXoClGM",
+    "created_at": "2026-08-07T12:02:32.982990Z"
+  },
+  {
+    "id": "e1f76e85-a337-4585-8cf4-9dad14eae00f",
+    "normalized_topic": "the five things you need to shake up your industry",
+    "original_topic": "The Five Things You Need To Shake Up Your Industry",
+    "correct_topic_name": "Meet The Disruptors",
+    "correct_doc_id": "1IeUWKNClg4gGY_82R73n1aCN319Y5upQMkEQ0wZbv_U",
+    "created_at": "2026-08-07T12:02:44.928588Z"
+  },
+  {
+    "id": "8c88578c-e3b9-4d75-b209-55efba14e579",
+    "normalized_topic": "redefining luxury through sculptural handbag design",
+    "original_topic": "Redefining Luxury through Sculptural Handbag design",
+    "correct_topic_name": "Female Disruptors",
+    "correct_doc_id": "1-z_b4YCzEqpOErq-f_BtNx6LpUe6j7-OhxAJctT96Z0",
+    "created_at": "2026-08-07T12:03:20.308802Z"
+  },
+  {
+    "id": "98da2181-8290-4b0a-9074-8fd3cfc7a65c",
+    "normalized_topic": "social impact purpose before profit",
+    "original_topic": "Social Impact: Purpose Before Profit",
+    "correct_topic_name": "Purpose Before Profit: Leaders Who Lead Purpose-Driven Businesses On The Benefits Of Running A Purpose-Driven Business",
+    "correct_doc_id": "1QzFr5DJySIK_RUk6sl4RBWI3Z4DNWtF8Ull629p7xcc",
+    "created_at": "2026-08-07T12:03:32.708655Z"
+  },
+  {
+    "id": "894e7674-e4db-4c34-bcc3-b8d8e0a3da15",
+    "normalized_topic": "working well how companies are creating cultures that support sustain mental emotional social physical financial wellness",
+    "original_topic": "Working Well: How Companies Are Creating Cultures That Support & Sustain Mental, Emotional, Social, Physical & Financial Wellness",
+    "correct_topic_name": "Working Well: How Companies Can Create A Fantastic Work Culture That Supports And Encourages Mental, Emotional, Social And Physical Wellness",
+    "correct_doc_id": "1XanBCkyzwzczsin8eBaHLlhEMYy7nQC8",
+    "created_at": "2026-08-07T12:03:36.828482Z",
+    "updated_at": "2026-08-07T12:04:32.177472Z"
+  },
+  {
+    "id": "92792c0d-0faf-4ff0-95c2-5f2825396947",
+    "normalized_topic": "women in business or social impact open to whatever you think is going to be best for interview",
+    "original_topic": "Women in Business or Social Impact-- Open to whatever you think is going to be best for interview",
+    "correct_topic_name": "Social Impact Heroes",
+    "correct_doc_id": "1vJAt9NaXYe0wgVyVr-iKDdJTERw_Xo9zlgaExgmCEE0",
+    "created_at": "2026-08-07T12:04:08.489349Z"
+  },
+  {
+    "id": "6340e41d-d0c6-40f2-8180-335aa5ab148c",
+    "normalized_topic": "hello i have successfully submitted the interview questions i look forward to it",
+    "original_topic": "Hello I have successfully submitted the interview questions. I look forward to it",
+    "correct_topic_name": "Female Disruptors",
+    "correct_doc_id": "1-z_b4YCzEqpOErq-f_BtNx6LpUe6j7-OhxAJctT96Z0",
+    "created_at": "2026-08-07T12:04:39.894344Z"
+  },
+  {
+    "id": "6f9aa2c2-63f0-4add-8ee3-0f5cf8bc6657",
+    "normalized_topic": "5 things i wish someone had told me before i became a filmmaker",
+    "original_topic": "5 Things I Wish Someone Had Told Me Before I Became a Filmmaker",
+    "correct_topic_name": "Directors & Producers: 5 Things I Wish Someone Told Me When I First Became A Filmmaker",
+    "correct_doc_id": "1uVuLamOkNGtNUHmtR5Jxzc0jKELuuTz1JmvqKUbcHjo",
+    "created_at": "2026-08-09T12:01:54.286683Z"
+  },
+  {
+    "id": "35b3fb5e-7b36-4cbe-a934-bcaea092dfad",
+    "normalized_topic": "109 becoming stress proof",
+    "original_topic": "109 - Becoming Stress-Proof",
+    "correct_topic_name": "Becoming Stress-Proof: How To Reduce Or Eliminate Stress When Caring For Elderly or Aging Parents",
+    "correct_doc_id": "1tnFREhgD7N2DynvQdkt3JLu7lh00WANNyuqPvSPKvIA",
+    "created_at": "2026-08-10T19:47:29.050404Z",
+    "updated_at": "2026-08-10T19:47:30.559879Z"
+  },
+  {
+    "id": "3e76444e-3753-4e9a-88fd-4e31e8194303",
+    "normalized_topic": "cup kings how 2 college kids started making cups for madison square garden and your neighborhood coffee shop",
+    "original_topic": "Cup Kings! How 2 college kids started making cups for Madison Square Garden... and your neighborhood coffee shop",
+    "correct_topic_name": "How My Experience in Athletics Trained Me to Become a Better Leader",
+    "correct_doc_id": "1rR3_MP3lymtLkTc_rCNtR10xn8IUIBnpTwy1P-ZnYJM",
+    "created_at": "2026-08-18T12:49:06.943131Z"
+  },
+  {
+    "id": "c8df8f0a-bd48-4d87-9ee3-e6af0ce87e61",
+    "normalized_topic": "author interview",
+    "original_topic": "Author Interview",
+    "correct_topic_name": "5 Things You Need To Be A Successful Writer Or Author",
+    "correct_doc_id": "1ZOfKUaMtFJARRU8kQzAUPHoKTvXZ6tRcLETeROTBn9M",
+    "created_at": "2026-08-19T21:41:50.931430Z"
+  },
+  {
+    "id": "0413d4ec-f645-4967-a9b8-20e4a697003c",
+    "normalized_topic": "the creative leader building the future of marketing",
+    "original_topic": "The Creative Leader Building the Future of Marketing",
+    "correct_topic_name": "The One Decision That Changed Everything - How a Single Choice Redefined My Leadership Journey",
+    "correct_doc_id": "1ydv7C-mJLjV3TRFZ_7fllWFv8eDe8KrUnFXFnfxhcRc",
+    "created_at": "2026-08-21T12:01:19.035435Z"
+  },
+  {
+    "id": "a10d0d2b-b1d0-4eec-89b8-75b5a1fcfdb4",
+    "normalized_topic": "world blood cancer awareness month and cheryl s story",
+    "original_topic": "World Blood Cancer Awareness Month and Cheryl's Story",
+    "correct_topic_name": "High Impact Philanthropy: 5 Things You Need To Create A Successful & Effective Nonprofit That Leaves A Lasting Legacy",
+    "correct_doc_id": "1hQis9-JUdxzEZUPEYi9w4mlbwyrJhE6Ehbap5vIvzBU",
+    "created_at": "2026-08-25T21:14:10.615579Z"
+  },
+  {
+    "id": "4774932e-e0f4-4711-b83c-a51e6d833310",
+    "normalized_topic": "meet the rising stars of tv film",
+    "original_topic": "meet the rising stars of tv/film",
+    "correct_topic_name": "Meet The Rising Stars of TV and Film",
+    "correct_doc_id": "1OeC4OUq2FC889OhQjXwk92_Qd1bLj_qsu1CQCC4Hgb4",
+    "created_at": "2026-08-27T00:59:28.578960Z",
+    "updated_at": "2026-08-27T00:59:32.350126Z"
+  },
+  {
+    "id": "e4808aa4-4d3f-4b9a-b35b-64ea22816a6d",
+    "normalized_topic": "5 ways to create a wow customer experience i d change the title to something more aligned with the pitch",
+    "original_topic": "5 Ways to Create a Wow Customer Experience (I'd change the title to something more aligned with the pitch)",
+    "correct_topic_name": "5 Things A Business Should Do To Create A Wow! Customer Experience",
+    "correct_doc_id": "1w26buv6luVzJdWoGbBGm4rmIdUOYTfZjPb5Pai8RENI",
+    "created_at": "2026-08-27T19:41:59.024455Z"
+  }
+]

@@ -1,0 +1,96 @@
+{
+  "id": "r4689852469694262337",
+  "message": {
+    "id": "1a09fd9ae1186440",
+    "threadId": "1a09f2add4b85434",
+    "labelIds": [
+      "DRAFT"
+    ],
+    "snippet": "Thank you so much for your pitch to Authority Magazine. You have been accepted and we would like to move forward with an email interview. Here is the link for the email interview questions for this",
+    "payload": {
+      "partId": "",
+      "mimeType": "multipart/alternative",
+      "filename": "",
+      "headers": [
+        {
+          "name": "MIME-Version",
+          "value": "1.0"
+        },
+        {
+          "name": "Date",
+          "value": "Mon, 14 Sep 2026 08:17:18 -0400"
+        },
+        {
+          "name": "References",
+          "value": "<CACn8G2OLqE+ESL0svpVj0DUZzNPFddQjni=1faUnZmZOjyrgnA@mail.gmail.com>"
+        },
+        {
+          "name": "In-Reply-To",
+          "value": "<CACn8G2OLqE+ESL0svpVj0DUZzNPFddQjni=1faUnZmZOjyrgnA@mail.gmail.com>"
+        },
+        {
+          "name": "Message-ID",
+          "value": "<CAMd8+zgHVv6eFao0rR9vfjU2bK0W52tWo8vLWdUqmzVmvXKhiw@mail.gmail.com>"
+        },
+        {
+          "name": "Subject",
+          "value": "Re: Thank you for your pitch to Authority Magazine!"
+        },
+        {
+          "name": "From",
+          "value": "\"Editor's Desk\" <support@authoritymag.co>"
+        },
+        {
+          "name": "To",
+          "value": "esther.harris@thebookpublicist.co.uk"
+        },
+        {
+          "name": "Content-Type",
+          "value": "multipart/alternative; boundary=\"0000000000005703c1065b706a15\""
+        }
+      ],
+      "body": {
+        "size": 0
+      },
+      "parts": [
+        {
+          "partId": "0",
+          "mimeType": "text/plain",
+          "filename": "",
+          "headers": [
+            {
+              "name": "Content-Type",
+              "value": "text/plain; charset=\"UTF-8\""
+            }
+          ],
+          "body": {
+            "size": 1059,
+            "data": "VGhhbmsgeW91IHNvIG11Y2ggZm9yIHlvdXIgcGl0Y2ggdG8gQXV0aG9yaXR5IE1hZ2F6aW5lLiANCg0KWW91IGhhdmUgYmVlbiBhY2NlcHRlZCBhbmQgd2Ugd291bGQgbGlrZSB0byBtb3ZlIGZvcndhcmQgd2l0aCBhbiBlbWFpbCANCmludGVydmlldy4gDQoNCkhlcmUgaXMgdGhlIGxpbmsgZm9yIHRoZSBlbWFpbCBpbnRlcnZpZXcgcXVlc3Rpb25zIGZvciB0aGlzIHNlcmllczoNCg0KV2hlbiBFdmVyeXRoaW5nIENoYW5nZWQ6IExlc3NvbnMgRnJvbSBMaWZlJ3MgVHVybmluZyBQb2ludHMNCmh0dHBzOi8vZG9jcy5nb29nbGUuY29tL2RvY3VtZW50L2QvMTlscnAxUnhyNVc0UG5tdklyMl9URThaOHk3dy0zdEZudDFKc25oYXprZWMvZWRpdD90YWI9dC4wDQoNCg0KUGxlYXNlIGNvbXBsZXRlIHRoZSB3cml0dGVuIGludGVydmlldywgKHBsZWFzZSBkbyBub3QgdXNlIEFJIHRvIGNyZWF0ZSB5b3VyIA0KYW5zd2VycykgYW5kIHVwbG9hZCB0aGUgaW50ZXJ2aWV3LCBpbWFnZXMgYW5kIGJpbyBpbnRvIHRoZSBwb3J0YWwgbGlua2VkIGF0IA0KdGhlIGJvdHRvbSBvZiB0aGUgaW50ZXJ2aWV3IHdoZW4gaXQgaXMgY29tcGxldGUuDQoNCldoZW4geW91IHVwbG9hZCB0aGUgbWF0ZXJpYWwsIHBsZWFzZSBrZWVwIHlvdXIgYnJvd3NlciBvcGVuIHVudGlsIHlvdSBzZWUgYSANCmNvbmZpcm1hdGlvbiBtZXNzYWdlLg0KDQpUaGUgb2ZmaWNpYWwgZGVhZGxpbmUgaXMgMjEgZGF5cy4NCg0KQWZ0ZXIgeW91IHVwbG9hZCB0aGUgaW50ZXJ2aWV3IGluIHRoZSB3cml0ZXIncyBwb3J0YWwsIHlvdSB3aWxsIHNlZSBhIGxpbmsgDQp0byBhIHNwcmVhZHNoZWV0IHF1ZXVlIHdpdGggb3VyIGVzdGltYXRlZCBwdWJsaXNoaW5nIGRhdGVzLg0KDQpBbGwgb3RoZXIgZGV0YWlscyBhbmQgZnJlcXVlbnRseSBhc2tlZCBxdWVzdGlvbnMgYXJlIGFkZHJlc3NlZCBoZXJlOiANCmh0dHBzOi8vYml0Lmx5L0F1dGhvcml0eU1hZ0ZBUWFuZEluc3RydWN0aW9ucyANCg0KV2UgbG9vayBmb3J3YXJkIHRvIHNlZWluZyB5b3VyIGludGVydmlldyBzdWJtaXNzaW9uIQ0KDQpXYXJtbHksDQpZaXR6aQ0K"
+          }
+        },
+        {
+          "partId": "1",
+          "mimeType": "text/html",
+          "filename": "",
+          "headers": [
+            {
+              "name": "Content-Type",
+              "value": "text/html; charset=\"UTF-8\""
+            },
+            {
+              "name": "Content-Transfer-Encoding",
+              "value": "quoted-printable"
+            }
+          ],
+          "body": {
+            "size": 1625,
+            "data": "PGRpdiBkaXI9Imx0ciI-PGRpdiBzdHlsZT0iZm9udC1mYW1pbHk6LWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsJiMzOTtTZWdvZSBVSSYjMzk7LFJvYm90byxBcmlhbCxzYW5zLXNlcmlmO2ZvbnQtc2l6ZToxNHB4O2xpbmUtaGVpZ2h0OjEuNTtjb2xvcjojMWQxZDFmIj5UaGFuayB5b3Ugc28gbXVjaCBmb3IgeW91ciBwaXRjaCB0byBBdXRob3JpdHkgTWFnYXppbmUuIDxicj4NCjxicj4NCllvdSBoYXZlIGJlZW4gYWNjZXB0ZWQgYW5kIHdlIHdvdWxkIGxpa2UgdG8gbW92ZSBmb3J3YXJkIHdpdGggYW4gZW1haWwgaW50ZXJ2aWV3LiA8YnI-DQo8YnI-DQpIZXJlIGlzIHRoZSBsaW5rIGZvciB0aGUgZW1haWwgaW50ZXJ2aWV3IHF1ZXN0aW9ucyBmb3IgdGhpcyBzZXJpZXM6PGJyPg0KPGJyPg0KV2hlbiBFdmVyeXRoaW5nIENoYW5nZWQ6IExlc3NvbnMgRnJvbSBMaWZlJiMzOTtzIFR1cm5pbmcgUG9pbnRzPGJyPg0KPGEgaHJlZj0iaHR0cHM6Ly9kb2NzLmdvb2dsZS5jb20vZG9jdW1lbnQvZC8xOWxycDFSeHI1VzRQbm12SXIyX1RFOFo4eTd3LTN0Rm50MUpzbmhhemtlYy9lZGl0P3RhYj10LjAiIHN0eWxlPSJjb2xvcjojMDA3MWUzO3RleHQtZGVjb3JhdGlvbjp1bmRlcmxpbmUiIHRhcmdldD0iX2JsYW5rIj5odHRwczovL2RvY3MuZ29vZ2xlLmNvbS9kb2N1bWVudC9kLzE5bHJwMVJ4cjVXNFBubXZJcjJfVEU4Wjh5N3ctM3RGbnQxSnNuaGF6a2VjL2VkaXQ_dGFiPXQuMDwvYT48YnI-DQo8YnI-DQo8YnI-DQpQbGVhc2UgY29tcGxldGUgdGhlIHdyaXR0ZW4gaW50ZXJ2aWV3LCAocGxlYXNlIGRvIG5vdCB1c2UgQUkgdG8gY3JlYXRlIHlvdXIgYW5zd2VycykgYW5kIHVwbG9hZCB0aGUgaW50ZXJ2aWV3LCBpbWFnZXMgYW5kIGJpbyBpbnRvIHRoZSBwb3J0YWwgbGlua2VkIGF0IHRoZSBib3R0b20gb2YgdGhlIGludGVydmlldyB3aGVuIGl0IGlzIGNvbXBsZXRlLjxicj4NCjxicj4NCldoZW4geW91IHVwbG9hZCB0aGUgbWF0ZXJpYWwsIHBsZWFzZSBrZWVwIHlvdXIgYnJvd3NlciBvcGVuIHVudGlsIHlvdSBzZWUgYSBjb25maXJtYXRpb24gbWVzc2FnZS48YnI-DQo8YnI-DQpUaGUgb2ZmaWNpYWwgZGVhZGxpbmUgaXMgMjEgZGF5cy48YnI-DQogPGJyPg0KQWZ0ZXIgeW91IHVwbG9hZCB0aGUgaW50ZXJ2aWV3IGluIHRoZSB3cml0ZXImIzM5O3MgcG9ydGFsLCB5b3Ugd2lsbCBzZWUgYSBsaW5rIHRvIGEgc3ByZWFkc2hlZXQgcXVldWUgd2l0aCBvdXIgZXN0aW1hdGVkIHB1Ymxpc2hpbmcgZGF0ZXMuPGJyPg0KIDxicj4NCkFsbCBvdGhlciBkZXRhaWxzIGFuZCBmcmVxdWVudGx5IGFza2VkIHF1ZXN0aW9ucyBhcmUgYWRkcmVzc2VkIGhlcmU6IDxhIGhyZWY9Imh0dHBzOi8vYml0Lmx5L0F1dGhvcml0eU1hZ0ZBUWFuZEluc3RydWN0aW9ucyIgc3R5bGU9ImNvbG9yOiMwMDcxZTM7dGV4dC1kZWNvcmF0aW9uOnVuZGVybGluZSIgdGFyZ2V0PSJfYmxhbmsiPmh0dHBzOi8vYml0Lmx5L0F1dGhvcml0eU1hZ0ZBUWFuZEluc3RydWN0aW9uczwvYT4gICA8YnI-DQogPGJyPg0KV2UgbG9vayBmb3J3YXJkIHRvIHNlZWluZyB5b3VyIGludGVydmlldyBzdWJtaXNzaW9uITxicj4NCiA8YnI-DQpXYXJtbHksPGJyPg0KWWl0emk8YnI-PC9kaXY-PC9kaXY-DQo="
+          }
+        }
+      ]
+    },
+    "sizeEstimate": 3515,
+    "historyId": "10347036",
+    "internalDate": "1789388238000"
+  }
+}

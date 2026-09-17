@@ -218,7 +218,5 @@ export const DEFAULT_AUTOMATION_WORKFLOW_SETTINGS = [
 
 export const DEFAULT_SUPPRESSIONS = [
   { kind: "phrase", value: "unsubscribe", reason: "Needs manual review" },
-  { kind: "phrase", value: "legal", reason: "Legal language must not be automated" },
   { kind: "phrase", value: "refund", reason: "Payment issues need human review" },
-  { kind: "phrase", value: "confidential", reason: "Sensitive content needs human review" },
 ] as const;

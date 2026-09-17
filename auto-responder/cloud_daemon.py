@@ -37,7 +37,7 @@ logger = logging.getLogger("cloud_daemon")
 ALERT_EMAIL = os.getenv("ALERT_EMAIL", "rabbiweiner@gmail.com")
 ALERT_COOLDOWN_SECONDS = 3600  # 1 hour between duplicate alerts
 CONSECUTIVE_ERROR_THRESHOLD = 3  # send alert after this many back-to-back loop errors
-BUILD_VERSION = "2026.09.16.1"
+BUILD_VERSION = "2026.09.17.1"
 # ──────────────────────────────────────────────────────────────────────────────
 
 

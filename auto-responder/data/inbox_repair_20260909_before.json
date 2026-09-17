@@ -1,0 +1,1154 @@
+[
+  {
+    "id": "1a082da931ce70b6",
+    "history_id": "10309474",
+    "messages": [
+      {
+        "id": "1a082da931ce70b6",
+        "thread_id": "1a082da931ce70b6",
+        "label_ids": [
+          "Label_2065340405041221323",
+          "CATEGORY_PERSONAL",
+          "INBOX"
+        ],
+        "snippet": "Here is a summary and confirmation of your pitch: Dear Authority Magazine Editors, Please kindly consider me or my client for the following interview topic: Name and Title of The Interviewee Blakely",
+        "history_id": "10309322",
+        "internal_date": "1788901749000",
+        "payload": {
+          "part_id": "",
+          "mime_type": "multipart/mixed",
+          "filename": "",
+          "headers": [
+            {
+              "name": "Delivered-To",
+              "value": "support@authoritymag.co"
+            },
+            {
+              "name": "Received",
+              "value": "by 2002:a05:7300:fd8b:b0:327:c819:8571 with SMTP id jy11csp448120dyc;        Tue, 8 Sep 2026 14:09:17 -0700 (PDT)"
+            },
+            {
+              "name": "X-Received",
+              "value": "by 2002:a05:651c:a211:10b0:3a3:61ec:7db8 with SMTP id 38308e7fff4ca-3a4882d3335mr6542301fa.14.1788901757634;        Tue, 08 Sep 2026 14:09:17 -0700 (PDT)"
+            },
+            {
+              "name": "ARC-Seal",
+              "value": "i=1; a=rsa-sha256; t=1788901757; cv=none;        d=google.com; s=arc-20260327;        b=HAK9l8E4fbZw9HPMWSgAqIKrb/1IX8XYzIYKBcBmFOsP64KjEAHqlSnNwOosUiseCH         AJQyosAzbePFiYmPny7Twcm6y9Vx6TXe7GT5RFPpTdvKWj87zrE1uvoRBqR/R6G884i8         vNXxUWUNK4nUr+M4umtpj4An8VeHmMNGi21gOp1jIiwubn0yK81l9og6SeYFVapQLo0q         QCzvMq+rdH8qNeLS9Q5zwj3C9kOQEzoWAXGUwMSEMQ406YcuaRJylEnUYFNNKgLoCZBx         N/FipUXq1l8lLK2Ig9h5GQXwcsul03OZkFR4yGRFboyRyAAxAE+/iAcTixbGpM5ijUAf         TySg=="
+            },
+            {
+              "name": "ARC-Message-Signature",
+              "value": "i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;        h=cc:to:subject:message-id:date:reply-to:from:mime-version         :dkim-signature;        bh=7ky1572N2vBZtcL8yqVUC3tH5o2rDEnpWt52BNyVqoo=;        fh=LcI4Dv543DZDy+QELinzFULMouTA9fBeAaSpu2ETvpc=;        b=J9aJZOZqmpxZ45ksnfROKqrCS1HeRZGQnC3+qEBwEhxA+RHwRSxyU3oxlzOT/fhBeT         o+Ap5gZIT7XD70csCKesh4jaMeaWU97rpZSba6Dae141UwYfKdwOZ0NhC6IEfr7GG0gE         Pn08qOICIgWto3ab4ssJwbRQXcc35yxk+DemwsC1/NbaZ02ZgYfk66OhBuhbWBow9Qrb         zF8wssdbb2rPC2kDtwKT5F1Rw7mDxWFxs/jWbWAepBdeZ/ucyFBEinQjcSKYDjILKer5         qiLgqrSAMKBLwX9mNohZ4+7J4tq1HKMLc/35/3MX5/9YcvPLaPdHSE+lusrNwQkkWHOJ         VRsg==;        dara=google.com"
+            },
+            {
+              "name": "ARC-Authentication-Results",
+              "value": "i=1; mx.google.com;       dkim=pass header.i=@authoritymag-co.20251104.gappssmtp.com header.s=20251104 header.b=va5sHOX8;       spf=pass (google.com: domain of editor@authoritymag.co designates 209.85.220.41 as permitted sender) smtp.mailfrom=editor@authoritymag.co;       dara=neutral header.i=@authoritymag.co"
+            },
+            {
+              "name": "Return-Path",
+              "value": "<editor@authoritymag.co>"
+            },
+            {
+              "name": "Received",
+              "value": "from mail-sor-f41.google.com (mail-sor-f41.google.com. [209.85.220.41])        by mx.google.com with SMTPS id 38308e7fff4ca-3a35b691183sor30698451fa.4.2026.09.08.14.09.17        for <support@authoritymag.co>        (Google Transport Security);        Tue, 08 Sep 2026 14:09:17 -0700 (PDT)"
+            },
+            {
+              "name": "Received-SPF",
+              "value": "pass (google.com: domain of editor@authoritymag.co designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41;"
+            },
+            {
+              "name": "Authentication-Results",
+              "value": "mx.google.com;       dkim=pass header.i=@authoritymag-co.20251104.gappssmtp.com header.s=20251104 header.b=va5sHOX8;       spf=pass (google.com: domain of editor@authoritymag.co designates 209.85.220.41 as permitted sender) smtp.mailfrom=editor@authoritymag.co;       dara=neutral header.i=@authoritymag.co"
+            },
+            {
+              "name": "DKIM-Signature",
+              "value": "v=1; a=rsa-sha256; c=relaxed/relaxed;        d=authoritymag-co.20251104.gappssmtp.com; s=20251104; t=1788901757; x=1789506557; darn=authoritymag.co;        h=content-type:cc:to:subject:message-id:date:reply-to:from         :mime-version:from:to:cc:subject:date:message-id:reply-to         :content-type;        bh=7ky1572N2vBZtcL8yqVUC3tH5o2rDEnpWt52BNyVqoo=;        b=va5sHOX8JBrTV6xcjMwnP8gGhlPbGGt8+zKM8x1oFr10cXC8wmoE1RVEozi9EWU4ys         7oO1+xgASeXglfuoX/ZeT6F2UD5yJ+JQMZ3rOqtcUJ9IL/QjanVvT72OKPpjtwUsM6Vw         8zlo++4fhUzkLsxKdfdZNuLTDeYqUiJcbLPi3W8bKcAt//qrZgVA/7ejF8ZR5Ai37uOc         vzkbubRkTMc+O1UaSOMMzrja9MIT9gtw0lcLwvO3e2Zv+SPiRazw3ZUIRiq1H4+inea5         UJyCT1k02fZBqeh/Iz/rxa0QVgyTbAG3bRDmiU4PAhsMpyfDFyaTCTCxceoespM29gJn         yC7A=="
+            },
+            {
+              "name": "X-Google-DKIM-Signature",
+              "value": "v=1; a=rsa-sha256; c=relaxed/relaxed;        d=1e100.net; s=20251104; t=1788901757; x=1789506557;        h=content-type:cc:to:subject:message-id:date:reply-to:from         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date         :message-id:reply-to:content-type;        bh=7ky1572N2vBZtcL8yqVUC3tH5o2rDEnpWt52BNyVqoo=;        b=mwaAlGcCBrBX42JLVPhly6SRdUv3jJcdQKMZMS3r9Oh4rW5mHyQbSzTUZMifZJJUMG         qmgzmHEDIqjOj84jVtulL7E4jaxTXcmqlkKe1UFxTRN93aejnnS/eEtvonwirhHh7d1r         1H9Adk7OLjm4WqHKVgsEiMCi3OIfgygk7suFbMyageIfE1l4JyPaYLvEEX8jF97GImOp         xZ33IY9NCAZJq2XUrl6nlVrK9Melo9RSGl4czSM2ORbF6TSliZrGVocGxqZAsFFXaiJS         pU56djGqC7CJdFfNOeycl3540bdn2rCgTXmlzJ8XplX1LWC6DCVO/0t/HgidIFwuMF/A         P2lg=="
+            },
+            {
+              "name": "X-Gm-Message-State",
+              "value": "AFuF++lXaO+c7EL/M4x2xCK5S7V5eOAFgYyvEA+zFF3Vwyw1AkQvOICl QjkeVff+OKq7ywlfOoKFfuMCbg3c/lz0M5MFuEkDcOQ6EApSaY4I6o/hkbt0mNTR64puKT5OEQU bLt85ZBXkjQ=="
+            },
+            {
+              "name": "X-Gm-Gg",
+              "value": "AYBFou3VicNNGfz73ziG2WUyLAqHGCuHPpS4Q+F9iCTsFDiX2dZnxMpDJzT9KHuXhg7 dz0c0sZyquv2WfVV3Eyrm7Xx3gxXCfBpwM4seT9+4jCd7b2+doVqOZ79C84jdbg2DvztJvdA6qb i8sdW7lr5sv9e6wfqAEDPT4LFJDm37A2ywEb1iDU7tURSVS6fasSOI18ljSInc/B38NJ6aZ/z87 FOy7sb5U9nJd8AZPWgRNKVtDh1t+AhFIY/K/Qbbluxtxv9quU0F48NlAJntG7bp1stPyFwzQgG2 OKu3rIrX7m3dOJmVQTkYzvNuJ2jlEZdQJhgowHiXwTenPCO2MltRf832D6ebas+VAo8+WkprmPT SMVMZp3G/J12I00HSVC5GtNiOoM+secdKvbi3uC7PiV/9XmSPKKUyfVlayjLqAYL1VGPfmOHbeg LCFvSZyFl2koUvsOt/YVGDQlEU+ibAP2q/BdUIl8Y/uDjk0ip94wc/OGVQlWAfu6Wd0/qtgho3c gMQlSHXgMIESnCayoDUTUcXvs3wHkWpAVqMOfjPXOi2le+F9NrXVA1G14fz"
+            },
+            {
+              "name": "X-Received",
+              "value": "by 2002:a05:6512:33ce:b0:5b4:5854:77f2 with SMTP id 2adb3069b0e04-5b75c8c2aaemr1402926e87.3.1788901755933;        Tue, 08 Sep 2026 14:09:15 -0700 (PDT)"
+            },
+            {
+              "name": "Return-Path",
+              "value": "<editor@authoritymag.co>"
+            },
+            {
+              "name": "Received",
+              "value": "from mail-lf1-f54.google.com (mail-lf1-f54.google.com. [209.85.167.54])        by smtp.gmail.com with ESMTPSA id 2adb3069b0e04-5b6166ed5fbsm3238060e87.28.2026.09.08.14.09.14        for <support@authoritymag.co>        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);        Tue, 08 Sep 2026 14:09:14 -0700 (PDT)"
+            },
+            {
+              "name": "Received",
+              "value": "by mail-lf1-f54.google.com with SMTP id 2adb3069b0e04-5b28c91fba5so5489217e87.1        for <support@authoritymag.co>; Tue, 08 Sep 2026 14:09:14 -0700 (PDT)"
+            },
+            {
+              "name": "X-Received",
+              "value": "by 2002:a05:6512:1292:b0:5b6:10bc:dc41 with SMTP id 2adb3069b0e04-5b610bcdd09mr5202745e87.24.1788901753592; Tue, 08 Sep 2026 14:09:13 -0700 (PDT)"
+            },
+            {
+              "name": "Received",
+              "value": "from 984866591130 named unknown by gmailapi.google.com with HTTPREST; Tue, 8 Sep 2026 16:09:09 -0500"
+            },
+            {
+              "name": "Received",
+              "value": "from 984866591130 named unknown by gmailapi.google.com with HTTPREST; Tue, 8 Sep 2026 16:09:09 -0500"
+            },
+            {
+              "name": "MIME-Version",
+              "value": "1.0"
+            },
+            {
+              "name": "From",
+              "value": "Authority Magazine <editor@authoritymag.co>"
+            },
+            {
+              "name": "Reply-To",
+              "value": "support@authoritymag.co"
+            },
+            {
+              "name": "Date",
+              "value": "Tue, 8 Sep 2026 16:09:09 -0500"
+            },
+            {
+              "name": "X-Gmail-Original-Message-ID",
+              "value": "<CACn8G2MqLjQX9yG7s128=bSgAcXaL3QvcWt-vfLwP-5+tnSNeg@mail.gmail.com>"
+            },
+            {
+              "name": "X-Gm-Features",
+              "value": "AcwNN1WJYbPT2_lW2foY3q7WvnWb9knVLLw5xwPHiU6Ro00Q8OLAPCe45-U3epY"
+            },
+            {
+              "name": "Message-ID",
+              "value": "<CACn8G2MqLjQX9yG7s128=bSgAcXaL3QvcWt-vfLwP-5+tnSNeg@mail.gmail.com>"
+            },
+            {
+              "name": "Subject",
+              "value": "Thank you for your pitch to Authority Magazine!"
+            },
+            {
+              "name": "To",
+              "value": "tiffany.crockett@gofishdigital.com"
+            },
+            {
+              "name": "Cc",
+              "value": "support@authoritymag.co"
+            },
+            {
+              "name": "Content-Type",
+              "value": "multipart/mixed; boundary=\"0000000000008fc80a065aff2508\""
+            }
+          ],
+          "body": {
+            "size": 0,
+            "base64_url_content": null,
+            "content": null,
+            "attachment_id": null
+          },
+          "read_attachment_supported": null,
+          "parts": [
+            {
+              "part_id": "0",
+              "mime_type": "multipart/alternative",
+              "filename": "",
+              "headers": [
+                {
+                  "name": "Content-Type",
+                  "value": "multipart/alternative; boundary=\"0000000000008fc808065aff2506\""
+                }
+              ],
+              "body": {
+                "size": 0,
+                "base64_url_content": null,
+                "content": null,
+                "attachment_id": null
+              },
+              "read_attachment_supported": null,
+              "parts": [
+                {
+                  "part_id": "0.0",
+                  "mime_type": "text/plain",
+                  "filename": "",
+                  "headers": [
+                    {
+                      "name": "Content-Type",
+                      "value": "text/plain; charset=\"UTF-8\""
+                    },
+                    {
+                      "name": "Content-Transfer-Encoding",
+                      "value": "quoted-printable"
+                    }
+                  ],
+                  "body": {
+                    "size": 2576,
+                    "base64_url_content": null,
+                    "content": "*Here is a summary and confirmation of your pitch:*\r\n\r\nDear Authority Magazine Editors,\r\n\r\nPlease kindly consider me or my client for the following interview topic:\r\n\r\nName and Title of The Interviewee Blakely Page\r\nName and Company of The Publicist Submitting (If applicable) Tiffany\r\nCrockett, Go Fish Digital\r\nHas this interviewee been featured in Authority Magazine before? No\r\nWhat is the name of the interview topic you are pitching for? (Choose one\r\nplease) Five Things You Need To Be A Highly Effective Leader\r\nYour 200 word pitch Blakely Page would be an excellent guest for Authority\r\nMagazine’s interview series featuring individuals and organizations\r\ncreating important social impact. He is a Principal at JM Search and a\r\nrespected financial-industry leader with experience in capital management,\r\norganizational growth, and strategic leadership. His perspective is\r\ncompelling because he pairs professional achievement with sustained,\r\nhands-on community commitment. Blakely has contributed to educational\r\ninstitutions, character-based scholarships, and veteran-support\r\ninitiatives. His work has helped expand access to opportunity for students\r\nwhile supporting programs that recognize character, perseverance, and\r\nleadership. He also helped establish a gym for Merging Veterans and Players\r\nin New York City, providing veterans with a community-centered space\r\nfocused on connection, wellness, and support. His recognition through the\r\nHeartShare Humanitarian Award and the PAM Rising Star distinction reflects\r\na record of leadership defined by integrity and service. In this interview,\r\nBlakely can share how business leaders can use their resources,\r\nrelationships, and professional expertise to serve communities with\r\npurpose. He can speak to selecting causes that align with personal values,\r\nbuilding durable philanthropic initiatives, supporting veterans and young\r\npeople, and measuring success through organizational growth and meaningful\r\nhuman impact. His story offers readers a practical example of values-driven\r\nleadership in action.\r\nWhat is the occupation of the interviewee? Entrepreneur\r\nWhat is the business website of the interviewee?\r\nhttps://www.blakelypage.org/\r\nLinks to The Interviewee's Best Social Media Profiles\r\nhttps://www.linkedin.com/in/blakelypage\r\nA High Quality Image of the Interviewee File 1\r\n<https://drive.google.com/open?id=1ui9nJDGMWvMU-6VE7zWGo1Ca_1ThKc3c>\r\nIn which country does the interviewee live? United States of America\r\nWhat is the best email to follow up with you?\r\ntiffany.crockett@gofishdigital.com\r\n",
+                    "attachment_id": null
+                  },
+                  "read_attachment_supported": null,
+                  "parts": null
+                },
+                {
+                  "part_id": "0.1",
+                  "mime_type": "text/html",
+                  "filename": "",
+                  "headers": [
+                    {
+                      "name": "Content-Type",
+                      "value": "text/html; charset=\"UTF-8\""
+                    },
+                    {
+                      "name": "Content-Transfer-Encoding",
+                      "value": "quoted-printable"
+                    }
+                  ],
+                  "body": {
+                    "size": 4135,
+                    "base64_url_content": null,
+                    "content": "<div style=\"width:100%;max-width:680px\"><p><em>Here is a summary and confirmation of your pitch:</em></p>\r\n<p>Dear Authority Magazine Editors,</p>\r\n<p>Please kindly consider me or my client for the following interview topic: </p>\r\n<p><table style=\"border-radius:2px;margin:2em 0 3em;min-width:400px;border:1px solid #eee;border-collapse:separate;border-spacing:1px\" cellspacing=\"0\" cellpadding=\"10\" border=\"0\" role=\"table\" aria-label=\"Google Forms Response\"><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">Name and Title of The Interviewee</th><td>Blakely Page</td></tr><tr style=\"background:#fbfbfb\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">Name and Company of The Publicist Submitting (If applicable) </th><td>Tiffany Crockett, Go Fish Digital</td></tr><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">Has this interviewee been featured in Authority Magazine before? </th><td>No</td></tr><tr style=\"background:#fbfbfb\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">What is the name of the interview topic you are pitching for? (Choose one please) </th><td>Five Things You Need To Be A Highly Effective Leader</td></tr><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">Your 200 word pitch</th><td>Blakely Page would be an excellent guest for Authority Magazine’s interview series featuring individuals and organizations creating important social impact. He is a Principal at JM Search and a respected financial-industry leader with experience in capital management, organizational growth, and strategic leadership. His perspective is compelling because he pairs professional achievement with sustained, hands-on community commitment.  Blakely has contributed to educational institutions, character-based scholarships, and veteran-support initiatives. His work has helped expand access to opportunity for students while supporting programs that recognize character, perseverance, and leadership. He also helped establish a gym for Merging Veterans and Players in New York City, providing veterans with a community-centered space focused on connection, wellness, and support.  His recognition through the HeartShare Humanitarian Award and the PAM Rising Star distinction reflects a record of leadership defined by integrity and service. In this interview, Blakely can share how business leaders can use their resources, relationships, and professional expertise to serve communities with purpose. He can speak to selecting causes that align with personal values, building durable philanthropic initiatives, supporting veterans and young people, and measuring success through organizational growth and meaningful human impact. His story offers readers a practical example of values-driven leadership in action.</td></tr><tr style=\"background:#fbfbfb\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">What is the occupation of the interviewee? </th><td>Entrepreneur </td></tr><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">What is the business website of the interviewee?</th><td><a href=\"https://www.blakelypage.org/\">https://www.blakelypage.org/</a></td></tr><tr style=\"background:#fbfbfb\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">Links to The Interviewee&#39;s Best Social Media Profiles</th><td><a href=\"https://www.linkedin.com/in/blakelypage\">https://www.linkedin.com/in/blakelypage</a></td></tr><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">A High Quality Image of the Interviewee</th><td><a href=\"https://drive.google.com/open?id=1ui9nJDGMWvMU-6VE7zWGo1Ca_1ThKc3c\">File 1</a></td></tr><tr style=\"background:#fbfbfb\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">In which country does the interviewee live?</th><td>United States of America</td></tr><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">What is the best email to follow up with you?</th><td><a href=\"mailto:tiffany.crockett@gofishdigital.com\">tiffany.crockett@gofishdigital.com</a></td></tr></table></p></div>\r\n",
+                    "attachment_id": null
+                  },
+                  "read_attachment_supported": null,
+                  "parts": null
+                }
+              ]
+            },
+            {
+              "part_id": "1",
+              "mime_type": "application/pdf",
+              "filename": "Authority Magazine Pitch.pdf",
+              "headers": [
+                {
+                  "name": "Content-Type",
+                  "value": "application/pdf; name=\"Authority Magazine Pitch.pdf\""
+                },
+                {
+                  "name": "Content-Disposition",
+                  "value": "attachment; filename=\"Authority Magazine Pitch.pdf\""
+                },
+                {
+                  "name": "Content-Transfer-Encoding",
+                  "value": "base64"
+                },
+                {
+                  "name": "X-Attachment-Id",
+                  "value": "3ac4c8b1a1accc92_0.1"
+                }
+              ],
+              "body": {
+                "size": 48108,
+                "base64_url_content": null,
+                "content": null,
+                "attachment_id": "ANGjdJ8cptr0t_eGyMt2MH-lscwpeCfnp17Bixx48knojra0s-WvbuQHbQ3h_LYsqkFbGf5jDnCevRApitttQraMuAQvZxac_wLEMTmzHYZffHWdsEi3lFj-tZAkp7W6tUGGJRoSWe8al2gYByVekzKLP0UScWsvDFr4ObmlXrg5P4cx--KU7UYZwuRkpveWHCIzU-Jf1oHqbnW0v5OGlgIatIdy5BEuC25WcLcvhpGolacg0w5P1Wxc1ki3Ya3_GP2PDY45UAadXAYXlM1EtZOxthk2UgwK7XLlDon2tUpWvshliIDjacSFw7KWStg6VzNDCzwVgPp1VOK-Ol4ygTzbWFAOg2OfSE88rg7bLEHqCNpmT4Yo-HJBKOacAXHdqCMVT8AZCAMpz3XA98OK"
+              },
+              "read_attachment_supported": true,
+              "parts": null
+            }
+          ]
+        },
+        "size_estimate": 80311,
+        "classification_label_values": null
+      },
+      {
+        "id": "1a08694b5ccbc542",
+        "thread_id": "1a082da931ce70b6",
+        "label_ids": [
+          "DRAFT"
+        ],
+        "snippet": "Thank you so much for your pitch to Authority Magazine. You have been accepted and we would like to move forward with an email interview. Here is the link for the email interview questions for this",
+        "history_id": "10309474",
+        "internal_date": "1788964287000",
+        "payload": {
+          "part_id": "",
+          "mime_type": "multipart/alternative",
+          "filename": "",
+          "headers": [
+            {
+              "name": "Received",
+              "value": "from 277249333162 named unknown by gmailapi.google.com with HTTPREST; Wed, 9 Sep 2026 07:31:27 -0700"
+            },
+            {
+              "name": "Content-Type",
+              "value": "multipart/alternative; boundary=\"===============3485914621954113439==\""
+            },
+            {
+              "name": "MIME-Version",
+              "value": "1.0"
+            },
+            {
+              "name": "to",
+              "value": "tiffany.crockett@gofishdigital.com"
+            },
+            {
+              "name": "subject",
+              "value": "Re: Thank you for your pitch to Authority Magazine!"
+            },
+            {
+              "name": "In-Reply-To",
+              "value": "<CACn8G2MqLjQX9yG7s128=bSgAcXaL3QvcWt-vfLwP-5+tnSNeg@mail.gmail.com>"
+            },
+            {
+              "name": "References",
+              "value": "<CACn8G2MqLjQX9yG7s128=bSgAcXaL3QvcWt-vfLwP-5+tnSNeg@mail.gmail.com>"
+            },
+            {
+              "name": "Date",
+              "value": "Wed, 9 Sep 2026 07:31:27 -0700"
+            },
+            {
+              "name": "Message-Id",
+              "value": "<CAMd8+zjrcFvhRmt3HieNBKfmN2_VKcjaSBCgEouXVaYc1ougEw@mail.gmail.com>"
+            },
+            {
+              "name": "From",
+              "value": "\"Editor's Desk\" <support@authoritymag.co>"
+            }
+          ],
+          "body": {
+            "size": 0,
+            "base64_url_content": null,
+            "content": null,
+            "attachment_id": null
+          },
+          "read_attachment_supported": null,
+          "parts": [
+            {
+              "part_id": "0",
+              "mime_type": "text/plain",
+              "filename": "",
+              "headers": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=\"us-ascii\""
+                },
+                {
+                  "name": "MIME-Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "Content-Transfer-Encoding",
+                  "value": "7bit"
+                }
+              ],
+              "body": {
+                "size": 1010,
+                "base64_url_content": null,
+                "content": "Thank you so much for your pitch to Authority Magazine. \n\nYou have been accepted and we would like to move forward with an email interview. \n\nHere is the link for the email interview questions for this series:\n\nFive Things You Need To Be A Highly Effective CRO\nhttps://docs.google.com/document/d/1xBL9U1GiFNNca489nR6VtIvzeEnFFx2HxziIYlETTuI/edit\n\n\nPlease complete the written interview, (please do not use AI to create your answers) and upload the interview, images and bio into the portal linked at the bottom of the interview when it is complete.\n\nWhen you upload the material, please keep your browser open until you see a confirmation message.\n\nThe official deadline is 21 days.\n \nAfter you upload the interview in the writer's portal, you will see a link to a spreadsheet queue with our estimated publishing dates.\n \nAll other details and frequently asked questions are addressed here: https://bit.ly/AuthorityMagFAQandInstructions   \n \nWe look forward to seeing your interview submission!\n \nWarmly,\nYitzi",
+                "attachment_id": null
+              },
+              "read_attachment_supported": null,
+              "parts": null
+            },
+            {
+              "part_id": "1",
+              "mime_type": "text/html",
+              "filename": "",
+              "headers": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/html; charset=\"us-ascii\""
+                },
+                {
+                  "name": "MIME-Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "Content-Transfer-Encoding",
+                  "value": "7bit"
+                }
+              ],
+              "body": {
+                "size": 1573,
+                "base64_url_content": null,
+                "content": "<html><body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #1d1d1f;\">Thank you so much for your pitch to Authority Magazine. <br>\n<br>\nYou have been accepted and we would like to move forward with an email interview. <br>\n<br>\nHere is the link for the email interview questions for this series:<br>\n<br>\nFive Things You Need To Be A Highly Effective CRO<br>\n<a href=\"https://docs.google.com/document/d/1xBL9U1GiFNNca489nR6VtIvzeEnFFx2HxziIYlETTuI/edit\" target=\"_blank\" style=\"color: #0071e3; text-decoration: underline;\">https://docs.google.com/document/d/1xBL9U1GiFNNca489nR6VtIvzeEnFFx2HxziIYlETTuI/edit</a><br>\n<br>\n<br>\nPlease complete the written interview, (please do not use AI to create your answers) and upload the interview, images and bio into the portal linked at the bottom of the interview when it is complete.<br>\n<br>\nWhen you upload the material, please keep your browser open until you see a confirmation message.<br>\n<br>\nThe official deadline is 21 days.<br>\n <br>\nAfter you upload the interview in the writer's portal, you will see a link to a spreadsheet queue with our estimated publishing dates.<br>\n <br>\nAll other details and frequently asked questions are addressed here: <a href=\"https://bit.ly/AuthorityMagFAQandInstructions\" target=\"_blank\" style=\"color: #0071e3; text-decoration: underline;\">https://bit.ly/AuthorityMagFAQandInstructions</a>   <br>\n <br>\nWe look forward to seeing your interview submission!<br>\n <br>\nWarmly,<br>\nYitzi<br></body></html>",
+                "attachment_id": null
+              },
+              "read_attachment_supported": null,
+              "parts": null
+            }
+          ]
+        },
+        "size_estimate": 3564,
+        "classification_label_values": null
+      }
+    ],
+    "snippet": null
+  },
+  {
+    "id": "1a08553664a49ca3",
+    "history_id": "10309417",
+    "messages": [
+      {
+        "id": "1a08553664a49ca3",
+        "thread_id": "1a08553664a49ca3",
+        "label_ids": [
+          "Label_2065340405041221323",
+          "CATEGORY_PERSONAL",
+          "INBOX"
+        ],
+        "snippet": "Here is a summary and confirmation of your pitch: Dear Authority Magazine Editors, Please kindly consider me or my client for the following interview topic: Name and Title of The Interviewee Manu J.",
+        "history_id": "10309417",
+        "internal_date": "1788943225000",
+        "payload": {
+          "part_id": "",
+          "mime_type": "multipart/mixed",
+          "filename": "",
+          "headers": [
+            {
+              "name": "Delivered-To",
+              "value": "support@authoritymag.co"
+            },
+            {
+              "name": "Received",
+              "value": "by 2002:a05:7300:b71f:b0:327:c819:8571 with SMTP id cy31csp376272dyb;        Wed, 9 Sep 2026 01:40:31 -0700 (PDT)"
+            },
+            {
+              "name": "X-Received",
+              "value": "by 2002:ac8:5888:0:b0:530:430f:b921 with SMTP id d75a77b69052e-53054a30086mr390253891cf.48.1788943230755;        Wed, 09 Sep 2026 01:40:30 -0700 (PDT)"
+            },
+            {
+              "name": "ARC-Seal",
+              "value": "i=1; a=rsa-sha256; t=1788943230; cv=none;        d=google.com; s=arc-20260327;        b=EjgtKBFJXZyzLOtQQ9NsRaWkewUEwSRRs82FCyrOEGwzt39mxQfySB2895HXxE/0J1         z2ZnjcNadPIpuNQAMcB63b2q2aVnjV25M9rZy30Ij3e7dSSWcNoFBEsjnFIrN0iu5vH4         Zlys/Q3AGNVAvr1L170kw5rMUuSBsvpcKC2RKGNcRT7swcLVXti/1uw0BosVS+WpBW7c         JsdR/PpJCrnXCZ+0fNE6mQvDubOR5DgBlGAQ22c9Ojxzf1BcYj3kzhZ8IYkukQwxXE9p         89X38RpEUnYlYmzaj/1KUtLq1YPhOQ0jppcCO9sxv4T5XD9jx0NVLkBKKZnBCWYzihgP         Z6oA=="
+            },
+            {
+              "name": "ARC-Message-Signature",
+              "value": "i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;        h=cc:to:subject:message-id:date:reply-to:from:mime-version         :dkim-signature;        bh=MTitPc+SPFZPI1Cv2jRP9ET64xewow3QSQzWp/PfKw4=;        fh=DYfl218zg6NfHnHQjq/Dekwv08a6NDgEozPlnc7VGi0=;        b=ay514iMVdBPiSfgulL/42mfx4p6G75lzSbJ9TFDpuJdkFX4zUE4e6qk3ng/kkHv1ll         qy/JsDv2xmb5jQ1ikPZTVMsOBDqPVQ69sG+jp2ElSNiZkt2nBDhG52v4GXrkdt6FeutS         7VyCtbbOXpTyWu6RZ7L2cbSg2L/aJLxYcaLnshxHgtBK2rP/z1iyB8Ya5B//dkuo6Qow         10sJ+1mIkMfVyYYK105hkNrX0+WZNDbmwiH5Wmd0+WTnw5FCC/ElXaPv54qH6StdEYtP         TjFEee3G0YTYWFOdAI5q2LxMr/vOp9IT8vuX5yioNLDQb2nHyH1KMY7kOVFTEtx9V8NY         u2QQ==;        dara=google.com"
+            },
+            {
+              "name": "ARC-Authentication-Results",
+              "value": "i=1; mx.google.com;       dkim=pass header.i=@authoritymag-co.20251104.gappssmtp.com header.s=20251104 header.b=YnXmu563;       spf=pass (google.com: domain of editor@authoritymag.co designates 209.85.220.41 as permitted sender) smtp.mailfrom=editor@authoritymag.co;       dara=neutral header.i=@authoritymag.co"
+            },
+            {
+              "name": "Return-Path",
+              "value": "<editor@authoritymag.co>"
+            },
+            {
+              "name": "Received",
+              "value": "from mail-sor-f41.google.com (mail-sor-f41.google.com. [209.85.220.41])        by mx.google.com with SMTPS id d75a77b69052e-5305419b6f5sor74471801cf.9.2026.09.09.01.40.30        for <support@authoritymag.co>        (Google Transport Security);        Wed, 09 Sep 2026 01:40:30 -0700 (PDT)"
+            },
+            {
+              "name": "Received-SPF",
+              "value": "pass (google.com: domain of editor@authoritymag.co designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41;"
+            },
+            {
+              "name": "Authentication-Results",
+              "value": "mx.google.com;       dkim=pass header.i=@authoritymag-co.20251104.gappssmtp.com header.s=20251104 header.b=YnXmu563;       spf=pass (google.com: domain of editor@authoritymag.co designates 209.85.220.41 as permitted sender) smtp.mailfrom=editor@authoritymag.co;       dara=neutral header.i=@authoritymag.co"
+            },
+            {
+              "name": "DKIM-Signature",
+              "value": "v=1; a=rsa-sha256; c=relaxed/relaxed;        d=authoritymag-co.20251104.gappssmtp.com; s=20251104; t=1788943230; x=1789548030; darn=authoritymag.co;        h=content-type:cc:to:subject:message-id:date:reply-to:from         :mime-version:from:to:cc:subject:date:message-id:reply-to         :content-type;        bh=MTitPc+SPFZPI1Cv2jRP9ET64xewow3QSQzWp/PfKw4=;        b=YnXmu563dyZPu44SGcjjFlEUZxHWjtv/8U5MxO/oi0OgveU18ccHYIZW7begZfiRE2         ZWIdVIOg46Srb/T1fWIwgnzYYnF+0Sw0un2PJ4Ipz66jkYfphCvFAYvzcez99EqflRYA         NZ+7j6attSvvss+8C0QxwL6J+Cy/i7ag/9e5UoyW7U9oBsvpUqkgbHr6HvlBVMifL26h         X/DU0ZSooHF+G8UOkBZXybPfAOtajl/6Xgcp5ifFtHoIb9cr6PojEun3XA7B+Hukz3+X         XmuhmgAyvXDs5Dr6VwF/EPhzfTalNFp0NkhODwdoJxTmcfBd/DCp1zII3/nXAoZ9oRLY         Kw8g=="
+            },
+            {
+              "name": "X-Google-DKIM-Signature",
+              "value": "v=1; a=rsa-sha256; c=relaxed/relaxed;        d=1e100.net; s=20251104; t=1788943230; x=1789548030;        h=content-type:cc:to:subject:message-id:date:reply-to:from         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date         :message-id:reply-to:content-type;        bh=MTitPc+SPFZPI1Cv2jRP9ET64xewow3QSQzWp/PfKw4=;        b=UHVHfsIKmevmO915yBS/HXiMRcgFA8AOe0V+7TO2L28i5rGm17ySDcTiMDxmRh7600         Yu2Hr0X/OKUh/8QHzfHPfH49Kq+nLKfYuM2v0kuYKxlGj0Gskw4POhEuf8jb7+Qzzw1w         7FHxrq+BN+SsUij5wDRUgtp7voOpj599D8SFsoWr6kOteRskSv3Ssca9mB245pdLypHw         EysRneAmbBx6FHxe40nIR1+O6Wa04HzaL7y/EBBZ8J5ZN9otCDGd9YKLhQRTXqsKGJ8j         GH1uL6Zeq0/wMoWnR324mbLI5INoEpsK3l737Aqk/gqzevRVQyN9lEY8BUaczrKQqa79         aH+A=="
+            },
+            {
+              "name": "X-Gm-Message-State",
+              "value": "AFuF++lm/Q4faNyI5V6/zw5JkohuNjetLOfAsUpfnUUkfb0MwihyA1iy AE5ehmU/tBE9R7wSYqikP7ExPppMQAbg1+/aDGnCk3q+KbVxYqUi6eWMQ7wQoTNht7rMNYjftlX nFQKcjeL/NA=="
+            },
+            {
+              "name": "X-Gm-Gg",
+              "value": "AYBFou2CQ9+8iFUMWI4o/fncyRnD/XrhqJNuMLFSKwNrVnwTblfmIPk4le6FmfhB1yF irVuFflqGuntJT3/pP+01EL0Dp3xydi0Nqj/UFtUB8Ex2UVc+TpBBEXoJOlzEeQXzSzpz8CjZtT ZtNC1/yAsrIUAc1ERQg7heeORYNWaFAsWBh34jBRaofM8ew8ufzFFLTEPz9OtLOXOQCHaPS/T1n ElyzCDSmsOsRG0X6PE47UMhAEMapcEfBac+PeqmJ6wgXdNlegPAXWZAX9b6Np1eOCpE/vQqpoi4 F1S6+bvtSOyCfyaE/3D/icdEJEiaV7kkIgH/6/BFxaoTF8vGUb2bSiFhu79ahdDXQ7G5mNUMKb6 Onhj9xRb7UcUH8puLqhmW1/wz82xB/5+dUpNCjAQ3Yb0f6PVNJ8AI2ReApJ9uJd+C6x6Q3LnYx+ r1ak0EBHYb/WGo7yJfG6F9CuGq/11mXYAzNOMm3Ba/tZXKtCQ2qKq/6K9Isp4930Zv6dK4jdP0P XAK10c/VCAjNBu/Mbxw9ad9dLs1KgHqV9zKwPSWa+5Mbr2J2gq8pYtB+uc2lk8ac3cbS3uo"
+            },
+            {
+              "name": "X-Received",
+              "value": "by 2002:a05:622a:4188:b0:52d:cda5:abfd with SMTP id d75a77b69052e-530549c6623mr365344941cf.38.1788943229177;        Wed, 09 Sep 2026 01:40:29 -0700 (PDT)"
+            },
+            {
+              "name": "Return-Path",
+              "value": "<editor@authoritymag.co>"
+            },
+            {
+              "name": "Received",
+              "value": "from mail-qv1-f44.google.com (mail-qv1-f44.google.com. [209.85.219.44])        by smtp.gmail.com with ESMTPSA id d75a77b69052e-5305413d803sm133722861cf.15.2026.09.09.01.40.27        for <support@authoritymag.co>        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);        Wed, 09 Sep 2026 01:40:27 -0700 (PDT)"
+            },
+            {
+              "name": "Received",
+              "value": "by mail-qv1-f44.google.com with SMTP id 6a1803df08f44-90cc107c451so35635356d6.0        for <support@authoritymag.co>; Wed, 09 Sep 2026 01:40:27 -0700 (PDT)"
+            },
+            {
+              "name": "X-Received",
+              "value": "by 2002:a05:6214:3d9c:b0:910:3888:c454 with SMTP id 6a1803df08f44-9103ef44b52mr427667036d6.14.1788943227086; Wed, 09 Sep 2026 01:40:27 -0700 (PDT)"
+            },
+            {
+              "name": "Received",
+              "value": "from 984866591130 named unknown by gmailapi.google.com with HTTPREST; Wed, 9 Sep 2026 01:40:25 -0700"
+            },
+            {
+              "name": "Received",
+              "value": "from 984866591130 named unknown by gmailapi.google.com with HTTPREST; Wed, 9 Sep 2026 01:40:25 -0700"
+            },
+            {
+              "name": "MIME-Version",
+              "value": "1.0"
+            },
+            {
+              "name": "From",
+              "value": "Authority Magazine <editor@authoritymag.co>"
+            },
+            {
+              "name": "Reply-To",
+              "value": "support@authoritymag.co"
+            },
+            {
+              "name": "Date",
+              "value": "Wed, 9 Sep 2026 01:40:25 -0700"
+            },
+            {
+              "name": "X-Gmail-Original-Message-ID",
+              "value": "<CACn8G2Mfnw-4=a4o5d+DDrmS+T5Et-tCM__TMKs2928WRO1AkQ@mail.gmail.com>"
+            },
+            {
+              "name": "X-Gm-Features",
+              "value": "AcwNN1Vohx0QDaYsMm8nhf-RidT4mpuWOIQcWjVJoNFhAkLerYpkgVGbGljaKmg"
+            },
+            {
+              "name": "Message-ID",
+              "value": "<CACn8G2Mfnw-4=a4o5d+DDrmS+T5Et-tCM__TMKs2928WRO1AkQ@mail.gmail.com>"
+            },
+            {
+              "name": "Subject",
+              "value": "Thank you for your pitch to Authority Magazine!"
+            },
+            {
+              "name": "To",
+              "value": "fatema.dahodwala@communicateindia.com"
+            },
+            {
+              "name": "Cc",
+              "value": "support@authoritymag.co"
+            },
+            {
+              "name": "Content-Type",
+              "value": "multipart/mixed; boundary=\"0000000000009325e1065b08cd38\""
+            }
+          ],
+          "body": {
+            "size": 0,
+            "base64_url_content": null,
+            "content": null,
+            "attachment_id": null
+          },
+          "read_attachment_supported": null,
+          "parts": [
+            {
+              "part_id": "0",
+              "mime_type": "multipart/alternative",
+              "filename": "",
+              "headers": [
+                {
+                  "name": "Content-Type",
+                  "value": "multipart/alternative; boundary=\"0000000000009325df065b08cd36\""
+                }
+              ],
+              "body": {
+                "size": 0,
+                "base64_url_content": null,
+                "content": null,
+                "attachment_id": null
+              },
+              "read_attachment_supported": null,
+              "parts": [
+                {
+                  "part_id": "0.0",
+                  "mime_type": "text/plain",
+                  "filename": "",
+                  "headers": [
+                    {
+                      "name": "Content-Type",
+                      "value": "text/plain; charset=\"UTF-8\""
+                    },
+                    {
+                      "name": "Content-Transfer-Encoding",
+                      "value": "quoted-printable"
+                    }
+                  ],
+                  "body": {
+                    "size": 2526,
+                    "base64_url_content": null,
+                    "content": "*Here is a summary and confirmation of your pitch:*\r\n\r\nDear Authority Magazine Editors,\r\n\r\nPlease kindly consider me or my client for the following interview topic:\r\n\r\nName and Title of The Interviewee Manu J. Nair, Co-founder & CEO, Ethereal\r\nExploration Guild (The Guild)\r\nName and Company of The Publicist Submitting (If applicable) Fatema\r\nDahodwala, Communicate India\r\nHas this interviewee been featured in Authority Magazine before? No\r\nWhat is the name of the interview topic you are pitching for? (Choose one\r\nplease) The Future of Space Innovation: Building the World’s First Fully\r\nReusable Medium-Lift Launch Vehicle\r\nYour 200 word pitch Manu J. Nair is the Co-founder and CEO of Ethereal\r\nExploration Guild (The Guild), a Bengaluru-based space technology company\r\nbuilding Razor Crest Mk-1, the world’s first fully reusable medium-lift\r\nlaunch vehicle. Designed around a reusable upper stage, Razor Crest Mk-1\r\naims to recover and reuse both stages of the rocket — tackling one of the\r\nbiggest challenges in space transportation today. Manu’s journey offers a\r\ncompelling perspective on what it takes to build an ambitious,\r\ncapital-intensive deep-tech company from India for a global market. He can\r\nspeak about building breakthrough aerospace technology from the ground up,\r\nnavigating risk and failure, assembling highly specialised teams, and\r\nmaintaining a long-term vision in an industry where development cycles are\r\nmeasured in years rather than months. Beyond The Guild’s technology, Manu\r\ncan offer a broader perspective on why the global launch market needs to\r\nmove from concentrated capacity towards a more multipolar future, how full\r\nreusability could fundamentally change the economics of access to orbit,\r\nand why India has the opportunity to become a major global hub for frontier\r\ntechnology. His experience combines entrepreneurship, engineering ambition\r\nand a mission to make access to space more affordable and flexible.\r\nWhat is the occupation of the interviewee? Space-tech entrepreneur;\r\nCo-founder & CEO of Ethereal Exploration Guild (The Guild)\r\nWhat is the business website of the interviewee?\r\nhttps://www.etherealx.space/\r\nLinks to The Interviewee's Best Social Media Profiles\r\nhttps://www.linkedin.com/in/manujnair/\r\nA High Quality Image of the Interviewee File 1\r\n<https://drive.google.com/open?id=1Frye3RC_tKu30EnyswZ5SBKoFNYId8dC>\r\nIn which country does the interviewee live? India\r\nWhat is the best email to follow up with you?\r\nFatema.dahodwala@communicateindia.com\r\n",
+                    "attachment_id": null
+                  },
+                  "read_attachment_supported": null,
+                  "parts": null
+                },
+                {
+                  "part_id": "0.1",
+                  "mime_type": "text/html",
+                  "filename": "",
+                  "headers": [
+                    {
+                      "name": "Content-Type",
+                      "value": "text/html; charset=\"UTF-8\""
+                    },
+                    {
+                      "name": "Content-Transfer-Encoding",
+                      "value": "quoted-printable"
+                    }
+                  ],
+                  "body": {
+                    "size": 4096,
+                    "base64_url_content": null,
+                    "content": "<div style=\"width:100%;max-width:680px\"><p><em>Here is a summary and confirmation of your pitch:</em></p>\r\n<p>Dear Authority Magazine Editors,</p>\r\n<p>Please kindly consider me or my client for the following interview topic: </p>\r\n<p><table style=\"border-radius:2px;margin:2em 0 3em;min-width:400px;border:1px solid #eee;border-collapse:separate;border-spacing:1px\" cellspacing=\"0\" cellpadding=\"10\" border=\"0\" role=\"table\" aria-label=\"Google Forms Response\"><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">Name and Title of The Interviewee</th><td>Manu J. Nair, Co-founder &amp; CEO, Ethereal Exploration Guild (The Guild)</td></tr><tr style=\"background:#fbfbfb\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">Name and Company of The Publicist Submitting (If applicable) </th><td>Fatema Dahodwala, Communicate India</td></tr><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">Has this interviewee been featured in Authority Magazine before? </th><td>No</td></tr><tr style=\"background:#fbfbfb\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">What is the name of the interview topic you are pitching for? (Choose one please) </th><td>The Future of Space Innovation: Building the World’s First Fully Reusable Medium-Lift Launch Vehicle</td></tr><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">Your 200 word pitch</th><td>Manu J. Nair is the Co-founder and CEO of Ethereal Exploration Guild (The Guild), a Bengaluru-based space technology company building Razor Crest Mk-1, the world’s first fully reusable medium-lift launch vehicle. Designed around a reusable upper stage, Razor Crest Mk-1 aims to recover and reuse both stages of the rocket — tackling one of the biggest challenges in space transportation today.  Manu’s journey offers a compelling perspective on what it takes to build an ambitious, capital-intensive deep-tech company from India for a global market. He can speak about building breakthrough aerospace technology from the ground up, navigating risk and failure, assembling highly specialised teams, and maintaining a long-term vision in an industry where development cycles are measured in years rather than months.  Beyond The Guild’s technology, Manu can offer a broader perspective on why the global launch market needs to move from concentrated capacity towards a more multipolar future, how full reusability could fundamentally change the economics of access to orbit, and why India has the opportunity to become a major global hub for frontier technology. His experience combines entrepreneurship, engineering ambition and a mission to make access to space more affordable and flexible.</td></tr><tr style=\"background:#fbfbfb\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">What is the occupation of the interviewee? </th><td>Space-tech entrepreneur; Co-founder &amp; CEO of Ethereal Exploration Guild (The Guild)</td></tr><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">What is the business website of the interviewee?</th><td><a href=\"https://www.etherealx.space/\">https://www.etherealx.space/</a></td></tr><tr style=\"background:#fbfbfb\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">Links to The Interviewee&#39;s Best Social Media Profiles</th><td><a href=\"https://www.linkedin.com/in/manujnair/\">https://www.linkedin.com/in/manujnair/</a></td></tr><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">A High Quality Image of the Interviewee</th><td><a href=\"https://drive.google.com/open?id=1Frye3RC_tKu30EnyswZ5SBKoFNYId8dC\">File 1</a></td></tr><tr style=\"background:#fbfbfb\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">In which country does the interviewee live?</th><td>India </td></tr><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">What is the best email to follow up with you?</th><td><a href=\"mailto:Fatema.dahodwala@communicateindia.com\">Fatema.dahodwala@communicateindia.com</a></td></tr></table></p></div>\r\n",
+                    "attachment_id": null
+                  },
+                  "read_attachment_supported": null,
+                  "parts": null
+                }
+              ]
+            },
+            {
+              "part_id": "1",
+              "mime_type": "application/pdf",
+              "filename": "Authority Magazine Pitch.pdf",
+              "headers": [
+                {
+                  "name": "Content-Type",
+                  "value": "application/pdf; name=\"Authority Magazine Pitch.pdf\""
+                },
+                {
+                  "name": "Content-Disposition",
+                  "value": "attachment; filename=\"Authority Magazine Pitch.pdf\""
+                },
+                {
+                  "name": "Content-Transfer-Encoding",
+                  "value": "base64"
+                },
+                {
+                  "name": "X-Attachment-Id",
+                  "value": "7d5ec812560372c7_0.1"
+                }
+              ],
+              "body": {
+                "size": 48732,
+                "base64_url_content": null,
+                "content": null,
+                "attachment_id": "ANGjdJ_xEtQwkXnQRqXJ5sKzP-A4obU5ein19VmOiqdYyKNUn4IzuDrpagmXGpdehBsfi2L6MM7SZ1PsXsAznlaycNWhBADS2HjNCl9EQNN8T0L2GYtj-PGh3W90SuLKsc3QEQqL6zyAJl2b5wxSCX3n7EIqZxaQqy4Gnc5TI1ez0WJGWFNBGfm4oHlFeCvDkZuGmgAriqt3PLXamGALzlgvhKr2IeR2_lwnXaS8E9bRxEYrnezZd1NaqGVSRGjlPZHuD_uc5SqSrnlET6CrMAoUeg-og3wN_KIFMBIjiFUpRcTwGXoqFmpb5v0zKGY1mlCGwgLsfJMtVzuFh7440y90bkokUvCB8SJ0DDbfvuwLc5t79_ArwCv2id1BrH_6xdSY_-rubxG-l5wBb6_6"
+              },
+              "read_attachment_supported": true,
+              "parts": null
+            }
+          ]
+        },
+        "size_estimate": 81155,
+        "classification_label_values": null
+      },
+      {
+        "id": "1a086901f5ac89a1",
+        "thread_id": "1a08553664a49ca3",
+        "label_ids": [
+          "DRAFT"
+        ],
+        "snippet": "Thank you so much for your pitch to Authority Magazine. You have been accepted and we would like to move forward with an email interview. Based on your pitch, here is the interview series that fits",
+        "history_id": "10309417",
+        "internal_date": "1788963986000",
+        "payload": {
+          "part_id": "",
+          "mime_type": "multipart/alternative",
+          "filename": "",
+          "headers": [
+            {
+              "name": "Received",
+              "value": "from 277249333162 named unknown by gmailapi.google.com with HTTPREST; Wed, 9 Sep 2026 07:26:26 -0700"
+            },
+            {
+              "name": "Content-Type",
+              "value": "multipart/alternative; boundary=\"===============7130426362692538829==\""
+            },
+            {
+              "name": "MIME-Version",
+              "value": "1.0"
+            },
+            {
+              "name": "to",
+              "value": "fatema.dahodwala@communicateindia.com"
+            },
+            {
+              "name": "subject",
+              "value": "Re: Thank you for your pitch to Authority Magazine!"
+            },
+            {
+              "name": "In-Reply-To",
+              "value": "<CACn8G2Mfnw-4=a4o5d+DDrmS+T5Et-tCM__TMKs2928WRO1AkQ@mail.gmail.com>"
+            },
+            {
+              "name": "References",
+              "value": "<CACn8G2Mfnw-4=a4o5d+DDrmS+T5Et-tCM__TMKs2928WRO1AkQ@mail.gmail.com>"
+            },
+            {
+              "name": "Date",
+              "value": "Wed, 9 Sep 2026 07:26:26 -0700"
+            },
+            {
+              "name": "Message-Id",
+              "value": "<CAMd8+zgiw00Rgs1A6xHaLSC2w0+q8X5jk-MQxV_Qm6Mkwq1Dhg@mail.gmail.com>"
+            },
+            {
+              "name": "From",
+              "value": "\"Editor's Desk\" <support@authoritymag.co>"
+            }
+          ],
+          "body": {
+            "size": 0,
+            "base64_url_content": null,
+            "content": null,
+            "attachment_id": null
+          },
+          "read_attachment_supported": null,
+          "parts": [
+            {
+              "part_id": "0",
+              "mime_type": "text/plain",
+              "filename": "",
+              "headers": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=\"us-ascii\""
+                },
+                {
+                  "name": "MIME-Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "Content-Transfer-Encoding",
+                  "value": "7bit"
+                }
+              ],
+              "body": {
+                "size": 1264,
+                "base64_url_content": null,
+                "content": "Thank you so much for your pitch to Authority Magazine. \n\nYou have been accepted and we would like to move forward with an email interview. \n\nBased on your pitch, here is the interview series that fits your expertise. Please click the link below to get started:\n\n1. The Future of Travel\n   https://docs.google.com/document/d/1C6qxS3i-QnpJ4zzSnje4oKT83Vhf3dcuyaBnd0_Z6us/edit\n\n2. The Future Of Adtech\n   https://docs.google.com/document/d/120ocXwFk0aRjSKUGBczLnOHIfHbz869f7G-mtvAJra0/edit\n\n3. The Future of Gaming\n   https://docs.google.com/document/d/1TV3r_o3WabiBIuIOZ2tAuQus7Gd_ikhZGH4-hB8KtHQ/edit\n\nPlease complete the written interview, (please do not use AI to create your answers) and upload the interview, images and bio into the portal linked at the bottom of the interview when it is complete.\n\nWhen you upload the material, please keep your browser open until you see a confirmation message.\n\nThe official deadline is 21 days.\n \nAfter you upload the interview in the writer's portal, you will see a link to a spreadsheet queue with our estimated publishing dates.\n \nAll other details and frequently asked questions are addressed here: https://bit.ly/AuthorityMagFAQandInstructions   \n \nWe look forward to seeing your interview submission!\n \nWarmly,\nYitzi",
+                "attachment_id": null
+              },
+              "read_attachment_supported": null,
+              "parts": null
+            },
+            {
+              "part_id": "1",
+              "mime_type": "text/html",
+              "filename": "",
+              "headers": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/html; charset=\"us-ascii\""
+                },
+                {
+                  "name": "MIME-Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "Content-Transfer-Encoding",
+                  "value": "7bit"
+                }
+              ],
+              "body": {
+                "size": 2181,
+                "base64_url_content": null,
+                "content": "<html><body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #1d1d1f;\">Thank you so much for your pitch to Authority Magazine. <br>\n<br>\nYou have been accepted and we would like to move forward with an email interview. <br>\n<br>\nBased on your pitch, here is the interview series that fits your expertise. Please click the link below to get started:<br>\n<br>\n1. The Future of Travel<br>\n   <a href=\"https://docs.google.com/document/d/1C6qxS3i-QnpJ4zzSnje4oKT83Vhf3dcuyaBnd0_Z6us/edit\" target=\"_blank\" style=\"color: #0071e3; text-decoration: underline;\">https://docs.google.com/document/d/1C6qxS3i-QnpJ4zzSnje4oKT83Vhf3dcuyaBnd0_Z6us/edit</a><br>\n<br>\n2. The Future Of Adtech<br>\n   <a href=\"https://docs.google.com/document/d/120ocXwFk0aRjSKUGBczLnOHIfHbz869f7G-mtvAJra0/edit\" target=\"_blank\" style=\"color: #0071e3; text-decoration: underline;\">https://docs.google.com/document/d/120ocXwFk0aRjSKUGBczLnOHIfHbz869f7G-mtvAJra0/edit</a><br>\n<br>\n3. The Future of Gaming<br>\n   <a href=\"https://docs.google.com/document/d/1TV3r_o3WabiBIuIOZ2tAuQus7Gd_ikhZGH4-hB8KtHQ/edit\" target=\"_blank\" style=\"color: #0071e3; text-decoration: underline;\">https://docs.google.com/document/d/1TV3r_o3WabiBIuIOZ2tAuQus7Gd_ikhZGH4-hB8KtHQ/edit</a><br>\n<br>\nPlease complete the written interview, (please do not use AI to create your answers) and upload the interview, images and bio into the portal linked at the bottom of the interview when it is complete.<br>\n<br>\nWhen you upload the material, please keep your browser open until you see a confirmation message.<br>\n<br>\nThe official deadline is 21 days.<br>\n <br>\nAfter you upload the interview in the writer's portal, you will see a link to a spreadsheet queue with our estimated publishing dates.<br>\n <br>\nAll other details and frequently asked questions are addressed here: <a href=\"https://bit.ly/AuthorityMagFAQandInstructions\" target=\"_blank\" style=\"color: #0071e3; text-decoration: underline;\">https://bit.ly/AuthorityMagFAQandInstructions</a>   <br>\n <br>\nWe look forward to seeing your interview submission!<br>\n <br>\nWarmly,<br>\nYitzi<br></body></html>",
+                "attachment_id": null
+              },
+              "read_attachment_supported": null,
+              "parts": null
+            }
+          ]
+        },
+        "size_estimate": 4429,
+        "classification_label_values": null
+      }
+    ],
+    "snippet": null
+  },
+  {
+    "id": "1a0865c7034e881a",
+    "history_id": "10309720",
+    "messages": [
+      {
+        "id": "1a0865c7034e881a",
+        "thread_id": "1a0865c7034e881a",
+        "label_ids": [
+          "Label_2065340405041221323",
+          "CATEGORY_PERSONAL",
+          "INBOX"
+        ],
+        "snippet": "Here is a summary and confirmation of your pitch: Dear Authority Magazine Editors, Please kindly consider me or my client for the following interview topic: Name and Title of The Interviewee Shannon",
+        "history_id": "10309720",
+        "internal_date": "1788960589000",
+        "payload": {
+          "part_id": "",
+          "mime_type": "multipart/mixed",
+          "filename": "",
+          "headers": [
+            {
+              "name": "Delivered-To",
+              "value": "support@authoritymag.co"
+            },
+            {
+              "name": "Received",
+              "value": "by 2002:a05:7300:b71f:b0:327:c819:8571 with SMTP id cy31csp678105dyb;        Wed, 9 Sep 2026 06:30:01 -0700 (PDT)"
+            },
+            {
+              "name": "X-Received",
+              "value": "by 2002:a05:6512:1307:b0:5ae:b969:417d with SMTP id 2adb3069b0e04-5b616e8aed5mr6497679e87.0.1788960600580;        Wed, 09 Sep 2026 06:30:00 -0700 (PDT)"
+            },
+            {
+              "name": "ARC-Seal",
+              "value": "i=1; a=rsa-sha256; t=1788960600; cv=none;        d=google.com; s=arc-20260327;        b=Epp4aAVcr53BU7xmOd3b3R4wTzoppHAwEiH1kDnYsS47AyROQQ4kncMFLgvUkeqhh/         x8O8T5PXXJbYA8bi5A98aZ85dtTacm3SmsfJX1QFUcgQso9Dgqpez9tsz81ntcu5wJ0a         HD+op+6FSGLsEjJYdRjxdRbJYaI7UVxsbkuwFXf/t60KQSG29HaF4ZtlgR3DCiD3cntc         oiPAr/d3X1OFwBMeATBmIPdZYGR6FvKrcBksQWsPZGuWEmH0m1SUMNYqGZbl41AG+LJX         TummsKvxRKdMvXE31goZq0IO+GVXTLJzJq1Vt3hcdDpjJAUPM2BbIEtLWlZb9cM4ayLl         BWtA=="
+            },
+            {
+              "name": "ARC-Message-Signature",
+              "value": "i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;        h=cc:to:subject:message-id:date:reply-to:from:mime-version         :dkim-signature;        bh=raWfnmd1YwzBUL5/zDN9C0HrtmAdE5LZ5bJ2fD/fwiU=;        fh=yB3qD2n8mpzLwMggwoUdmHAOVW99B7y6btENmByKLPI=;        b=FTRgHTWFJnlFaN70e97QMO9flMlm9ZrGDwAnFdU/Kn/E9jbeDP1uDUh1qSN+JFc65Z         VX5EBWoKXiq+r1ltGtYcPq8lwKvJi4epyvE60WzSlO1e4n8sm8UE4TgL1sTVRJiagdPa         ST9PpR43UEeSYL4oEZ8rS3WjOReHNzeW5MUa8s4zZme6chVkwNMd8/AYjm+oJxJCqtKY         TJs+qjHBTckU+lSPqRDznFwa2eFWfOaNDlNDgAxAb8FK1vY76JbrnkXP/fRnfDY2xp8e         VebHeef2U66/GvZ+O6CnKsqkEkrr4BVx1Zg/iH/5SUy3bospRCGYr7tnonTaSrG0inbp         Blbg==;        dara=google.com"
+            },
+            {
+              "name": "ARC-Authentication-Results",
+              "value": "i=1; mx.google.com;       dkim=pass header.i=@authoritymag-co.20251104.gappssmtp.com header.s=20251104 header.b=cIJDadnV;       spf=pass (google.com: domain of editor@authoritymag.co designates 209.85.220.41 as permitted sender) smtp.mailfrom=editor@authoritymag.co;       dara=neutral header.i=@authoritymag.co"
+            },
+            {
+              "name": "Return-Path",
+              "value": "<editor@authoritymag.co>"
+            },
+            {
+              "name": "Received",
+              "value": "from mail-sor-f41.google.com (mail-sor-f41.google.com. [209.85.220.41])        by mx.google.com with SMTPS id 2adb3069b0e04-5b616700260sor2754868e87.13.2026.09.09.06.29.59        for <support@authoritymag.co>        (Google Transport Security);        Wed, 09 Sep 2026 06:30:00 -0700 (PDT)"
+            },
+            {
+              "name": "Received-SPF",
+              "value": "pass (google.com: domain of editor@authoritymag.co designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41;"
+            },
+            {
+              "name": "Authentication-Results",
+              "value": "mx.google.com;       dkim=pass header.i=@authoritymag-co.20251104.gappssmtp.com header.s=20251104 header.b=cIJDadnV;       spf=pass (google.com: domain of editor@authoritymag.co designates 209.85.220.41 as permitted sender) smtp.mailfrom=editor@authoritymag.co;       dara=neutral header.i=@authoritymag.co"
+            },
+            {
+              "name": "DKIM-Signature",
+              "value": "v=1; a=rsa-sha256; c=relaxed/relaxed;        d=authoritymag-co.20251104.gappssmtp.com; s=20251104; t=1788960599; x=1789565399; darn=authoritymag.co;        h=content-type:cc:to:subject:message-id:date:reply-to:from         :mime-version:from:to:cc:subject:date:message-id:reply-to         :content-type;        bh=raWfnmd1YwzBUL5/zDN9C0HrtmAdE5LZ5bJ2fD/fwiU=;        b=cIJDadnVYM2tnA7aeFfCOc72OBGrUXDMd9s8wYu+Kak/X4NSbm39h+Q+EG0TrCW2s+         X1sroFw8zbU2uyI3WtolcNw6FaWZvOyddSIn0jTp/URM3YT+xqBQxranKY5qlZhQ8gnr         QJHKH6c402vs6GCZhlwAm30RjqqP5KDzEkQL/oZGLXXAIXuKOa0NJxnzxeaI6+2b4Rg3         FLQSnlxtrbQjngrqJQGIcfRcYg2FWb15FhFbvwzkRdQyPdnORbN9uF1/SnkfGKCGx7aH         AwV3UIrLvQI3DzC1yLWQ4lUFgvVUZeFB8xDl6Q98J25HiKwQtkrrjKm27MdCSodi4E9+         n96A=="
+            },
+            {
+              "name": "X-Google-DKIM-Signature",
+              "value": "v=1; a=rsa-sha256; c=relaxed/relaxed;        d=1e100.net; s=20251104; t=1788960599; x=1789565399;        h=content-type:cc:to:subject:message-id:date:reply-to:from         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date         :message-id:reply-to:content-type;        bh=raWfnmd1YwzBUL5/zDN9C0HrtmAdE5LZ5bJ2fD/fwiU=;        b=sTNXyuyAD07tKdoZDkafpSN6yrVTd3embw2RxJ3KrdcHRPCMix28efX+zBba+cUs7z         hQ7Og1Elg9glloiEEDT8CmbKCqY0VHqoBnPLMNMORm8V/SPMzxd/FqutzSwyLDwPWB6D         cbv5gB+QHiKYHySfbnDki/aCAb3lcg968kLTGCcbpD113foFcXLUBk+T6G3yhRBY7yTq         X5V5QHZaZfLITU9GDgv708grPuMms0x4oWbkaBFP47EtmQ+WCA6X8haT1mINILROlEVI         IYbVl4FMnCYtKvQPWqeKXd1uOwmxTVVgjnXPnd3N/wU/Exnes8iOOf7gJmENJz0BRUin         sYdA=="
+            },
+            {
+              "name": "X-Gm-Message-State",
+              "value": "AFuF++neCPXM3y2VNzKG2R3pFmAm0039K9GEGEvyd72Q/YzCMTjQ1dwc IiaboLg9V7HflK7xXFpZzb9yXY/tYuK4ZgtHEUVBSgNUsGj/hKtgoFl6gFWoWHijOS9oPcFTYZK MHDJGsOoS6w=="
+            },
+            {
+              "name": "X-Gm-Gg",
+              "value": "AYBFou3SKX9yr8cwA8OACWLCJBDf0O4RfFJW8RWfCueLDYDSscJ70uzxFDX6By/NUrw bBx4iavctDfmFiWpxqhgp1bLCaquudsG2UYmw39o3i+T5rvZaKoUJPHez4QstcBp7xG3DvP2a6p C6ukdtXbHMZgaK75TbVistZ/c64PDPKddxKg5+LC5aIjFWBWgJLHuOv93wFSNveTztBQ+J+6B3E CzchbNvkjcRaPhVjkim9gIC8lhQZCpT+uhqVP1ElHd+OjGk3c3ZHuQfzwznu5pcKNGyQ0Yhy0rD P/snD+mZWFT6KtnRnd+yHd9EP9oUT3CSSn/V+5L5XZC8Ibipi9HMfrxQX9o4YwSrRFYp+5wGVah yhvaUqD9RGx29Q7C2zA5ddBzp5N6BYuCyz8rXCZzBStqLml1lz/VhI9PBrscj9qzf2VGSKjBgcE EAZHRCZuMpPkyMayOMFlI23qwMjrJ5abCzz7qmNzQcVATJ0oUv/FnMHwLH8W9NjLnYpFNNuLa8U nk5rNRAz/oluzleWJEkggixuYjE3TGQqgFAAvnp3jtjJLkJOL9OZ0Tx0qioz4NgBfiBBLQiuKI="
+            },
+            {
+              "name": "X-Received",
+              "value": "by 2002:a05:6512:2c04:b0:5b6:1a81:1c8d with SMTP id 2adb3069b0e04-5b61a811f6cmr6118390e87.66.1788960598767;        Wed, 09 Sep 2026 06:29:58 -0700 (PDT)"
+            },
+            {
+              "name": "Return-Path",
+              "value": "<editor@authoritymag.co>"
+            },
+            {
+              "name": "Received",
+              "value": "from mail-lj1-f171.google.com (mail-lj1-f171.google.com. [209.85.208.171])        by smtp.gmail.com with ESMTPSA id 2adb3069b0e04-5b667b6c30fsm3454515e87.9.2026.09.09.06.29.57        for <support@authoritymag.co>        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);        Wed, 09 Sep 2026 06:29:57 -0700 (PDT)"
+            },
+            {
+              "name": "Received",
+              "value": "by mail-lj1-f171.google.com with SMTP id 38308e7fff4ca-3a1e9f55e03so54230221fa.1        for <support@authoritymag.co>; Wed, 09 Sep 2026 06:29:57 -0700 (PDT)"
+            },
+            {
+              "name": "X-Received",
+              "value": "by 2002:a05:651c:a208:20b0:3a3:7682:49a3 with SMTP id 38308e7fff4ca-3a376824d3bmr25241911fa.24.1788960596644; Wed, 09 Sep 2026 06:29:56 -0700 (PDT)"
+            },
+            {
+              "name": "Received",
+              "value": "from 984866591130 named unknown by gmailapi.google.com with HTTPREST; Wed, 9 Sep 2026 06:29:50 -0700"
+            },
+            {
+              "name": "Received",
+              "value": "from 984866591130 named unknown by gmailapi.google.com with HTTPREST; Wed, 9 Sep 2026 06:29:49 -0700"
+            },
+            {
+              "name": "MIME-Version",
+              "value": "1.0"
+            },
+            {
+              "name": "From",
+              "value": "Authority Magazine <editor@authoritymag.co>"
+            },
+            {
+              "name": "Reply-To",
+              "value": "support@authoritymag.co"
+            },
+            {
+              "name": "Date",
+              "value": "Wed, 9 Sep 2026 06:29:49 -0700"
+            },
+            {
+              "name": "X-Gmail-Original-Message-ID",
+              "value": "<CACn8G2PUqsfMU7P6mf2dpV+PjutY50j8PKtuOqAjEVSS7MQv5Q@mail.gmail.com>"
+            },
+            {
+              "name": "X-Gm-Features",
+              "value": "AcwNN1Uyu4QYqUdjE93t41b1Pp3BHuUI6HJAIihnCs0I_2eWJRSkJxnm06Ekuig"
+            },
+            {
+              "name": "Message-ID",
+              "value": "<CACn8G2PUqsfMU7P6mf2dpV+PjutY50j8PKtuOqAjEVSS7MQv5Q@mail.gmail.com>"
+            },
+            {
+              "name": "Subject",
+              "value": "Thank you for your pitch to Authority Magazine!"
+            },
+            {
+              "name": "To",
+              "value": "sarah@practicalinspiration.com"
+            },
+            {
+              "name": "Cc",
+              "value": "support@authoritymag.co"
+            },
+            {
+              "name": "Content-Type",
+              "value": "multipart/mixed; boundary=\"000000000000e19ed1065b0cd8a9\""
+            }
+          ],
+          "body": {
+            "size": 0,
+            "base64_url_content": null,
+            "content": null,
+            "attachment_id": null
+          },
+          "read_attachment_supported": null,
+          "parts": [
+            {
+              "part_id": "0",
+              "mime_type": "multipart/alternative",
+              "filename": "",
+              "headers": [
+                {
+                  "name": "Content-Type",
+                  "value": "multipart/alternative; boundary=\"000000000000e19ed0065b0cd8a7\""
+                }
+              ],
+              "body": {
+                "size": 0,
+                "base64_url_content": null,
+                "content": null,
+                "attachment_id": null
+              },
+              "read_attachment_supported": null,
+              "parts": [
+                {
+                  "part_id": "0.0",
+                  "mime_type": "text/plain",
+                  "filename": "",
+                  "headers": [
+                    {
+                      "name": "Content-Type",
+                      "value": "text/plain; charset=\"UTF-8\""
+                    },
+                    {
+                      "name": "Content-Transfer-Encoding",
+                      "value": "quoted-printable"
+                    }
+                  ],
+                  "body": {
+                    "size": 2191,
+                    "base64_url_content": null,
+                    "content": "*Here is a summary and confirmation of your pitch:*\r\n\r\nDear Authority Magazine Editors,\r\n\r\nPlease kindly consider me or my client for the following interview topic:\r\n\r\nName and Title of The Interviewee Shannon Nutter and Julia Carreon\r\nName and Company of The Publicist Submitting (If applicable) Sarah Hodgen -\r\nPractical Inspiration Publishing\r\nHas this interviewee been featured in Authority Magazine before? No\r\nWhat is the name of the interview topic you are pitching for? (Choose one\r\nplease) Women of the C-Suite\r\nYour 200 word pitch Shannon Nutter and Julia Carreon have decades of\r\nexpertise in leadership, strategy and large-scale transformation, they have\r\nnow joined forces to share hard-won tips for identifying, preparing for and\r\ncountering workplace land mines. Their mission: mobilize women to build\r\ncollective power and change the broken systems in which they work.\r\nExamining the “glass cliff”, their takedown playbook and persistent\r\ninstitutional bias, Walking on Broken Glass offers a practical,\r\nexperience-led guide to recognising and responding to the systems that\r\nundermine women at work. Drawing on their own C-suite careers in global\r\nfinancial institutions, Shannon and Julia call on women to claim their\r\npower, act collectively and build careers that are successful on their own\r\nterms. The result is a timely and urgent call to action for women, leaders\r\nand organizations ready to move beyond performative progress and towards\r\nlasting change. As such they would be excellent Women in C-Suite\r\ninterviewees.\r\nWhat is the occupation of the interviewee? Shannon Nutter is a global\r\nexecutive and board director and Julia C. Carreon is a financial services\r\nexecutive.\r\nWhat is the business website of the interviewee?\r\nhttps://walkingonbrokenglass.com/\r\nLinks to The Interviewee's Best Social Media Profiles\r\nhttps://www.linkedin.com/in/shannon-nutter/;\r\nhttps://www.linkedin.com/in/julia-c-carreon-8318674/\r\nA High Quality Image of the Interviewee File 1\r\n<https://drive.google.com/open?id=1cij-HvD2dmf9mU9r7DoxlRgUBw9DQILr>\r\nIn which country does the interviewee live? USA\r\nWhat is the best email to follow up with you? sarah@practicalinspiration.com\r\n",
+                    "attachment_id": null
+                  },
+                  "read_attachment_supported": null,
+                  "parts": null
+                },
+                {
+                  "part_id": "0.1",
+                  "mime_type": "text/html",
+                  "filename": "",
+                  "headers": [
+                    {
+                      "name": "Content-Type",
+                      "value": "text/html; charset=\"UTF-8\""
+                    },
+                    {
+                      "name": "Content-Transfer-Encoding",
+                      "value": "quoted-printable"
+                    }
+                  ],
+                  "body": {
+                    "size": 3825,
+                    "base64_url_content": null,
+                    "content": "<div style=\"width:100%;max-width:680px\"><p><em>Here is a summary and confirmation of your pitch:</em></p>\r\n<p>Dear Authority Magazine Editors,</p>\r\n<p>Please kindly consider me or my client for the following interview topic: </p>\r\n<p><table style=\"border-radius:2px;margin:2em 0 3em;min-width:400px;border:1px solid #eee;border-collapse:separate;border-spacing:1px\" cellspacing=\"0\" cellpadding=\"10\" border=\"0\" role=\"table\" aria-label=\"Google Forms Response\"><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">Name and Title of The Interviewee</th><td>Shannon Nutter and Julia Carreon</td></tr><tr style=\"background:#fbfbfb\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">Name and Company of The Publicist Submitting (If applicable) </th><td>Sarah Hodgen - Practical Inspiration Publishing</td></tr><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">Has this interviewee been featured in Authority Magazine before? </th><td>No</td></tr><tr style=\"background:#fbfbfb\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">What is the name of the interview topic you are pitching for? (Choose one please) </th><td>Women of the C-Suite</td></tr><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">Your 200 word pitch</th><td>Shannon Nutter and Julia Carreon have decades of expertise in leadership, strategy and large-scale transformation, they have now joined forces to share hard-won tips for identifying, preparing for and countering workplace land mines. Their mission: mobilize women to build collective power and change the broken systems in which they work. Examining the “glass cliff”, their takedown playbook and persistent institutional bias, Walking on Broken Glass offers a practical, experience-led guide to recognising and responding to the systems that undermine women at work. Drawing on their own C-suite careers in global financial institutions, Shannon and Julia call on women to claim their power, act collectively and build careers that are successful on their own terms. The result is a timely and urgent call to action for women, leaders and organizations ready to move beyond performative progress and towards lasting change. As such they would be excellent Women in C-Suite interviewees.</td></tr><tr style=\"background:#fbfbfb\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">What is the occupation of the interviewee? </th><td>Shannon Nutter is a global executive and board director and Julia C. Carreon is a financial services executive.</td></tr><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">What is the business website of the interviewee?</th><td><a href=\"https://walkingonbrokenglass.com/\">https://walkingonbrokenglass.com/</a></td></tr><tr style=\"background:#fbfbfb\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">Links to The Interviewee&#39;s Best Social Media Profiles</th><td><a href=\"https://www.linkedin.com/in/shannon-nutter/\">https://www.linkedin.com/in/shannon-nutter/</a>; <a href=\"https://www.linkedin.com/in/julia-c-carreon-8318674/\">https://www.linkedin.com/in/julia-c-carreon-8318674/</a> </td></tr><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">A High Quality Image of the Interviewee</th><td><a href=\"https://drive.google.com/open?id=1cij-HvD2dmf9mU9r7DoxlRgUBw9DQILr\">File 1</a></td></tr><tr style=\"background:#fbfbfb\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">In which country does the interviewee live?</th><td>USA</td></tr><tr style=\"background:#f9f9f9\"><th scope=\"row\" style=\"font-weight:bold;width:180px\">What is the best email to follow up with you?</th><td><a href=\"mailto:sarah@practicalinspiration.com\">sarah@practicalinspiration.com</a></td></tr></table></p></div>\r\n",
+                    "attachment_id": null
+                  },
+                  "read_attachment_supported": null,
+                  "parts": null
+                }
+              ]
+            },
+            {
+              "part_id": "1",
+              "mime_type": "application/pdf",
+              "filename": "Authority Magazine Pitch.pdf",
+              "headers": [
+                {
+                  "name": "Content-Type",
+                  "value": "application/pdf; name=\"Authority Magazine Pitch.pdf\""
+                },
+                {
+                  "name": "Content-Disposition",
+                  "value": "attachment; filename=\"Authority Magazine Pitch.pdf\""
+                },
+                {
+                  "name": "Content-Transfer-Encoding",
+                  "value": "base64"
+                },
+                {
+                  "name": "X-Attachment-Id",
+                  "value": "2e39edfa34b2e150_0.1"
+                }
+              ],
+              "body": {
+                "size": 48498,
+                "base64_url_content": null,
+                "content": null,
+                "attachment_id": "ANGjdJ_pb_9suMJtrPtuv3rrrW9OBPFqjzE8siyFqgZiEmhofSS_2Kb9zs2irzUUiCehMAJBDzkwNE6EwPaUQBlgDxpbAc2FVhwzs77qWL9e5C2NZW0W49Mhe73GiU5wckOWpxuoGke4wxgyBHDacTAuXyoAjDryRxOEO7nU4Mk_xNLeJSzx8Ie0roxZ1SkZ7uHiWnqz457F5EWz0PBtcWQQ--tIfFQdEWYTySAnB6--Z0xlq4MwFmc7vRZLEs2e8J0A5EofS0Kvpzfv6A_QCwkzmy6JPqRuo2ZQffzyLAhXgZyha7NFtQGUcs9lzGTSWspqCj4syP_1aQ--e-2yMv7CRz4dZYMX8hzeusq5RQcM-L5gVJEbO8shbZDZnvqypCW3fDxM8tpbwJibrNij"
+              },
+              "read_attachment_supported": true,
+              "parts": null
+            }
+          ]
+        },
+        "size_estimate": 80175,
+        "classification_label_values": null
+      },
+      {
+        "id": "1a0868fe99dc75d7",
+        "thread_id": "1a0865c7034e881a",
+        "label_ids": [
+          "DRAFT"
+        ],
+        "snippet": "Thank you so much for your pitch to Authority Magazine. You have been accepted and we would like to move forward with an email interview. Here is the link for the email interview questions for this",
+        "history_id": "10309720",
+        "internal_date": "1788963973000",
+        "payload": {
+          "part_id": "",
+          "mime_type": "multipart/alternative",
+          "filename": "",
+          "headers": [
+            {
+              "name": "Received",
+              "value": "from 277249333162 named unknown by gmailapi.google.com with HTTPREST; Wed, 9 Sep 2026 09:26:13 -0500"
+            },
+            {
+              "name": "Content-Type",
+              "value": "multipart/alternative; boundary=\"===============0299047892848045547==\""
+            },
+            {
+              "name": "MIME-Version",
+              "value": "1.0"
+            },
+            {
+              "name": "to",
+              "value": "sarah@practicalinspiration.com"
+            },
+            {
+              "name": "subject",
+              "value": "Re: Thank you for your pitch to Authority Magazine!"
+            },
+            {
+              "name": "In-Reply-To",
+              "value": "<CACn8G2PUqsfMU7P6mf2dpV+PjutY50j8PKtuOqAjEVSS7MQv5Q@mail.gmail.com>"
+            },
+            {
+              "name": "References",
+              "value": "<CACn8G2PUqsfMU7P6mf2dpV+PjutY50j8PKtuOqAjEVSS7MQv5Q@mail.gmail.com>"
+            },
+            {
+              "name": "Date",
+              "value": "Wed, 9 Sep 2026 09:26:13 -0500"
+            },
+            {
+              "name": "Message-Id",
+              "value": "<CAMd8+zjb7HQ40QoFnyoxepDS0bq5UF_kES8C8OrnobyvXj7ZAg@mail.gmail.com>"
+            },
+            {
+              "name": "From",
+              "value": "\"Editor's Desk\" <support@authoritymag.co>"
+            }
+          ],
+          "body": {
+            "size": 0,
+            "base64_url_content": null,
+            "content": null,
+            "attachment_id": null
+          },
+          "read_attachment_supported": null,
+          "parts": [
+            {
+              "part_id": "0",
+              "mime_type": "text/plain",
+              "filename": "",
+              "headers": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=\"us-ascii\""
+                },
+                {
+                  "name": "MIME-Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "Content-Transfer-Encoding",
+                  "value": "7bit"
+                }
+              ],
+              "body": {
+                "size": 995,
+                "base64_url_content": null,
+                "content": "Thank you so much for your pitch to Authority Magazine. \n\nYou have been accepted and we would like to move forward with an email interview. \n\nHere is the link for the email interview questions for this series:\n\nBlack Men and Women of the C-Suite\nhttps://docs.google.com/document/d/1Cx2BgoDrPLtqNxwttkcL1YxPeSqE77KwydXTZSEbGtk/edit\n\n\nPlease complete the written interview, (please do not use AI to create your answers) and upload the interview, images and bio into the portal linked at the bottom of the interview when it is complete.\n\nWhen you upload the material, please keep your browser open until you see a confirmation message.\n\nThe official deadline is 21 days.\n \nAfter you upload the interview in the writer's portal, you will see a link to a spreadsheet queue with our estimated publishing dates.\n \nAll other details and frequently asked questions are addressed here: https://bit.ly/AuthorityMagFAQandInstructions   \n \nWe look forward to seeing your interview submission!\n \nWarmly,\nYitzi",
+                "attachment_id": null
+              },
+              "read_attachment_supported": null,
+              "parts": null
+            },
+            {
+              "part_id": "1",
+              "mime_type": "text/html",
+              "filename": "",
+              "headers": [
+                {
+                  "name": "Content-Type",
+                  "value": "text/html; charset=\"us-ascii\""
+                },
+                {
+                  "name": "MIME-Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "Content-Transfer-Encoding",
+                  "value": "7bit"
+                }
+              ],
+              "body": {
+                "size": 1558,
+                "base64_url_content": null,
+                "content": "<html><body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #1d1d1f;\">Thank you so much for your pitch to Authority Magazine. <br>\n<br>\nYou have been accepted and we would like to move forward with an email interview. <br>\n<br>\nHere is the link for the email interview questions for this series:<br>\n<br>\nBlack Men and Women of the C-Suite<br>\n<a href=\"https://docs.google.com/document/d/1Cx2BgoDrPLtqNxwttkcL1YxPeSqE77KwydXTZSEbGtk/edit\" target=\"_blank\" style=\"color: #0071e3; text-decoration: underline;\">https://docs.google.com/document/d/1Cx2BgoDrPLtqNxwttkcL1YxPeSqE77KwydXTZSEbGtk/edit</a><br>\n<br>\n<br>\nPlease complete the written interview, (please do not use AI to create your answers) and upload the interview, images and bio into the portal linked at the bottom of the interview when it is complete.<br>\n<br>\nWhen you upload the material, please keep your browser open until you see a confirmation message.<br>\n<br>\nThe official deadline is 21 days.<br>\n <br>\nAfter you upload the interview in the writer's portal, you will see a link to a spreadsheet queue with our estimated publishing dates.<br>\n <br>\nAll other details and frequently asked questions are addressed here: <a href=\"https://bit.ly/AuthorityMagFAQandInstructions\" target=\"_blank\" style=\"color: #0071e3; text-decoration: underline;\">https://bit.ly/AuthorityMagFAQandInstructions</a>   <br>\n <br>\nWe look forward to seeing your interview submission!<br>\n <br>\nWarmly,<br>\nYitzi<br></body></html>",
+                "attachment_id": null
+              },
+              "read_attachment_supported": null,
+              "parts": null
+            }
+          ]
+        },
+        "size_estimate": 3530,
+        "classification_label_values": null
+      }
+    ],
+    "snippet": null
+  }
+]
