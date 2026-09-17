@@ -67,7 +67,7 @@ function SsoReceiver() {
           <div>
             <div className="mb-4 text-sm font-semibold text-rose-600">{error}</div>
             <a
-              href="/login"
+              href={`/login?callbackUrl=${encodeURIComponent(dest)}`}
               className="inline-block rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
             >
               Sign In Manually
