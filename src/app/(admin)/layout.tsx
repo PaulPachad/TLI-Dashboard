@@ -98,6 +98,7 @@ const adminNavItems: NavItem[] = [
   { label: "Import", href: "/admin/import", icon: ArrowUpTrayIcon },
   { label: "Operations", href: "/admin/operations", icon: BoltIcon },
   { label: "Automation", href: "/admin/automation", icon: BoltIcon },
+  { label: "Release Hub", href: "/admin/release", icon: BoltIcon },
 ];
 
 const dashboardNavItems: NavItem[] = [
