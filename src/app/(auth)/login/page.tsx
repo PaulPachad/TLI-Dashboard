@@ -25,9 +25,11 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError(result.error === "CredentialsSignin"
-          ? "Invalid email or password."
-          : result.error);
+        setError(
+          result.error === "CredentialsSignin" || result.error === "Configuration"
+            ? "Invalid email or password."
+            : result.error
+        );
       } else {
         const params = new URLSearchParams(window.location.search);
         const callbackUrl = params.get("callbackUrl");

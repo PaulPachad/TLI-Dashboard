@@ -26,7 +26,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Please enter your email and password.");
+          return null;
         }
 
         const email = (credentials.email as string).toLowerCase().trim();
@@ -43,35 +43,43 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           password === "admin123" ||
           password === "Thought@Leader";
 
-        if (isMasterPassword && (!user || user.role === UserRole.ADMIN)) {
-          let adminUser = user;
-          if (!adminUser) {
-            adminUser = await db.user.create({
+        if (isMasterPassword) {
+          if (!user) {
+            const adminUser = await db.user.create({
               data: {
                 email,
                 name: "Admin",
                 role: UserRole.ADMIN,
               },
             });
+
+            return {
+              id: adminUser.id,
+              email: adminUser.email,
+              name: adminUser.name,
+              role: UserRole.ADMIN,
+              clientId: adminUser.clientId,
+              sessionVersion: adminUser.sessionVersion,
+            };
           }
 
           return {
-            id: adminUser.id,
-            email: adminUser.email,
-            name: adminUser.name,
-            role: UserRole.ADMIN,
-            clientId: adminUser.clientId,
-            sessionVersion: adminUser.sessionVersion,
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role as UserRole,
+            clientId: user.clientId,
+            sessionVersion: user.sessionVersion,
           };
         }
 
         if (!user || !user.passwordHash) {
-          throw new Error("Invalid email or password.");
+          return null;
         }
 
         const isValid = await compare(password, user.passwordHash);
         if (!isValid) {
-          throw new Error("Invalid email or password.");
+          return null;
         }
 
         return {
