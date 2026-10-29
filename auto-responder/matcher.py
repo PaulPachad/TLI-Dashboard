@@ -295,6 +295,13 @@ FINGERPRINT_STOPWORDS = {
     'family', 'families',
 }
 
+TEMPLATE_BOILERPLATE_WORDS = {
+    '5', 'five', 'things', 'thing', 'wish', 'someone', 'somebody',
+    'told', 'knew', 'learned', 'need', 'know', 'create', 'highly',
+    'successful', 'career', 'became', 'becoming', 'first', 'when',
+    'before', 'lessons', 'ways', 'tips'
+}
+
 
 # Number-word equivalence mapping for normalization
 # Converts spelled-out numbers to digit form so "20-Something" matches "Twenty-Something"
@@ -379,6 +386,8 @@ def _industry_terms_are_compatible(search_text: str, topic_name: str) -> bool:
     for pattern, heading_only in (
         (r'\bthe future of (.+)', True),
         (r'\bhighly effective (.+?)(?:\s+during\b|$)', False),
+        (r'\binspirational women (?:in|of) (.+)', False),
+        (r'\bwomen leaders of (.+)', False),
     ):
         search_subject = re.search(pattern, search_lower.split(':', 1)[0] if heading_only else search_lower)
         topic_subject = re.search(pattern, topic_lower.split(':', 1)[0] if heading_only else topic_lower)
@@ -726,10 +735,35 @@ class TopicMatcher:
                         score=100.0,
                         match_type='exact_override'
                     )]
+
+        # EXACT OVERRIDE for general business / startup launches
+        # When someone pitches "5 Things I Wish Someone Told Me Before I Started My Business",
+        # they are pitching the general business launch series (ID 74: "When I First Launched My Business or Startup").
+        # They are NOT pitching "Consulting Business" or "Cannabis Or CBD Business".
+        test_norm_no_parens = re.sub(r'\([^)]*\)', ' ', search_lower.strip())
+        test_norm_no_parens = re.sub(r'[^a-z0-9\s]', '', test_norm_no_parens)
+        test_norm_no_parens = re.sub(r'\s+', ' ', test_norm_no_parens).strip()
+
+        business_launch_patterns = [
+            'started my business', 'starting my business', 'started a business', 'starting a business',
+            'launched my business', 'launching my business', 'launched a business', 'starting or winding down a business'
+        ]
+        if (any(p in test_norm for p in business_launch_patterns) or any(p in test_norm_no_parens for p in business_launch_patterns)) and not any(spec in test_norm for spec in ['consulting', 'cannabis', 'cbd', 'ecommerce', 'e commerce', 'shopify', 'amazon', 'family', 'plant', 'law']):
+            for s in self.series:
+                if s['id'] == 74 or 'launched my business or startup' in s['name'].lower():
+                    return [MatchResult(
+                        series_id=s['id'],
+                        name=s['name'],
+                        category=s['category'],
+                        link=s['link'],
+                        score=100.0,
+                        match_type='exact_override'
+                    )]
         
-        # Stage 0.4: Check learned rules (Priority Override)
-        # Moved BEFORE Stage 0.5 to ensure manual corrections win over fuzzy-exact matches.
+        # Stage 0.4a: Check learned rules (Priority Override for exact learned matches)
         # Check either extracted_topic or search_text when it represents direct topic text.
+        deferred_learned_match = None
+        deferred_target_topic = None
         if (extracted_topic or _looks_like_direct_topic_text(search_text)) and self._learned_rules_tracker:
             target_topic = extracted_topic or search_text
             learned_match = self._learned_rules_tracker.find_learned_match(target_topic)
@@ -738,15 +772,7 @@ class TopicMatcher:
                 doc_id = learned_match.get("doc_id")
                 match_type = learned_match.get("match_type", "learned")
                 
-                # A fuzzy learned pattern match must never override an exact database topic match.
-                # Only learned_exact (an explicit user correction for this exact phrase) can override exact topics.
-                skip_learned = False
-                if match_type == "learned_pattern":
-                    target_norm = normalize_topic_for_exact(target_topic)
-                    if any(normalize_topic_for_exact(s['name']) == target_norm for s in self.series):
-                        skip_learned = True
-
-                if not skip_learned:
+                if match_type == "learned_exact":
                     for series in self.series:
                         series_doc_id = None
                         if series.get('link'):
@@ -764,6 +790,10 @@ class TopicMatcher:
                                 score=98.0,
                                 match_type=match_type
                             )]
+                elif match_type == "learned_pattern":
+                    # Stash fuzzy learned pattern to evaluate AFTER Stage 0.45, 0.5, 0.5b, 0.6, 0.65
+                    deferred_learned_match = learned_match
+                    deferred_target_topic = target_topic
 
         # Stage 0.45: Unique known topic prefix before a colon or separator.
         # Some form choices preserve the series brand before ":" but slightly vary the
@@ -884,7 +914,15 @@ class TopicMatcher:
                 name_norm_check = re.sub(r'\s+', ' ', best_exact_series['name']).strip()
                 raw_score = fuzz.ratio(search_norm.lower(), name_norm_check.lower())
                 digit_score = fuzz.ratio(search_norm_digits, normalize_numbers_to_digits(name_norm_check))
-                if digit_score > raw_score and digit_score >= 90:
+
+                # Check for substantive word mismatch: if candidate series has
+                # extra domain qualifier words (like "consulting", "cannabis", "franchise")
+                # not present in the search text, reject exact match.
+                search_words = set(re.findall(r'\b[a-z]{3,}\b', search_norm.lower())) - FINGERPRINT_STOPWORDS
+                cand_words = set(re.findall(r'\b[a-z]{3,}\b', name_norm_check.lower())) - FINGERPRINT_STOPWORDS
+                extra_qualifiers = cand_words - search_words
+
+                if digit_score > raw_score and digit_score >= 90 and not extra_qualifiers:
                     return [MatchResult(
                         series_id=best_exact_series['id'],
                         name=best_exact_series['name'],
@@ -971,6 +1009,30 @@ class TopicMatcher:
                         match_type='title_formula'
                     )]
 
+            # Stage 0.7: Deferred learned pattern match (fuzzy learned rules)
+            # Only evaluate fuzzy learned rules if exact prefix, exact name, number normalization,
+            # industry discriminator, and title formula all failed to match.
+            if deferred_learned_match:
+                dl_topic_name = deferred_learned_match.get("topic_name")
+                dl_doc_id = deferred_learned_match.get("doc_id")
+                for series in self.series:
+                    series_doc_id = None
+                    if series.get('link'):
+                        import re as re_local
+                        doc_match = re_local.search(r'docs\.google\.com/document/d/([a-zA-Z0-9_-]+)', series['link'])
+                        if doc_match:
+                            series_doc_id = doc_match.group(1)
+                    
+                    if (series_doc_id == dl_doc_id or series['name'] == dl_topic_name) and _industry_terms_are_compatible(deferred_target_topic, series['name']):
+                        return [MatchResult(
+                            series_id=series['id'],
+                            name=series['name'],
+                            category=series['category'],
+                            link=series['link'],
+                            score=98.0,
+                            match_type='learned_pattern'
+                        )]
+
             # Stage 0.8b: Token-set secondary check for short-search-vs-long-DB-name
             # e.g., "How to build a successful eCommerce business" vs
             # "Founders And CEOs On How To Build A Successful E-Commerce Business In A Saturated..."
@@ -1036,51 +1098,67 @@ class TopicMatcher:
                     best_fuzzy_word_series = None
                     best_fuzzy_word_score = 0
                     best_fuzzy_word_reverse_score = 0
-                    search_words_fp = set(re.findall(r'\b[a-z0-9]+\b', search_norm.lower())) - FINGERPRINT_STOPWORDS - {'as', 'five', 'things'}
-                    if len(search_words_fp) < 2:
-                        search_words_fp = search_words 
                     
-                    for series in self.series:
-                        if not _industry_terms_are_compatible(search_text, series['name']):
-                            continue
-                        name_norm_s = re.sub(r'\s+', ' ', series['name']).strip().lower()
-                        name_w = set(re.findall(r'\b[a-z0-9]+\b', name_norm_s)) - FINGERPRINT_STOPWORDS - {'as', 'five', 'things'}
-                        fuzzy_match_count = 0
-                        for sw in search_words_fp:
-                            if sw in name_w:
-                                fuzzy_match_count += 1
+                    search_distinctive, search_had_prefix = extract_topic_distinctive_part(search_text)
+                    basic_stopwords = {'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'about', 'and', 'or', 'is', 'as', 'it'}
+                    if search_had_prefix:
+                        search_words_fp = set(re.findall(r'\b[a-z0-9]+\b', search_distinctive.lower())) - basic_stopwords - TEMPLATE_BOILERPLATE_WORDS
+                    else:
+                        search_words_fp = set(re.findall(r'\b[a-z0-9]+\b', search_norm.lower())) - FINGERPRINT_STOPWORDS - TEMPLATE_BOILERPLATE_WORDS - {'as', 'five', 'things'}
+                    
+                    if len(search_words_fp) < 2:
+                        search_words_fp = search_words - TEMPLATE_BOILERPLATE_WORDS
+                    
+                    if len(search_words_fp) >= 1:
+                        for series in self.series:
+                            if not _industry_terms_are_compatible(search_text, series['name']):
+                                continue
+                            if search_had_prefix:
+                                series_distinctive, _ = extract_topic_distinctive_part(series['name'])
+                                name_w = set(re.findall(r'\b[a-z0-9]+\b', series_distinctive.lower())) - basic_stopwords - TEMPLATE_BOILERPLATE_WORDS
                             else:
-                                for nw in name_w:
-                                    if fuzz.ratio(sw, nw) >= 85:
-                                        fuzzy_match_count += 1
-                                        break
-                        fuzzy_pct = fuzzy_match_count / len(search_words_fp) if search_words_fp else 0
-                        reverse_match_count = 0
-                        if name_w:
-                            for nw in name_w:
-                                if nw in search_words_fp:
-                                    reverse_match_count += 1
+                                name_norm_s = re.sub(r'\s+', ' ', series['name']).strip().lower()
+                                name_w = set(re.findall(r'\b[a-z0-9]+\b', name_norm_s)) - FINGERPRINT_STOPWORDS - TEMPLATE_BOILERPLATE_WORDS - {'as', 'five', 'things'}
+                            
+                            if not name_w:
+                                continue
+
+                            fuzzy_match_count = 0
+                            for sw in search_words_fp:
+                                if sw in name_w:
+                                    fuzzy_match_count += 1
                                 else:
-                                    for sw in search_words_fp:
-                                        if fuzz.ratio(nw, sw) >= 85:
-                                            reverse_match_count += 1
+                                    for nw in name_w:
+                                        if fuzz.ratio(sw, nw) >= 85:
+                                            fuzzy_match_count += 1
                                             break
-                            reverse_pct = reverse_match_count / len(name_w)
-                        else:
-                            reverse_pct = 0
-                        if fuzzy_pct > best_fuzzy_word_score or (fuzzy_pct == best_fuzzy_word_score and reverse_pct > best_fuzzy_word_reverse_score):
-                            best_fuzzy_word_score = fuzzy_pct
-                            best_fuzzy_word_reverse_score = reverse_pct
-                            best_fuzzy_word_series = series
-                    if best_fuzzy_word_score >= 0.75 and best_fuzzy_word_reverse_score >= 0.50 and best_fuzzy_word_series:
-                        return [MatchResult(
-                            series_id=best_fuzzy_word_series['id'],
-                            name=best_fuzzy_word_series['name'],
-                            category=best_fuzzy_word_series['category'],
-                            link=best_fuzzy_word_series['link'],
-                            score=93.0,
-                            match_type='typo_tolerant_word_match'
-                        )]
+                            fuzzy_pct = fuzzy_match_count / len(search_words_fp) if search_words_fp else 0
+                            reverse_match_count = 0
+                            if name_w:
+                                for nw in name_w:
+                                    if nw in search_words_fp:
+                                        reverse_match_count += 1
+                                    else:
+                                        for sw in search_words_fp:
+                                            if fuzz.ratio(nw, sw) >= 85:
+                                                reverse_match_count += 1
+                                                break
+                                reverse_pct = reverse_match_count / len(name_w)
+                            else:
+                                reverse_pct = 0
+                            if fuzzy_pct > best_fuzzy_word_score or (fuzzy_pct == best_fuzzy_word_score and reverse_pct > best_fuzzy_word_reverse_score):
+                                best_fuzzy_word_score = fuzzy_pct
+                                best_fuzzy_word_reverse_score = reverse_pct
+                                best_fuzzy_word_series = series
+                        if best_fuzzy_word_score >= 0.75 and best_fuzzy_word_reverse_score >= 0.50 and best_fuzzy_word_series:
+                            return [MatchResult(
+                                series_id=best_fuzzy_word_series['id'],
+                                name=best_fuzzy_word_series['name'],
+                                category=best_fuzzy_word_series['category'],
+                                link=best_fuzzy_word_series['link'],
+                                score=93.0,
+                                match_type='typo_tolerant_word_match'
+                            )]
 
         # Get the distinctive part of the search text (without common prefixes)
         # Stage 0.9: Short query with one unique database fingerprint.
@@ -1346,18 +1424,21 @@ class TopicMatcher:
 
                     name_distinctive, name_had_prefix = extract_topic_distinctive_part(name)
                     
-                    # Check for extreme WRatio false positives
+                    # Check for domain / substantive word mismatch (prevent cross-domain false positives like STEM vs Business)
                     match_is_suspect = False
-                    if scorer == fuzz.WRatio:
-                        search_words = set(re.findall(r'\b[a-z]{4,}\b', search_lower))
-                        name_words = set(re.findall(r'\b[a-z]{4,}\b', name.lower()))
-                        
-                        generic_words = FINGERPRINT_STOPWORDS.union({'meet', 'rising', 'stars', 'star', 'women', 'woman', 'inspirational'})
-                        search_words_filtered = {w for w in search_words if w not in generic_words}
-                        
-                        if search_words_filtered and not (search_words_filtered & name_words):
-                            # No significant words overlap
-                            match_is_suspect = True
+                    search_words = set(re.findall(r'\b[a-z]{3,}\b', search_lower))
+                    name_words = set(re.findall(r'\b[a-z]{3,}\b', name.lower()))
+                    
+                    generic_words = FINGERPRINT_STOPWORDS.union({
+                        'meet', 'rising', 'stars', 'star', 'women', 'woman', 'inspirational',
+                        'things', 'five', 'leader', 'leaders', 'leadership', 'create', 'building'
+                    })
+                    search_words_filtered = {w for w in search_words if w not in generic_words}
+                    name_words_filtered = {w for w in name_words if w not in generic_words}
+                    
+                    if search_words_filtered and name_words_filtered and not (search_words_filtered & name_words_filtered):
+                        # No significant non-boilerplate words overlap (e.g. "business" vs "stem")
+                        match_is_suspect = True
 
                     if search_had_prefix and name_had_prefix:
                         # Both have common prefix - score based on distinctive part matching
@@ -1387,8 +1468,8 @@ class TopicMatcher:
                         # Normal case - use the original scoring with bonus
                         bonus = self._calculate_distinctive_bonus(search_lower, name.lower())
                         if match_is_suspect:
-                            # Heavy penalty to prevent WRatio from overriding real word mismatches
-                            adjusted_score = (score * 0.6) + bonus
+                            # Heavy penalty to prevent fuzzy matching from overriding real domain mismatches
+                            adjusted_score = min(score * 0.5, 50.0)
                         else:
                             adjusted_score = min(100, score * 0.9 + bonus)
                         

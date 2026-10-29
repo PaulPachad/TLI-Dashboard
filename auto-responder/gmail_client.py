@@ -329,6 +329,65 @@ class GmailClient:
     def invalidate_draft_cache(self):
         """Force the draft cache to refresh on next call (call after creating a draft)."""
         self._draft_cache_time = 0.0
+
+    @retry_on_transient_error()
+    def get_thread(self, thread_id: str) -> Optional[dict]:
+        """Get full thread details."""
+        if not self.service:
+            if not self.authenticate(interactive=False):
+                return None
+        try:
+            return self.service.users().threads().get(userId='me', id=thread_id).execute()
+        except Exception as e:
+            logger.warning(f"Error fetching thread {thread_id}: {e}")
+            return None
+
+    @retry_on_transient_error()
+    def thread_already_replied(self, thread_id: str) -> bool:
+        """
+        Check if an acceptance email was already sent in this thread.
+        Returns True if any message sent by us in the thread contains acceptance text.
+        """
+        if not thread_id:
+            return False
+        if not self.service:
+            if not self.authenticate(interactive=False):
+                return False
+        
+        try:
+            thread = self.service.users().threads().get(
+                userId='me', id=thread_id, format='metadata',
+                metadataHeaders=['From', 'Subject']
+            ).execute()
+            messages = thread.get('messages', [])
+            
+            acceptance_markers = [
+                'here is the link for the email interview questions for this series',
+                'you have been accepted and we would like to move forward with an email interview',
+                'you have been accepted and we would like to move forward',
+                'here is the link for the email interview questions',
+                'thank you so much for your pitch to authority magazine. you have been accepted'
+            ]
+            
+            for msg in messages:
+                labels = msg.get('labelIds', [])
+                if 'SENT' in labels:
+                    snippet = msg.get('snippet', '').lower()
+                    if any(marker in snippet for marker in acceptance_markers):
+                        return True
+                    # Check body content if snippet did not show it
+                    try:
+                        content = self.get_message_content(msg['id'])
+                        if content:
+                            content_lower = content.lower()
+                            if any(marker in content_lower for marker in acceptance_markers):
+                                return True
+                    except Exception:
+                        pass
+            return False
+        except Exception as e:
+            logger.warning(f"Error checking thread_already_replied for {thread_id}: {e}")
+            return False
     
     @retry_on_transient_error()
     def list_messages(self, query: str = 'subject:pitch', max_results: int = 10) -> list:

@@ -1227,5 +1227,53 @@
     "correct_topic_name": "5 Things I Wish Someone Told Me Before I Became a C-Suite Executive",
     "correct_doc_id": "1bsXgBQHiGWqKuvntxubsnk8_K1sR141uPrvsRbXbnTw",
     "created_at": "2026-09-14T20:44:11.971568Z"
+  },
+  {
+    "id": "20284da1-c8dc-4345-a097-30de1e642552",
+    "normalized_topic": "5 things i wish someone told me before i started my business",
+    "original_topic": "5 Things I Wish Someone Told Me Before I Started My Business",
+    "correct_topic_name": "Five Things I Wish Someone Told Me When I First Launched My Business or Startup",
+    "correct_doc_id": "1Ck6SJBSimdyDM-eEuTK_gNXT6rSUJ_6lAEWzd9fdT8Y",
+    "created_at": "2026-10-02T18:59:42.310611Z"
+  },
+  {
+    "id": "75e13c6a-dbf9-492f-b876-4a0372af81b5",
+    "normalized_topic": "5 things i wish someone told me before starting my business",
+    "original_topic": "5 Things I Wish Someone Told Me Before Starting My Business",
+    "correct_topic_name": "Five Things I Wish Someone Told Me When I First Launched My Business or Startup",
+    "correct_doc_id": "1Ck6SJBSimdyDM-eEuTK_gNXT6rSUJ_6lAEWzd9fdT8Y",
+    "created_at": "2026-10-02T18:59:42.330198Z"
+  },
+  {
+    "id": "51cfec0b-b231-4966-857d-4a029d088f30",
+    "normalized_topic": "5 things i wish someone told me when i started my business",
+    "original_topic": "5 Things I Wish Someone Told Me When I Started My Business",
+    "correct_topic_name": "Five Things I Wish Someone Told Me When I First Launched My Business or Startup",
+    "correct_doc_id": "1Ck6SJBSimdyDM-eEuTK_gNXT6rSUJ_6lAEWzd9fdT8Y",
+    "created_at": "2026-10-02T18:59:42.355667Z"
+  },
+  {
+    "id": "586f37da-122d-47fa-8282-484412930526",
+    "normalized_topic": "wellness 113 travel and personal growth why and how traveling can help us become better human beings",
+    "original_topic": "Wellness #113 - Travel and Personal Growth: Why and How Traveling Can Help Us Become Better Human Beings",
+    "correct_topic_name": "Travel and Personal Growth: Why & How Traveling Can Help Us Become Better Human Beings",
+    "correct_doc_id": "1WIrVD28lvedJ8Dm8BdiYeibK7E2iFGvBK_NQAVCag00",
+    "created_at": "2026-10-02T18:59:42.377789Z"
+  },
+  {
+    "id": "5d92111e-5dfe-464b-bb93-26fb0758628c",
+    "normalized_topic": "meet the entrepreneurs pushing the boundaries of ai",
+    "original_topic": "Meet the Entrepreneurs Pushing the Boundaries of AI",
+    "correct_topic_name": "Meet the Entrepreneurs Pushing the Boundaries of AI",
+    "correct_doc_id": "1js--taJcQcbKBAocZzKclahuNjHiW0WF9ant9P3jE28",
+    "created_at": "2026-10-02T18:59:42.400627Z"
+  },
+  {
+    "id": "f6ba189b-dadc-4656-91c7-61821f0138c6",
+    "normalized_topic": "5 things i wish someone told me about starting or winding down a business",
+    "original_topic": "5 things I wish someone told me about starting (or winding down) a business",
+    "correct_topic_name": "Five Things I Wish Someone Told Me When I First Launched My Business or Startup",
+    "correct_doc_id": "1Ck6SJBSimdyDM-eEuTK_gNXT6rSUJ_6lAEWzd9fdT8Y",
+    "created_at": "2026-10-29T15:52:13.548543Z"
   }
 ]

@@ -736,9 +736,9 @@ class CorrectionTracker:
         # Pattern: "by Name" or "with Name"
         normalized = re.sub(r'\b(by|with|from)\s+[a-z]+(\s+[a-z]+)?\s+', ' ', normalized)
         
-        # Remove single capitalized-word-looking tokens (likely names) 
-        # when followed by common words
-        normalized = re.sub(r'\b[a-z]+\s+(of|on|about|discusses|shares|talks)\b', r' \1', normalized)
+        # Remove single-word tokens only when followed by conversational verbs (discusses, shares, talks),
+        # NEVER before prepositions like 'of', 'on', or 'about' which are vital parts of topics like 'Guardians of AI'.
+        normalized = re.sub(r'\b[a-z]+\s+(discusses|shares|talks)\b', r' \1', normalized)
         
         # Remove punctuation except spaces
         normalized = re.sub(r'[^a-z0-9\s]', ' ', normalized)
@@ -783,12 +783,15 @@ class CorrectionTracker:
         # 2. Pattern-based matching (handles name variations)
         input_pattern = self._extract_topic_pattern(extracted_topic)
         input_tokens = set(input_pattern.split())
+        pattern_stopwords = {'the', 'a', 'an', 'of', 'in', 'on', 'to', 'for', 'and', 'or', 'is', 'at', 'by', 'from', 'with', 'about', 'how', 'why', 'what', 'when', 'where', 'who'}
+        input_content_tokens = input_tokens - pattern_stopwords
         
         # Also check for key topic indicators
         input_lower = extracted_topic.lower()
         
         best_match = None
         best_score = 0
+        best_content_similarity = 0.0
         near_misses = []  # Track close-but-not-enough matches for debugging
         
         for rule in rules:
@@ -798,8 +801,27 @@ class CorrectionTracker:
             
             if not rule_tokens:
                 continue
+
+            rule_content_tokens = rule_tokens - pattern_stopwords
+            shared_content = input_content_tokens & rule_content_tokens
+
+            # Substantive content word guard:
+            # Require at least 2 shared substantive content words,
+            # unless both strings have exactly 1 content word and match 100%.
+            # Never allow sharing a single word like 'ai' to trigger learned_pattern!
+            is_single_word_exact = (len(input_content_tokens) == 1 and len(rule_content_tokens) == 1 and input_content_tokens == rule_content_tokens)
+            if len(shared_content) < 2 and not is_single_word_exact:
+                continue
+
+            # Jaccard similarity on content tokens
+            content_union = input_content_tokens | rule_content_tokens
+            if not content_union:
+                continue
+            content_similarity = len(shared_content) / len(content_union)
+            if content_similarity < 0.75:
+                continue
             
-            # Jaccard similarity on pattern tokens
+            # Jaccard similarity on pattern tokens (full)
             intersection = input_tokens & rule_tokens
             union = input_tokens | rule_tokens
             
@@ -840,14 +862,14 @@ class CorrectionTracker:
                 # These topics are fundamentally different even if they share the same
                 # "5 Things I Wish..." template. Cut the score to prevent false matches.
                 similarity = similarity * 0.5
-
             
             # Track near-misses for debug logging
-            if 0.60 <= similarity < 0.80:
+            if 0.60 <= similarity < 0.85:
                 near_misses.append((similarity, rule_original, rule.get("correct_topic_name", "")))
             
             if similarity > best_score:
                 best_score = similarity
+                best_content_similarity = content_similarity
                 best_match = rule
         
         # Log near-misses so we can tune the threshold if needed
@@ -856,8 +878,8 @@ class CorrectionTracker:
             for score, orig, correct in sorted(near_misses, reverse=True)[:3]:
                 logger.debug(f"  {score:.0%} '{orig[:50]}' -> '{correct[:50]}'")
         
-        # Require 80% similarity for pattern match (much stricter to avoid false positives)
-        if best_match and best_score >= 0.80:
+        # Require content_similarity >= 0.75 AND best_score >= 0.85 for pattern match
+        if best_match and best_score >= 0.85 and best_content_similarity >= 0.75:
             logger.info(f"Learned rule matched (pattern {best_score:.0%}): '{extracted_topic}' -> '{best_match.get('correct_topic_name')}'")
             return {
                 "topic_name": best_match.get("correct_topic_name"),

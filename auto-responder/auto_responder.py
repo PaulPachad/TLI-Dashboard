@@ -435,7 +435,12 @@ class AutoResponder:
             r'thank\s+you\s+very\s+much',
             r'really\s+appreciate\s+it',
             r'thank\s*s?\s*(you)?\s*for\s*(the|an)?\s*exten[st]ion',
-            r'thank\s*s?\s*(you)?\s*for\s*(the|an)?\s*acceptance'
+            r'thank\s*s?\s*(you)?\s*for\s*(the|an)?\s*acceptance',
+            r'we\s+will\s+work\s+on\s+this',
+            r'will\s+work\s+on\s+(this|it)',
+            r'working\s+on\s+(this|it)',
+            r'we\s+are\s+on\s+it',
+            r'look\s+forward\s+to\s+working'
         ]
 
         # If it's a very short message (under 300 chars) we check if the primary sentence matches
@@ -968,17 +973,50 @@ class AutoResponder:
             
             new_count = 0
             skipped_count = 0
+            seen_threads = set()
             for msg in messages:
                 # Get thread ID for this message
                 msg_details = self.gmail.get_message_details(msg['id'])
                 thread_id = msg_details.get('threadId') if msg_details else None
                 
+                # Deduplicate messages within the same thread in this run
+                if thread_id:
+                    if thread_id in seen_threads:
+                        continue
+                    seen_threads.add(thread_id)
+
                 # Check if this thread already has a draft - skip if so
                 if thread_id and self.gmail.thread_has_draft(thread_id):
                     logger.info(f"Skipping (already has draft): {msg['subject'][:50]}")
                     skipped_count += 1
                     continue
-                
+
+                # Check if an acceptance email was already sent in this thread
+                if thread_id and self.gmail.thread_already_replied(thread_id):
+                    # Fetch thread to check the latest message
+                    thread_data = self.gmail.get_thread(thread_id)
+                    thread_msgs = thread_data.get('messages', []) if thread_data else []
+                    latest_msg = thread_msgs[-1] if thread_msgs else None
+                    
+                    if latest_msg:
+                        latest_content = self.gmail.get_message_content(latest_msg['id']) or ''
+                        latest_details = self.gmail.get_message_details(latest_msg['id'])
+                        latest_subj = latest_details.get('subject', '') if latest_details else msg['subject']
+                        
+                        is_ext = self._is_extension_request(latest_subj, latest_content)
+                        parsed = PitchParser.parse_pitch(latest_content, latest_subj, latest_details.get('sender', '') if latest_details else '')
+                        is_new_pitch = parsed.is_pitch_form
+                        
+                        if not (is_ext or is_new_pitch):
+                            logger.info(f"Skipping (thread already accepted and replied): {msg['subject'][:50]}")
+                            skipped_count += 1
+                            continue
+                        elif latest_msg['id'] != msg['id']:
+                            msg['id'] = latest_msg['id']
+                            msg['subject'] = latest_subj
+                            if latest_details and latest_details.get('sender'):
+                                msg['sender'] = latest_details['sender']
+
                 # New unprocessed pitch!
                 success = self.process_pitch(
                     msg_id=msg['id'],
