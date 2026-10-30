@@ -22,7 +22,6 @@ const STORAGE_KEY_COLLAPSED = "tli-readiness-checklist-collapsed-v1";
 export function OnboardingChecklist({ readiness }: OnboardingChecklistProps) {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [isDismissed, setIsDismissed] = useState<boolean>(false);
-  const [mounted, setMounted] = useState(false);
 
   // Calculate completed count
   const steps = [
@@ -76,10 +75,13 @@ export function OnboardingChecklist({ readiness }: OnboardingChecklistProps) {
   const allComplete = completedCount === steps.length;
 
   useEffect(() => {
-    setMounted(true);
-    const storedCollapsed = localStorage.getItem(STORAGE_KEY_COLLAPSED);
-    if (storedCollapsed === "true" || (storedCollapsed === null && allComplete)) {
-      setIsCollapsed(true);
+    try {
+      const storedCollapsed = localStorage.getItem(STORAGE_KEY_COLLAPSED);
+      if (storedCollapsed === "true" || (storedCollapsed === null && allComplete)) {
+        setIsCollapsed(true);
+      }
+    } catch {
+      // localStorage fallback
     }
   }, [allComplete]);
 
@@ -102,7 +104,7 @@ export function OnboardingChecklist({ readiness }: OnboardingChecklistProps) {
     }
   };
 
-  if (!mounted || isDismissed) {
+  if (isDismissed) {
     return null;
   }
 
