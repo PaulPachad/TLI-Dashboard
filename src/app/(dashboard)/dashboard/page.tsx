@@ -1,4 +1,5 @@
 import { DashboardPanels } from "@/components/dashboard/dashboard-panels";
+import { OnboardingChecklist, type ReadinessState } from "@/components/dashboard/onboarding-checklist";
 import { SyncButton } from "@/components/dashboard/sync-button";
 import { requireAuth } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
@@ -8,28 +9,87 @@ import type { Event, Topic } from "@prisma/client";
 export default async function DashboardHomePage() {
   const user = await requireAuth();
 
-  // Fetch topics and events for this client
+  // Fetch topics, events, and account readiness for this client
   let topics: Topic[] = [];
   let events: Event[] = [];
   let authorityColumnUrl: string | null = null;
-  
+  let readinessState: ReadinessState = {
+    hasSheetConnected: false,
+    hasEmailConfigured: false,
+    hasSchedulingConfigured: false,
+    hasFirstOutreachSent: false,
+    isAdmin: user.role === UserRole.ADMIN,
+    isClient: Boolean(user.clientId),
+    clientId: user.clientId || null,
+  };
+
   if (user.clientId) {
-    authorityColumnUrl = await getClientAuthorityColumnUrl(user.clientId);
-    topics = await db.topic.findMany({
-      where: { clientId: user.clientId },
-      orderBy: { createdAt: "desc" },
-    });
-    events = await db.event.findMany({
-      where: { clientId: user.clientId },
-      orderBy: { createdAt: "desc" },
-    });
+    const [authColUrl, topList, evList, clientData, sheetCount, interviewCount, actionCount] =
+      await Promise.all([
+        getClientAuthorityColumnUrl(user.clientId),
+        db.topic.findMany({
+          where: { clientId: user.clientId },
+          orderBy: { createdAt: "desc" },
+        }),
+        db.event.findMany({
+          where: { clientId: user.clientId },
+          orderBy: { createdAt: "desc" },
+        }),
+        db.client.findUnique({
+          where: { id: user.clientId },
+          select: { replyToEmail: true, signature: true, schedulingLink: true },
+        }),
+        db.sheetSource.count({ where: { clientId: user.clientId } }),
+        db.interview.count({ where: { clientId: user.clientId } }),
+        db.action.count({
+          where: {
+            clientId: user.clientId,
+            status: "SUCCESS",
+            actionType: {
+              in: [
+                "LIVE_EMAIL_SENT",
+                "ZOOM_INVITE_SENT",
+                "LINKEDIN_POST_GENERATED",
+                "MARKED_SHARED",
+                "SOCIAL_IMAGE_GENERATED",
+              ],
+            },
+          },
+        }),
+      ]);
+
+    authorityColumnUrl = authColUrl;
+    topics = topList;
+    events = evList;
+
+    readinessState = {
+      hasSheetConnected: sheetCount > 0 || interviewCount > 0,
+      hasEmailConfigured: Boolean(clientData?.replyToEmail || clientData?.signature),
+      hasSchedulingConfigured: Boolean(clientData?.schedulingLink),
+      hasFirstOutreachSent: actionCount > 0,
+      isAdmin: false,
+      isClient: true,
+      clientId: user.clientId,
+    };
   } else if (user.role === UserRole.ADMIN) {
-    topics = await db.topic.findMany({
-      orderBy: { createdAt: "desc" },
-    });
-    events = await db.event.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+    const [topList, evList, sheetCount, interviewCount, actionCount] = await Promise.all([
+      db.topic.findMany({ orderBy: { createdAt: "desc" } }),
+      db.event.findMany({ orderBy: { createdAt: "desc" } }),
+      db.sheetSource.count(),
+      db.interview.count(),
+      db.action.count({ where: { status: "SUCCESS" } }),
+    ]);
+    topics = topList;
+    events = evList;
+    readinessState = {
+      hasSheetConnected: sheetCount > 0 || interviewCount > 0,
+      hasEmailConfigured: true,
+      hasSchedulingConfigured: true,
+      hasFirstOutreachSent: actionCount > 0,
+      isAdmin: true,
+      isClient: false,
+      clientId: null,
+    };
   }
 
   return (
@@ -73,6 +133,10 @@ export default async function DashboardHomePage() {
         </div>
       </div>
 
+      {/* Account Readiness & Quick Start Checklist */}
+      <OnboardingChecklist readiness={readinessState} />
+
+      {/* Dashboard Panels (Interviews, Topics, Events, Tutorial) */}
       <DashboardPanels topics={topics} events={events} />
     </div>
   );

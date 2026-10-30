@@ -80,6 +80,61 @@ export async function GET(
     const user = await requireApiAuth();
     const { id } = await params;
 
+    if (id === "demo") {
+      const demoInterview = {
+        id: "demo",
+        clientId: user.clientId || "demo-client",
+        intervieweeName: "Sarah Jenkins",
+        intervieweeCompany: "NovaScale AI",
+        intervieweeTitle: "CEO & Co-Founder",
+        intervieweeEmail: "sarah.jenkins@novascale.ai",
+        publicistName: "Marcus Vance",
+        publicistEmail: "marcus@vancepr.com",
+        topic: "The Future of Ethical Enterprise AI in 2026",
+        articleUrl: "https://medium.com/authority-magazine/the-future-of-ethical-enterprise-ai-sarah-jenkins-novascale-demo",
+        image1Url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800",
+        image2Url: null,
+        client: {
+          name: "Thought Leader",
+          email: user.email || "client@authoritymag.co",
+          signature: "Best regards,\nThought Leader",
+          linkedinUrl: "https://linkedin.com",
+          schedulingLink: "https://calendly.com/demo",
+          defaultSignoff: "Warmly",
+          defaultHashtags: "#AuthorityMagazine #ThoughtLeadership #AI #Leadership",
+          replyToEmail: user.email || "client@authoritymag.co",
+        },
+        actions: [],
+      };
+      return NextResponse.json({
+        interview: demoInterview,
+        recipient: "sarah.jenkins@novascale.ai",
+        liveEmail: {
+          to: "sarah.jenkins@novascale.ai",
+          cc: "marcus@vancepr.com",
+          subject: "Your interview in Authority Magazine is live!",
+          body: "Hi Sarah,\n\nIt was such a pleasure featuring you in Authority Magazine! Here is the live link to your feature: https://medium.com/authority-magazine/the-future-of-ethical-enterprise-ai-sarah-jenkins-novascale-demo\n\nWarmly,\nThought Leader",
+        },
+        zoomInvite: {
+          to: "sarah.jenkins@novascale.ai",
+          cc: "marcus@vancepr.com",
+          subject: "Follow-up Zoom interview for your Authority Magazine feature",
+          body: "Hi Sarah,\n\nYour feature received fantastic feedback! Would love to invite you for a 15-minute Zoom chat to discuss your latest initiatives.\n\nBook a quick time here: https://calendly.com/demo\n\nWarmly,\nThought Leader",
+        },
+        linkedin: {
+          postText: "Excited to share my interview with Sarah Jenkins, CEO of NovaScale AI! We explored the future of ethical enterprise AI and what leaders need to prepare for. Read the full feature on Authority Magazine: https://medium.com/authority-magazine/the-future-of-ethical-enterprise-ai-sarah-jenkins-novascale-demo #AuthorityMagazine #AI #Leadership",
+          variations: [
+            "Excited to share my interview with Sarah Jenkins, CEO of NovaScale AI! We explored the future of ethical enterprise AI and what leaders need to prepare for. Read the full feature on Authority Magazine: https://medium.com/authority-magazine/the-future-of-ethical-enterprise-ai-sarah-jenkins-novascale-demo #AuthorityMagazine #AI #Leadership",
+            "Had an insightful conversation with Sarah Jenkins on ethical enterprise scaling. Catch the full interview on Authority Magazine: https://medium.com/authority-magazine/the-future-of-ethical-enterprise-ai-sarah-jenkins-novascale-demo #Leadership #Interview",
+          ],
+        },
+        articleTitle: "The Future of Ethical Enterprise AI With Sarah Jenkins",
+        demoMode: true,
+        emailConfigured: true,
+        schedulingConfigured: true,
+      });
+    }
+
     const interview = await db.interview.findUnique({
       where: { id },
       select: actionInterviewSelect,
@@ -174,6 +229,14 @@ export async function POST(
   try {
     const user = await requireApiAuth();
     const { id } = await params;
+
+    if (id === "demo") {
+      return NextResponse.json({
+        success: true,
+        simulated: true,
+        message: "Sample action simulated successfully on demo card!",
+      });
+    }
 
     // Fetch the interview details
     const interview = await db.interview.findUnique({
@@ -732,4 +795,89 @@ async function checkEmailRateLimit(
   }
 
   return null;
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await requireApiAuth();
+    const { id } = await params;
+
+    if (id === "demo") {
+      const body = await request.json().catch(() => ({}));
+      const email = (body.intervieweeEmail || body.email || "sarah.jenkins@novascale.ai").trim().toLowerCase();
+      return NextResponse.json({
+        success: true,
+        interview: {
+          id: "demo",
+          intervieweeEmail: email,
+        },
+      });
+    }
+
+    const body = await request.json();
+    const intervieweeEmail = (body.intervieweeEmail || body.email || "").trim().toLowerCase();
+
+    if (!intervieweeEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(intervieweeEmail)) {
+      return NextResponse.json(
+        { error: "Please enter a valid email address." },
+        { status: 400 }
+      );
+    }
+
+    const interview = await db.interview.findUnique({
+      where: { id },
+      select: { id: true, clientId: true },
+    });
+
+    if (!interview) {
+      return NextResponse.json(
+        { error: "Interview not found." },
+        { status: 404 }
+      );
+    }
+
+    if (user.role !== "ADMIN" && user.clientId !== interview.clientId) {
+      return NextResponse.json(
+        { error: "Access denied." },
+        { status: 403 }
+      );
+    }
+
+    const updated = await db.interview.update({
+      where: { id },
+      data: { intervieweeEmail },
+      select: {
+        id: true,
+        intervieweeEmail: true,
+        publicistName: true,
+        publicistEmail: true,
+      },
+    });
+
+    await db.action.create({
+      data: {
+        clientId: interview.clientId,
+        interviewId: id,
+        actionType: "CONTACT_INFO_UPDATED",
+        status: "SUCCESS",
+        note: `Updated guest email to ${intervieweeEmail}`,
+        createdByUserId: user.id,
+      },
+    });
+
+    return NextResponse.json({ success: true, interview: updated });
+  } catch (error: unknown) {
+    const err = error as { status?: number; message?: string };
+    if (err.status) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    console.error("Error in PATCH interview email:", error);
+    return NextResponse.json(
+      { error: "Failed to update guest email." },
+      { status: 500 }
+    );
+  }
 }

@@ -115,20 +115,33 @@ export function SyncButton() {
       {error && (
         <div
           role="alert"
-          className="max-w-[300px] rounded-md border border-rose-100 bg-rose-50 px-2 py-1 text-right text-xs text-rose-700"
+          className="max-w-[320px] rounded-md border border-rose-100 bg-rose-50 px-3 py-2 text-right text-xs text-rose-700 shadow-sm"
         >
           <p className="font-semibold">{error}</p>
-          <p className="mt-1 text-rose-600">
-            Check sheet sharing, column mapping, and network access, then try again.
-          </p>
-          <button
-            type="button"
-            onClick={handleSync}
-            disabled={syncing}
-            className="mt-2 rounded border border-rose-200 bg-white px-2 py-1 font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
-          >
-            Retry sync
-          </button>
+          {error.toLowerCase().includes("no google sheet") ? (
+            <div className="mt-2 text-right">
+              <a
+                href="/dashboard/settings#sheet-import"
+                className="inline-flex items-center gap-1 font-semibold text-indigo-700 hover:text-indigo-900 underline"
+              >
+                Go to Settings to link your Google Sheet →
+              </a>
+            </div>
+          ) : (
+            <>
+              <p className="mt-1 text-rose-600">
+                Check sheet sharing, column mapping, and network access, then try again.
+              </p>
+              <button
+                type="button"
+                onClick={handleSync}
+                disabled={syncing}
+                className="mt-2 rounded border border-rose-200 bg-white px-2 py-1 font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+              >
+                Retry sync
+              </button>
+            </>
+          )}
         </div>
       )}
       {!error && syncing && (

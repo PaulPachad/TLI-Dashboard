@@ -48,6 +48,14 @@ export async function POST(
     const user = await requireApiAuth();
     const { id } = await params;
 
+    if (id === "demo") {
+      return NextResponse.json({
+        success: true,
+        note: "VIP credentials & talking points refreshed for Sarah Jenkins (Sample Demo Card).",
+        simulated: true,
+      });
+    }
+
     const interview = await db.interview.findUnique({
       where: { id },
       select: researchableInterviewSelect,

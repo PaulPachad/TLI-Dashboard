@@ -16,16 +16,17 @@ import type {
 
 interface InterviewGridProps {
   clientId?: string;
+  onStartTour?: () => void;
 }
 
 const STATUS_FILTERS = [
   { value: "all", label: "All" },
   { value: "upcoming", label: "Upcoming" },
-  { value: "new", label: "New" },
-  { value: "needs_contact", label: "Needs Contact" },
+  { value: "new", label: "Ready for Outreach" },
+  { value: "needs_contact", label: "Missing Email" },
   { value: "email_sent", label: "Email Sent" },
   { value: "shared", label: "Shared" },
-  { value: "leveraged", label: "Leveraged" },
+  { value: "leveraged", label: "All Complete" },
   { value: "dismissed", label: "Dismissed" },
 ];
 
@@ -83,7 +84,123 @@ interface InterviewPagination {
 
 type DetailFocusTarget = "sources";
 
-export function InterviewGrid({ clientId }: InterviewGridProps) {
+const SAMPLE_DEMO_INTERVIEW: InterviewView = {
+  id: "demo",
+  intervieweeName: "Sarah Jenkins",
+  intervieweeCompany: "NovaScale AI",
+  intervieweeTitle: "CEO & Co-Founder",
+  intervieweeEmail: "sarah.jenkins@novascale.ai",
+  publicistName: "Marcus Vance",
+  publicistEmail: "marcus@vancepr.com",
+  topic: "The Future of Ethical Enterprise AI in 2026",
+  articleUrl: "https://medium.com/authority-magazine/the-future-of-ethical-enterprise-ai-sarah-jenkins-novascale-demo",
+  buzzfeedUrl: null,
+  interviewDocUrl: null,
+  image1Url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800",
+  image2Url: null,
+  videoUrl: null,
+  linkedinUrl: "https://linkedin.com/in/sarahjenkins-demo",
+  twitterUrl: "https://twitter.com/sarahjenkins_ai",
+  estimatedPublishDate: null,
+  liveEmailStatusImported: "LIVE",
+  currentStatus: "new",
+  nextAction: "send_live_email",
+  nextActionLabel: "Send Live Link Email",
+  actionSummary: {
+    liveEmailSent: false,
+    linkedinGenerated: false,
+    socialImageGenerated: false,
+    markedShared: false,
+    zoomInviteSent: false,
+  },
+  actions: [
+    {
+      id: "demo-act-1",
+      actionType: "PROMINENCE_RESEARCHED",
+      status: "SUCCESS",
+      createdAt: new Date().toISOString(),
+      note: "Executive VIP signals verified via Google Search & Gemini Flash",
+    },
+  ],
+  prominence: {
+    score: 94,
+    tier: "elite",
+    tierLabel: "Tier 1: Elite VIP",
+    confidence: "high",
+    badges: [
+      { label: "CEO / Founder", tone: "violet" },
+      { label: "125K+ Audience", tone: "sky" },
+      { label: "$28M ARR", tone: "emerald" },
+    ],
+    reasons: [
+      "Keynote enterprise AI speaker",
+      "125,000+ LinkedIn network",
+      "Series B B2B enterprise founder",
+    ],
+    frontFlag: {
+      label: "Tier 1: Elite VIP",
+      tone: "violet",
+      reason: "High notability CEO & speaker",
+    },
+    signalGroups: {
+      exceptional: [
+        {
+          label: "Role",
+          tone: "violet",
+          value: "CEO & Co-Founder",
+          detail: "Keynote speaker at TechCrunch Disrupt & SaaStr",
+        },
+      ],
+      audience: [
+        {
+          label: "LinkedIn",
+          tone: "sky",
+          value: "125,000+ Followers",
+          detail: "Top Voice in Artificial Intelligence & Leadership",
+        },
+      ],
+      company: [
+        {
+          label: "Employees",
+          tone: "emerald",
+          value: "250-500",
+          detail: "High-growth enterprise B2B platform",
+        },
+        {
+          label: "Revenue",
+          tone: "emerald",
+          value: "$28M ARR",
+          detail: "Reported Series B valuation $180M",
+        },
+      ],
+      context: [
+        {
+          label: "Accolades",
+          tone: "slate",
+          value: "Forbes 30 Under 30",
+          detail: "Enterprise Tech Class of 2023",
+        },
+      ],
+    },
+    hasAnySignals: true,
+    evidenceSummary:
+      "Public LinkedIn and Crunchbase profiles show significant executive notability and enterprise footprint.",
+    evidenceSources: [
+      {
+        title: "LinkedIn Executive Profile",
+        summary: "125,000+ followers and regular thought leadership posts.",
+        url: "https://linkedin.com/in/sarahjenkins-demo",
+      },
+      {
+        title: "TechCrunch Enterprise Coverage",
+        summary: "NovaScale AI raises $32M Series B for ethical AI workflows.",
+        url: "https://techcrunch.com/demo",
+      },
+    ],
+  },
+};
+
+export function InterviewGrid({ clientId, onStartTour }: InterviewGridProps) {
   const [interviews, setInterviews] = useState<InterviewView[]>([]);
   const [pagination, setPagination] = useState<InterviewPagination | null>(null);
   const [loading, setLoading] = useState(true);
@@ -111,6 +228,34 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
   const quietScanRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // --- Dismissed cards state (localStorage) ---
+  const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
+  const [showSampleCard, setShowSampleCard] = useState(true);
+
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem("tli-welcome-seen-v1");
+      if (!seen) {
+        setShowWelcomeBanner(true);
+      }
+    } catch {
+      // localStorage unavailable
+    }
+  }, []);
+
+  const handleDismissWelcome = () => {
+    setShowWelcomeBanner(false);
+    try {
+      localStorage.setItem("tli-welcome-seen-v1", "true");
+    } catch {
+      // localStorage fallback
+    }
+  };
+
+  const handleStartTourWelcome = () => {
+    handleDismissWelcome();
+    onStartTour?.();
+  };
+
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -447,7 +592,7 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
     return getProminenceSortScore(b) - getProminenceSortScore(a);
   });
   const activeDetailInterview = activeDetail
-    ? interviews.find((interview) => interview.id === activeDetail.interviewId)
+    ? (activeDetail.interviewId === "demo" ? SAMPLE_DEMO_INTERVIEW : interviews.find((interview) => interview.id === activeDetail.interviewId))
     : null;
 
   return (
@@ -487,19 +632,54 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
           </div>
         </div>
       )}
+      {/* First-Visit Welcome Banner */}
+      {showWelcomeBanner && (
+        <div className="rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-600 via-indigo-700 to-sky-600 p-5 text-white shadow-md">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🚀</span>
+                <h3 className="text-base font-bold text-white">
+                  Welcome to Your Authority Magazine Leverage Dashboard!
+                </h3>
+              </div>
+              <p className="text-xs text-indigo-100 max-w-xl leading-relaxed">
+                Turn every published interview into lifelong VIP relationships, warm follow-up Zoom meetings, and executive social proof in 5 simple steps.
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={handleStartTourWelcome}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3.5 py-2 text-xs font-bold text-indigo-700 shadow-sm hover:bg-indigo-50 active:scale-95 transition-all"
+              >
+                <span>Take 45-Second Tour 🚀</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDismissWelcome}
+                className="rounded-lg border border-white/30 bg-white/10 px-2.5 py-2 text-xs font-semibold text-white hover:bg-white/20 transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats bar */}
       <div
         data-tour="interview-stats"
         className="grid grid-cols-2 lg:grid-cols-6 gap-4"
       >
-        <StatCard label="Total Interviews" value={stats.total} color="indigo" />
-        <StatCard label="Upcoming" value={stats.upcoming} color="sky" />
-        <StatCard label="Needs Action" value={stats.needsAction} color="amber" />
-        <StatCard label="Fully Leveraged" value={stats.leveraged} color="emerald" />
-        <StatCard label="Needs Contact" value={stats.needsContact} color="rose" />
-        <StatCard label="Signals Found" value={stats.signalsFound} color="violet" />
+        <StatCard label="Total Interviews" value={stats.total} color="indigo" tooltip="All imported features and upcoming pipeline items" />
+        <StatCard label="Upcoming" value={stats.upcoming} color="sky" tooltip="Scheduled or in editorial production" />
+        <StatCard label="Ready for Outreach" value={stats.needsAction} color="amber" tooltip="Live interviews ready for email outreach or LinkedIn promotion" />
+        <StatCard label="All Steps Complete" value={stats.leveraged} color="emerald" tooltip="All 5 leverage and outreach steps completed" />
+        <StatCard label="Missing Guest Email" value={stats.needsContact} color="rose" tooltip="Interviews missing guest or publicist email addresses" />
+        <StatCard label="VIP Guests Identified" value={stats.signalsFound} color="violet" tooltip="Guests with notable audience, company size, or executive credentials" />
         {dismissedCount > 0 && (
-          <StatCard label="Dismissed" value={dismissedCount} color="slate" />
+          <StatCard label="Dismissed" value={dismissedCount} color="slate" tooltip="Interviews hidden from the active view" />
         )}
       </div>
 
@@ -639,18 +819,93 @@ export function InterviewGrid({ clientId }: InterviewGridProps) {
 
       {/* Empty state */}
       {!loading && !error && interviews.length === 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+        <div className="bg-white rounded-xl border border-slate-200 p-8 sm:p-12 text-center shadow-xs">
           <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <svg className="w-8 h-8 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">No interviews yet</h3>
-          <p className="text-slate-500 max-w-sm mx-auto">
+          <h3 className="text-lg font-bold text-slate-900 mb-2">No interviews imported yet</h3>
+          <p className="text-slate-500 max-w-md mx-auto text-sm leading-relaxed mb-6">
             {search || topicFilter
-              ? "No interviews match the selected filters. Try a different search or topic."
-              : "No interviews have been imported yet. Use the Google Sheet importer above to add them."}
+              ? "No interviews match the selected filters. Try a different search term or topic filter."
+              : "Connect your Authority Magazine Google Sheet in settings to automatically sync all your published features, VIP talking points, and upcoming articles."}
           </p>
+          {!search && !topicFilter && (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a
+                href="/dashboard/settings#sheet-import"
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors"
+              >
+                <span>Link Google Sheet in Settings →</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => setShowSampleCard(true)}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                <span>Explore Sample Demo Card ↓</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Interactive Sample Demo Interview Card when empty */}
+      {!loading && !error && interviews.length === 0 && !search && !topicFilter && (
+        <div className="space-y-4 pt-2">
+          <div className="flex items-center justify-between rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 px-4 py-3 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-white text-xs font-bold shadow-2xs">
+                ★
+              </span>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-indigo-900">
+                  SAMPLE DEMO CARD — Try flipping, researching, or previewing emails &amp; graphics!
+                </p>
+                <p className="text-xs text-indigo-700">
+                  Experience full 5-step outreach workflows before your Google Sheet is connected.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSampleCard(!showSampleCard)}
+              className="text-xs font-semibold text-indigo-700 hover:text-indigo-900 underline shrink-0"
+            >
+              {showSampleCard ? "Hide Sample Card" : "Show Sample Card"}
+            </button>
+          </div>
+
+          {showSampleCard && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <InterviewCard
+                interview={SAMPLE_DEMO_INTERVIEW}
+                isDemoCard={true}
+                onAction={(id, action) => {
+                  setActiveInterviewId(id);
+                  setActiveAction(action);
+                }}
+                onResearchProminence={researchProminence}
+                onViewDetails={(id, options) =>
+                  setActiveDetail({
+                    interviewId: id,
+                    focus: options?.focus,
+                  })
+                }
+                researchingProminence={researchingId === "demo"}
+                researchDisabled={researchingId !== null && researchingId !== "demo"}
+                researchFeedback={
+                  researchFeedback?.interviewId === "demo"
+                    ? {
+                        tone: researchFeedback.tone,
+                        message: researchFeedback.message,
+                      }
+                    : undefined
+                }
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -843,10 +1098,12 @@ function StatCard({
   label,
   value,
   color,
+  tooltip,
 }: {
   label: string;
   value: number;
   color: string;
+  tooltip?: string;
 }) {
   const colorClasses: Record<string, string> = {
     indigo: "bg-indigo-50 text-indigo-700 border-indigo-200",
@@ -859,7 +1116,7 @@ function StatCard({
   };
 
   return (
-    <div className={`rounded-xl border p-4 ${colorClasses[color] || colorClasses.indigo}`}>
+    <div title={tooltip} className={`rounded-xl border p-4 ${colorClasses[color] || colorClasses.indigo} transition-all hover:shadow-xs`}>
       <p className="text-2xl font-bold">{value}</p>
       <p className="text-xs font-medium opacity-75 mt-0.5">{label}</p>
     </div>

@@ -92,7 +92,10 @@ export function DashboardPanels({ topics, events }: DashboardPanelsProps) {
       <div className="relative w-full min-h-[600px] [perspective:8000px] [perspective-origin:center_center]">
         <AnimatePresence mode="wait" custom={direction}>
           {activePanel === "interviews" &&
-            renderPanel("interviews", <InterviewGrid />)}
+            renderPanel(
+              "interviews",
+              <InterviewGrid onStartTour={() => setTourSignal((value) => value + 1)} />
+            )}
 
           {activePanel === "topics" &&
             renderPanel("topics", <TopicsGrid topics={topics} />)}

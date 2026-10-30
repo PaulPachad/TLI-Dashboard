@@ -355,7 +355,7 @@ export default function SettingsPage() {
 
       {/* Google Sheet Import — only for CLIENT users */}
       {isClient && (session?.user as { clientId?: string })?.clientId && (
-        <div className="animate-slide-up" style={{ animationDelay: '100ms' }}>
+        <div id="sheet-import" className="animate-slide-up scroll-mt-6" style={{ animationDelay: '100ms' }}>
           <h2 className="text-lg font-semibold text-slate-900 mb-1">Google Sheet</h2>
           <p className="text-sm text-slate-500 mb-4">
             Link your Authority Magazine interview spreadsheet to import and sync your data.
