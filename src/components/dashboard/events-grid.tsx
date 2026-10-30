@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Event } from "@prisma/client";
 import { buildEventOutreachEmailBody } from "@/lib/email/copy";
 
@@ -52,8 +53,14 @@ export function EventsGrid({ events }: { events: Event[] }) {
         data-tour="events-controls"
         className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-slate-500"
       >
-        <p>No upcoming events.</p>
-        <p className="text-sm">Events will appear here once synced.</p>
+        <p className="font-medium text-slate-700">No upcoming events found.</p>
+        <p className="text-sm mt-1">Events will appear here once your Google Sheet is linked and synced.</p>
+        <Link
+          href="/dashboard/settings#topics-sheet"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
+        >
+          Connect Topics &amp; Events Sheet in Settings &rarr;
+        </Link>
       </div>
     );
   }
@@ -411,10 +418,44 @@ function EventOutreachModal({
     [event.contactInfo]
   );
   const [recipients, setRecipients] = useState(defaultRecipients);
+  const [cc, setCc] = useState("");
   const [subject, setSubject] = useState(`Press opportunities for ${event.eventName}`);
   const [body, setBody] = useState(buildEventOutreachEmailBody(event));
   const [sending, setSending] = useState(false);
+  const [testSending, setTestSending] = useState(false);
+  const [testSuccessBanner, setTestSuccessBanner] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleSendTest() {
+    try {
+      setTestSending(true);
+      setError(null);
+      setTestSuccessBanner(null);
+
+      const response = await fetch(`/api/outreach/events/${event.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipients: recipients.trim() || undefined,
+          cc: cc.trim() || undefined,
+          subject,
+          body,
+          isTest: true,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Could not send test email.");
+      }
+      setTestSuccessBanner(
+        data.note || `Test email preview sent${data.sentTo ? ` to ${data.sentTo}` : ""}. Check your inbox!`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send test email.");
+    } finally {
+      setTestSending(false);
+    }
+  }
 
   async function handleSubmit(formEvent: React.FormEvent) {
     formEvent.preventDefault();
@@ -425,7 +466,12 @@ function EventOutreachModal({
       const response = await fetch(`/api/outreach/events/${event.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipients, subject, body }),
+        body: JSON.stringify({
+          recipients,
+          cc: cc.trim() || undefined,
+          subject,
+          body,
+        }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -471,6 +517,18 @@ function EventOutreachModal({
         </div>
 
         <div className="space-y-4 p-5">
+          {testSuccessBanner && (
+            <div role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 flex items-center justify-between">
+              <span>✉ {testSuccessBanner}</span>
+              <button
+                type="button"
+                onClick={() => setTestSuccessBanner(null)}
+                className="text-xs font-semibold text-emerald-700 hover:underline ml-2"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
           {error && (
             <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
               {error}
@@ -486,6 +544,17 @@ function EventOutreachModal({
               value={recipients}
               onChange={(eventChange) => setRecipients(eventChange.target.value)}
               placeholder="contact@example.com, press@example.com"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-slate-500">
+              CC (Optional)
+            </label>
+            <input
+              value={cc}
+              onChange={(e) => setCc(e.target.value)}
+              placeholder="colleague@example.com"
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
             />
           </div>
@@ -514,21 +583,38 @@ function EventOutreachModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 px-5 py-4">
+        <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-5 py-4">
           <button
             type="button"
-            onClick={onClose}
-            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-white"
+            disabled={testSending || sending}
+            onClick={handleSendTest}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50"
           >
-            Cancel
+            {testSending ? (
+              <>
+                <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+                Sending Test...
+              </>
+            ) : (
+              <>✉ Send Test to Myself</>
+            )}
           </button>
-          <button
-            type="submit"
-            disabled={sending || !recipients.trim()}
-            className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {sending ? "Sending..." : "Send Email"}
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-white"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={sending || testSending || !recipients.trim()}
+              className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {sending ? "Sending..." : "Send Email"}
+            </button>
+          </div>
         </div>
       </form>
     </div>

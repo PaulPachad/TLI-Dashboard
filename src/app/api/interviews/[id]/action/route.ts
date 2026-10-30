@@ -35,6 +35,9 @@ interface ActionData {
   body?: string;
   postText?: string;
   linkedinPostUrl?: string;
+  cc?: string;
+  bcc?: string;
+  isTest?: boolean;
 }
 
 interface ActionBody {
@@ -222,6 +225,19 @@ export async function GET(
   }
 }
 
+function parseEmailList(input?: string | string[]): string[] {
+  if (!input) return [];
+  const raw = Array.isArray(input) ? input.join(",") : input;
+  return [
+    ...new Set(
+      raw
+        .split(/[\s,;]+/)
+        .map((e) => e.replace(/[<>()]/g, "").trim().toLowerCase())
+        .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+    ),
+  ];
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -230,7 +246,19 @@ export async function POST(
     const user = await requireApiAuth();
     const { id } = await params;
 
+    const body: ActionBody = await request.json();
+    const { actionType, data } = body;
+
     if (id === "demo") {
+      if (data?.isTest) {
+        const target = user.email || "client@authoritymag.co";
+        return NextResponse.json({
+          success: true,
+          isTest: true,
+          sentTo: target,
+          note: `✓ Test email sent to your inbox (${target})! Review it and click Send when ready.`,
+        });
+      }
       return NextResponse.json({
         success: true,
         simulated: true,
@@ -258,9 +286,6 @@ export async function POST(
         { status: 403 }
       );
     }
-
-    const body: ActionBody = await request.json();
-    const { actionType, data } = body;
     const hasSuccessfulAction = (type: string) =>
       interview.actions.some(
         (action) =>
@@ -328,8 +353,57 @@ export async function POST(
           publicistEmail: interview.publicistEmail,
           clientEmail: interview.client.email,
         });
-        const recipient = emailRecipients.recipient;
-        const cc = emailRecipients.ccDisplay;
+        const defaultRecipient = emailRecipients.recipient;
+        const defaultCC = emailRecipients.cc;
+        const providedCC = data?.cc ? parseEmailList(data.cc) : [];
+        const finalCC = providedCC.length > 0 ? providedCC : defaultCC;
+        const finalBCC = data?.bcc ? parseEmailList(data.bcc) : [];
+
+        // Check if this is a test email sent to the user themselves
+        if (data?.isTest) {
+          const testRecipient = user.email || interview.client.replyToEmail || interview.client.email;
+          if (!testRecipient) {
+            return NextResponse.json(
+              { error: "No user email address available to deliver test preview." },
+              { status: 400 }
+            );
+          }
+          const emailSubject = `[TEST PREVIEW] ${data?.subject || "Your interview in Authority Magazine is live!"}`;
+          const emailBody = data?.body || buildLiveLinkEmailBody(interview, interview.client);
+
+          if (!resend && !demoMode) {
+            return NextResponse.json(
+              { error: "Email delivery is not configured. Add RESEND_API_KEY before sending." },
+              { status: 503 }
+            );
+          }
+
+          if (resend) {
+            try {
+              const htmlContent = await renderEmail(LiveLinkEmail({ body: emailBody }));
+              await resend.emails.send({
+                from: emailFrom,
+                to: testRecipient,
+                replyTo: interview.client.replyToEmail || undefined,
+                subject: emailSubject,
+                text: emailBody,
+                html: htmlContent,
+              });
+            } catch (err: unknown) {
+              const msg = err instanceof Error ? err.message : "Delivery error";
+              return NextResponse.json({ error: `Test email delivery failed: ${msg}` }, { status: 502 });
+            }
+          }
+
+          return NextResponse.json({
+            success: true,
+            isTest: true,
+            sentTo: testRecipient,
+            note: `✓ Test email sent to your inbox (${testRecipient})! Review it and click Send when ready.`,
+          });
+        }
+
+        const recipient = defaultRecipient;
         if (!recipient) {
           return NextResponse.json(
             { error: "No recipient email address available. Please add contact info first." },
@@ -370,7 +444,8 @@ export async function POST(
             const sendResult = await resend.emails.send({
               from: emailFrom,
               to: recipient,
-              cc: emailRecipients.cc.length > 0 ? emailRecipients.cc : undefined,
+              cc: finalCC.length > 0 ? finalCC : undefined,
+              bcc: finalBCC.length > 0 ? finalBCC : undefined,
               replyTo: interview.client.replyToEmail || undefined,
               subject: emailSubject,
               text: emailBody,
@@ -384,7 +459,7 @@ export async function POST(
                 userId: user.id,
                 actionType: "LIVE_EMAIL_SENT",
                 recipient,
-                cc,
+                cc: finalCC.join(", "),
                 subject: emailSubject,
                 body: emailBody,
                 message: sendResult.error.message,
@@ -406,7 +481,7 @@ export async function POST(
               userId: user.id,
               actionType: "LIVE_EMAIL_SENT",
               recipient,
-              cc,
+              cc: finalCC.join(", "),
               subject: emailSubject,
               body: emailBody,
               message,
@@ -425,7 +500,7 @@ export async function POST(
             actionType: "LIVE_EMAIL_SENT",
             status: "SUCCESS",
             recipient,
-            cc,
+            cc: finalCC.join(", "),
             subject: emailSubject,
             body: emailBody,
             note,
@@ -595,8 +670,57 @@ export async function POST(
           publicistEmail: interview.publicistEmail,
           clientEmail: interview.client.email,
         });
-        const recipient = emailRecipients.recipient;
-        const cc = emailRecipients.ccDisplay;
+        const defaultRecipient = emailRecipients.recipient;
+        const defaultCC = emailRecipients.cc;
+        const providedCC = data?.cc ? parseEmailList(data.cc) : [];
+        const finalCC = providedCC.length > 0 ? providedCC : defaultCC;
+        const finalBCC = data?.bcc ? parseEmailList(data.bcc) : [];
+
+        // Check if this is a test email sent to the user themselves
+        if (data?.isTest) {
+          const testRecipient = user.email || interview.client.replyToEmail || interview.client.email;
+          if (!testRecipient) {
+            return NextResponse.json(
+              { error: "No user email address available to deliver test preview." },
+              { status: 400 }
+            );
+          }
+          const emailSubject = `[TEST PREVIEW] ${data?.subject || "Follow-up Zoom interview for your Authority Magazine feature"}`;
+          const emailBody = data?.body || buildZoomInviteEmailBody(interview, interview.client);
+
+          if (!resend && !demoMode) {
+            return NextResponse.json(
+              { error: "Email delivery is not configured. Add RESEND_API_KEY before sending." },
+              { status: 503 }
+            );
+          }
+
+          if (resend) {
+            try {
+              const htmlContent = await renderEmail(ZoomInviteEmail({ body: emailBody }));
+              await resend.emails.send({
+                from: emailFrom,
+                to: testRecipient,
+                replyTo: interview.client.replyToEmail || undefined,
+                subject: emailSubject,
+                text: emailBody,
+                html: htmlContent,
+              });
+            } catch (err: unknown) {
+              const msg = err instanceof Error ? err.message : "Delivery error";
+              return NextResponse.json({ error: `Test email delivery failed: ${msg}` }, { status: 502 });
+            }
+          }
+
+          return NextResponse.json({
+            success: true,
+            isTest: true,
+            sentTo: testRecipient,
+            note: `✓ Test email sent to your inbox (${testRecipient})! Review it and click Send when ready.`,
+          });
+        }
+
+        const recipient = defaultRecipient;
         if (!recipient) {
           return NextResponse.json(
             { error: "No recipient email address available." },
@@ -639,7 +763,8 @@ export async function POST(
             const sendResult = await resend.emails.send({
               from: emailFrom,
               to: recipient,
-              cc: emailRecipients.cc.length > 0 ? emailRecipients.cc : undefined,
+              cc: finalCC.length > 0 ? finalCC : undefined,
+              bcc: finalBCC.length > 0 ? finalBCC : undefined,
               replyTo: interview.client.replyToEmail || undefined,
               subject: emailSubject,
               text: emailBody,
@@ -653,7 +778,7 @@ export async function POST(
                 userId: user.id,
                 actionType: "ZOOM_INVITE_SENT",
                 recipient,
-                cc,
+                cc: finalCC.join(", "),
                 subject: emailSubject,
                 body: emailBody,
                 message: sendResult.error.message,
@@ -675,7 +800,7 @@ export async function POST(
               userId: user.id,
               actionType: "ZOOM_INVITE_SENT",
               recipient,
-              cc,
+              cc: finalCC.join(", "),
               subject: emailSubject,
               body: emailBody,
               message,
@@ -694,7 +819,7 @@ export async function POST(
             actionType: "ZOOM_INVITE_SENT",
             status: "SUCCESS",
             recipient,
-            cc,
+            cc: finalCC.join(", "),
             subject: emailSubject,
             body: emailBody,
             note,

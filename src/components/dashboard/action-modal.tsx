@@ -53,9 +53,21 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
   const [emailForm, setEmailForm] = useState({
     to: "",
     cc: "",
+    bcc: "",
     subject: "",
     body: "",
   });
+
+  const [bccSelf, setBccSelf] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const [testSending, setTestSending] = useState(false);
+  const [testSuccessBanner, setTestSuccessBanner] = useState<string | null>(null);
+  const [savingGuestEmail, setSavingGuestEmail] = useState(false);
+  const [guestEmailSaved, setGuestEmailSaved] = useState(false);
+  const [schedulingInput, setSchedulingInput] = useState("");
+  const [savingScheduling, setSavingScheduling] = useState(false);
+  const [schedulingSaved, setSchedulingSaved] = useState(false);
+  const [copyImageSuccess, setCopyImageSuccess] = useState(false);
 
   const [linkedinText, setLinkedinText] = useState("");
   const [linkedinVariations, setLinkedinVariations] = useState<string[]>([]);
@@ -82,6 +94,9 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
         setEmailConfigured(Boolean(data.emailConfigured));
         setSchedulingConfigured(Boolean(data.schedulingConfigured));
         
+        const senderEmail = data.interview?.client?.replyToEmail || data.interview?.client?.email || "";
+        setUserEmail(senderEmail);
+
         setIntervieweeName(data.interview.intervieweeName);
         setArticleUrl(data.interview.articleUrl || "");
         setSocialInterview({
@@ -108,6 +123,7 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
           setEmailForm({
             to: data.liveEmail.to,
             cc: data.liveEmail.cc || "",
+            bcc: "",
             subject: data.liveEmail.subject,
             body: data.liveEmail.body,
           });
@@ -115,6 +131,7 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
           setEmailForm({
             to: data.zoomInvite.to,
             cc: data.zoomInvite.cc || "",
+            bcc: "",
             subject: data.zoomInvite.subject,
             body: data.zoomInvite.body,
           });
@@ -233,6 +250,8 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
         subject?: string;
         body?: string;
         linkedinPostUrl?: string;
+        cc?: string;
+        bcc?: string;
       } = {};
       if (actionType === "add_contact") {
         payload = contactForm;
@@ -240,6 +259,8 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
         payload = {
           subject: emailForm.subject,
           body: emailForm.body,
+          cc: emailForm.cc,
+          bcc: emailForm.bcc,
         };
       } else if (actionType === "mark_shared") {
         payload = { linkedinPostUrl };
@@ -263,6 +284,125 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Handle Send Test to Myself
+  async function handleSendTestEmail() {
+    try {
+      setTestSending(true);
+      setError(null);
+      setTestSuccessBanner(null);
+
+      const res = await fetch(`/api/interviews/${interviewId}/action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          actionType,
+          data: {
+            subject: emailForm.subject,
+            body: emailForm.body,
+            cc: emailForm.cc,
+            bcc: emailForm.bcc,
+            isTest: true,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send test email.");
+      }
+
+      setTestSuccessBanner(
+        data.note || `✓ Test email sent to your inbox (${data.sentTo || "you"})! Review it and click Send when ready.`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to deliver test email.");
+    } finally {
+      setTestSending(false);
+    }
+  }
+
+  // Fast-Fix: Save Guest Email directly from modal
+  async function handleSaveGuestEmail() {
+    if (!emailForm.to.trim()) return;
+    try {
+      setSavingGuestEmail(true);
+      setError(null);
+      const res = await fetch(`/api/interviews/${interviewId}/action`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ intervieweeEmail: emailForm.to.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to save guest email.");
+      }
+      setGuestEmailSaved(true);
+      setTimeout(() => setGuestEmailSaved(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save email.");
+    } finally {
+      setSavingGuestEmail(false);
+    }
+  }
+
+  // Fast-Fix: Save and Insert Scheduling Link directly inside modal
+  async function handleSaveSchedulingLink() {
+    if (!schedulingInput.trim()) return;
+    try {
+      setSavingScheduling(true);
+      setError(null);
+      const res = await fetch(`/api/clients/settings`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ schedulingLink: schedulingInput.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to save scheduling link.");
+      }
+      setSchedulingConfigured(true);
+      setSchedulingSaved(true);
+      const link = schedulingInput.trim();
+      setEmailForm((prev) => {
+        let updatedBody = prev.body;
+        if (!updatedBody.includes(link)) {
+          updatedBody = updatedBody + `\n\nBook a convenient time here: ${link}`;
+        }
+        return { ...prev, body: updatedBody };
+      });
+      setTimeout(() => setSchedulingSaved(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save scheduling link.");
+    } finally {
+      setSavingScheduling(false);
+    }
+  }
+
+  // Handle Copy Social Image to Clipboard
+  async function handleCopyImageToClipboard() {
+    try {
+      setLoading(true);
+      setError(null);
+      if (!socialInterview) {
+        throw new Error("The image details are still loading.");
+      }
+      const blob = await generateBrowserSocialImage(socialInterview);
+      await navigator.clipboard.write([
+        new ClipboardItem({ [blob.type]: blob }),
+      ]);
+      setCopyImageSuccess(true);
+      setTimeout(() => setCopyImageSuccess(false), 3000);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to copy image to clipboard."
+      );
     } finally {
       setLoading(false);
     }
@@ -499,6 +639,15 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
             </p>
             <ActionError message={error} />
 
+            {testSuccessBanner && (
+              <div role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800 animate-fade-in flex items-center gap-2">
+                <svg className="w-4 h-4 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>{testSuccessBanner}</span>
+              </div>
+            )}
+
             {demoMode && !emailConfigured && (
               <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800">
                 Demo mode is on. This action will be tracked, but no email will
@@ -512,41 +661,130 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
               </div>
             )}
             {!isLive && !schedulingConfigured && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                No scheduling link is saved. This email will ask the guest to
-                reply with available times. You can add a link in{" "}
-                <a
-                  href="/dashboard/settings"
-                  className="font-semibold underline underline-offset-2"
-                >
-                  Settings
-                </a>.
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 space-y-2">
+                <p className="font-medium">
+                  No scheduling link is saved. You can paste your link below to save it and insert it directly into the email!
+                </p>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="url"
+                    value={schedulingInput}
+                    onChange={(e) => setSchedulingInput(e.target.value)}
+                    placeholder="https://calendly.com/your-name/15min"
+                    className="w-full rounded-md border border-amber-300 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-500 font-sans"
+                  />
+                  <button
+                    type="button"
+                    disabled={savingScheduling || !schedulingInput.trim()}
+                    onClick={handleSaveSchedulingLink}
+                    className="px-3 py-1.5 rounded-md bg-amber-700 hover:bg-amber-800 text-white font-semibold text-xs shrink-0 transition-colors disabled:opacity-50 font-sans"
+                  >
+                    {savingScheduling ? "Saving..." : schedulingSaved ? "✓ Inserted" : "Save & Insert Link"}
+                  </button>
+                </div>
               </div>
             )}
 
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1 font-sans">To</label>
+                {emailForm.to ? (
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="email"
+                      value={emailForm.to}
+                      onChange={(e) => setEmailForm({ ...emailForm, to: e.target.value })}
+                      placeholder="guest@example.com"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 font-sans focus:border-indigo-500 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      disabled={savingGuestEmail || !emailForm.to.trim()}
+                      onClick={handleSaveGuestEmail}
+                      className="px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold shrink-0 transition-colors disabled:opacity-50 font-sans"
+                    >
+                      {savingGuestEmail ? "Saving..." : guestEmailSaved ? "✓ Saved" : "Save Email"}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-amber-300 bg-amber-50/70 p-3 space-y-2">
+                    <p className="text-xs font-semibold text-amber-900">
+                      Missing Guest Email — enter it here to enable sending immediately without closing:
+                    </p>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="email"
+                        placeholder="guest@company.com"
+                        value={emailForm.to}
+                        onChange={(e) => setEmailForm({ ...emailForm, to: e.target.value })}
+                        className="w-full rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-500 font-sans"
+                      />
+                      <button
+                        type="button"
+                        disabled={savingGuestEmail || !emailForm.to.trim()}
+                        onClick={handleSaveGuestEmail}
+                        className="px-3 py-1.5 rounded-md bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shrink-0 transition-colors disabled:opacity-50 font-sans"
+                      >
+                        {savingGuestEmail ? "Saving..." : guestEmailSaved ? "✓ Saved" : "Save Guest Email"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1 font-sans">
+                  CC (Optional)
+                </label>
                 <input
                   type="text"
-                  disabled
-                  value={emailForm.to || "(No email address set — Please update contact info)"}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 font-sans"
+                  value={emailForm.cc}
+                  onChange={(e) => setEmailForm({ ...emailForm, cc: e.target.value })}
+                  placeholder="colleague@company.com, pr@company.com"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 font-sans focus:border-indigo-500 focus:outline-none"
                 />
               </div>
-              {emailForm.cc && (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1 font-sans">
-                    CC
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-500 font-sans">
+                    BCC (Optional)
                   </label>
-                  <input
-                    type="text"
-                    disabled
-                    value={emailForm.cc}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 font-sans"
-                  />
+                  {userEmail && (
+                    <label className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 cursor-pointer font-medium select-none">
+                      <input
+                        type="checkbox"
+                        checked={bccSelf}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setBccSelf(checked);
+                          if (checked) {
+                            const existing = emailForm.bcc.trim();
+                            if (!existing) {
+                              setEmailForm((prev) => ({ ...prev, bcc: userEmail }));
+                            } else if (!existing.includes(userEmail)) {
+                              setEmailForm((prev) => ({ ...prev, bcc: `${existing}, ${userEmail}` }));
+                            }
+                          } else {
+                            const parts = emailForm.bcc.split(",").map((s) => s.trim()).filter((s) => s !== userEmail);
+                            setEmailForm((prev) => ({ ...prev, bcc: parts.join(", ") }));
+                          }
+                        }}
+                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
+                      />
+                      <span>BCC copy to my email ({userEmail})</span>
+                    </label>
+                  )}
                 </div>
-              )}
+                <input
+                  type="text"
+                  value={emailForm.bcc}
+                  onChange={(e) => setEmailForm({ ...emailForm, bcc: e.target.value })}
+                  placeholder="Optional BCC email addresses..."
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 font-sans focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1 font-sans">Subject</label>
                 <input
@@ -557,6 +795,7 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none font-sans"
                 />
               </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1 font-sans">Body Preview</label>
                 <textarea
@@ -569,25 +808,39 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 font-sans">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 font-sans">
               <button
                 type="button"
-                onClick={onClose}
-                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50 transition-colors"
+                onClick={handleSendTestEmail}
+                disabled={loading || testSending || (!demoMode && !emailConfigured)}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-lg transition-colors shadow-2xs disabled:opacity-50"
               >
-                Cancel
+                <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                </svg>
+                {testSending ? "Sending Test..." : "✉ Send Test to Myself"}
               </button>
-              <button
-                type="submit"
-                disabled={
-                  loading ||
-                  !emailForm.to ||
-                  (!demoMode && !emailConfigured)
-                }
-                className="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
-              >
-                {loading ? "Sending..." : isLive ? "Send Email" : "Send Invitation"}
-              </button>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    loading ||
+                    testSending ||
+                    !emailForm.to ||
+                    (!demoMode && !emailConfigured)
+                  }
+                  className="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? "Sending..." : isLive ? "Send Email" : "Send Invitation"}
+                </button>
+              </div>
             </div>
           </form>
         );
@@ -625,6 +878,10 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
               onChange={(event) => setLinkedinText(event.target.value)}
               className="w-full rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-700 focus:border-indigo-500 focus:bg-white focus:outline-none"
             />
+
+            <div className="rounded-lg border border-sky-200 bg-sky-50 px-3.5 py-2.5 text-xs text-sky-900 font-medium flex items-center gap-2">
+              <span>💡 Note: LinkedIn&apos;s share window attaches your article link automatically. Once LinkedIn opens, press Paste (Ctrl+V / Cmd+V) to insert your copied post text!</span>
+            </div>
 
             <div className="flex flex-col gap-3 border-t border-slate-100 pt-3 font-sans sm:flex-row sm:items-center sm:justify-between">
               <a
@@ -707,22 +964,35 @@ export function ActionModal({ interviewId, actionType, onClose, onSuccess }: Act
               )}
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 font-sans">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 font-sans">
               <button
                 type="button"
-                onClick={onClose}
-                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDownloadImage}
+                onClick={handleCopyImageToClipboard}
                 disabled={loading || socialImageRendering || !socialImagePreviewUrl}
-                className="px-5 py-2 bg-pink-600 text-white rounded-lg text-sm font-semibold hover:bg-pink-700 transition-colors disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-lg transition-colors shadow-2xs disabled:opacity-50"
               >
-                {loading ? "Downloading..." : "Download Image"}
+                <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                </svg>
+                {copyImageSuccess ? "✓ Image Copied to Clipboard!" : "📋 Copy Image to Clipboard"}
               </button>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadImage}
+                  disabled={loading || socialImageRendering || !socialImagePreviewUrl}
+                  className="px-5 py-2 bg-pink-600 text-white rounded-lg text-sm font-semibold hover:bg-pink-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? "Downloading..." : "Download Image"}
+                </button>
+              </div>
             </div>
           </div>
         );

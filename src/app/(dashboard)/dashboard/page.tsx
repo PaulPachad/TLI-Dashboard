@@ -37,7 +37,7 @@ export default async function DashboardHomePage() {
         }),
         db.client.findUnique({
           where: { id: user.clientId },
-          select: { replyToEmail: true, signature: true, schedulingLink: true },
+          select: { replyToEmail: true, signature: true, schedulingLink: true, topicsSheetUrl: true },
         }),
         db.sheetSource.count({ where: { clientId: user.clientId } }),
         db.interview.count({ where: { clientId: user.clientId } }),
@@ -70,6 +70,10 @@ export default async function DashboardHomePage() {
       isAdmin: false,
       isClient: true,
       clientId: user.clientId,
+      replyToEmail: clientData?.replyToEmail || null,
+      signature: clientData?.signature || null,
+      schedulingLink: clientData?.schedulingLink || null,
+      topicsSheetUrl: clientData?.topicsSheetUrl || null,
     };
   } else if (user.role === UserRole.ADMIN) {
     const [topList, evList, sheetCount, interviewCount, actionCount] = await Promise.all([

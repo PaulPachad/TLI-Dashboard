@@ -8,8 +8,10 @@ import { OutreachEmail } from "@/lib/email/templates/outreach";
 
 interface OutreachBody {
   recipients?: string;
+  cc?: string;
   subject?: string;
   body?: string;
+  isTest?: boolean;
 }
 
 export async function POST(
@@ -36,6 +38,43 @@ export async function POST(
     }
 
     const data: OutreachBody = await request.json();
+
+    const subject =
+      data.subject?.trim() || `Press opportunities for ${event.eventName}`;
+    const emailBody =
+      data.body?.trim() || buildEventOutreachEmailBody(event);
+
+    if (data.isTest) {
+      const testRecipient = user.email || event.client.replyToEmail;
+      if (!testRecipient) {
+        return NextResponse.json(
+          { error: "Could not find user email or client reply-to email for test delivery." },
+          { status: 400 }
+        );
+      }
+      const testSubject = subject.startsWith("[TEST PREVIEW]")
+        ? subject
+        : `[TEST PREVIEW] ${subject}`;
+
+      const result = await sendOutreach({
+        recipients: [testRecipient],
+        subject: testSubject,
+        body: emailBody,
+        heading: "Press opportunity request (Preview Test)",
+        replyTo: event.client.replyToEmail,
+      });
+
+      return NextResponse.json({
+        success: true,
+        isTest: true,
+        sentTo: testRecipient,
+        ...result,
+        note: result.simulated
+          ? `Demo mode: simulated test outreach to ${testRecipient}.`
+          : `Test outreach email sent to ${testRecipient}.`,
+      });
+    }
+
     const recipients = parseRecipients(data.recipients || event.contactInfo || "");
     if (recipients.length === 0) {
       return NextResponse.json(
@@ -44,12 +83,11 @@ export async function POST(
       );
     }
 
-    const subject =
-      data.subject?.trim() || `Press opportunities for ${event.eventName}`;
-    const emailBody =
-      data.body?.trim() || buildEventOutreachEmailBody(event);
+    const ccList = data.cc ? parseRecipients(data.cc) : undefined;
+
     const result = await sendOutreach({
       recipients,
+      cc: ccList && ccList.length > 0 ? ccList : undefined,
       subject,
       body: emailBody,
       heading: "Press opportunity request",
@@ -88,12 +126,14 @@ function parseRecipients(value: string): string[] {
 
 async function sendOutreach({
   recipients,
+  cc,
   subject,
   body,
   heading,
   replyTo,
 }: {
   recipients: string[];
+  cc?: string[];
   subject: string;
   body: string;
   heading: string;
@@ -120,6 +160,7 @@ async function sendOutreach({
   const sendResult = await resend.emails.send({
     from: process.env.EMAIL_FROM || "Authority Magazine <onboarding@resend.dev>",
     to: recipients,
+    cc: cc && cc.length > 0 ? cc : undefined,
     replyTo: replyTo || undefined,
     subject,
     text: body,

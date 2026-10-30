@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Topic } from "@prisma/client";
 import { TopicDetailPanel } from "@/components/panels/topic-detail-panel";
 
 export function TopicsGrid({ topics }: { topics: Topic[] }) {
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+  const [scrollToInvite, setScrollToInvite] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "tag">("grid");
@@ -17,8 +20,14 @@ export function TopicsGrid({ topics }: { topics: Topic[] }) {
         data-tour="topics-controls"
         className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-slate-500"
       >
-        <p>No topics found.</p>
-        <p className="text-sm">They will appear here once synced from your sheet.</p>
+        <p className="font-medium text-slate-700">No topics found.</p>
+        <p className="text-sm mt-1">Topics will appear here once your Google Sheet is linked and synced.</p>
+        <Link
+          href="/dashboard/settings#topics-sheet"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
+        >
+          Connect Topics &amp; Events Sheet in Settings &rarr;
+        </Link>
       </div>
     );
   }
@@ -127,12 +136,18 @@ export function TopicsGrid({ topics }: { topics: Topic[] }) {
     const hasPitch = !!topic.sourceRequests;
     const hasResponses = !!topic.responses;
     const hasQuestions = !!topic.interviewQuestions;
+    const pitchUrl = extractFirstUrl(topic.sourceRequests);
+    const responsesUrl = extractFirstUrl(topic.responses);
+    const canInvite = Boolean(topic.interviewQuestions || topic.sourceRequests);
 
     return (
       <div
         key={topic.id}
         data-tour="topic-card"
-        onClick={() => setSelectedTopic(topic)}
+        onClick={() => {
+          setScrollToInvite(false);
+          setSelectedTopic(topic);
+        }}
         className="group flex flex-col cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-indigo-300 animate-fadeIn"
       >
         <div className="flex-1 p-5 flex flex-col">
@@ -160,6 +175,51 @@ export function TopicsGrid({ topics }: { topics: Topic[] }) {
               <span className="text-xs text-slate-400">Title only</span>
             )}
           </div>
+        </div>
+
+        <div className="border-t border-slate-100 bg-slate-50/70 p-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            {pitchUrl && (
+              <button
+                type="button"
+                title="Copy Google Form Pitch Link"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(pitchUrl);
+                  setCopiedId(topic.id);
+                  setTimeout(() => setCopiedId(null), 2000);
+                }}
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+              >
+                📋 {copiedId === topic.id ? "Copied!" : "Pitch Link"}
+              </button>
+            )}
+            {responsesUrl && (
+              <a
+                href={responsesUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open Responses Form / Sheet"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 hover:text-emerald-600 transition-colors"
+              >
+                ↗ Responses
+              </a>
+            )}
+          </div>
+          {canInvite && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setScrollToInvite(true);
+                setSelectedTopic(topic);
+              }}
+              className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors"
+            >
+              ✉ Invite Guest
+            </button>
+          )}
         </div>
       </div>
     );
@@ -336,9 +396,19 @@ export function TopicsGrid({ topics }: { topics: Topic[] }) {
       {selectedTopic && (
         <TopicDetailPanel
           topic={selectedTopic}
-          onClose={() => setSelectedTopic(null)}
+          initialScrollToInvite={scrollToInvite}
+          onClose={() => {
+            setSelectedTopic(null);
+            setScrollToInvite(false);
+          }}
         />
       )}
     </div>
   );
+}
+
+function extractFirstUrl(text: string | null): string | null {
+  if (!text) return null;
+  const match = text.match(/https?:\/\/[^\s"'<>)]+/);
+  return match ? match[0] : null;
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export interface ReadinessState {
   hasSheetConnected: boolean;
@@ -11,6 +12,10 @@ export interface ReadinessState {
   isAdmin?: boolean;
   isClient?: boolean;
   clientId?: string | null;
+  replyToEmail?: string | null;
+  signature?: string | null;
+  schedulingLink?: string | null;
+  topicsSheetUrl?: string | null;
 }
 
 interface OnboardingChecklistProps {
@@ -20,8 +25,21 @@ interface OnboardingChecklistProps {
 const STORAGE_KEY_COLLAPSED = "tli-readiness-checklist-collapsed-v1";
 
 export function OnboardingChecklist({ readiness }: OnboardingChecklistProps) {
+  const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [isDismissed, setIsDismissed] = useState<boolean>(false);
+
+  // Local overrides for instant reactive feedback
+  const [hasEmailConfigured, setHasEmailConfigured] = useState(readiness.hasEmailConfigured);
+  const [hasSchedulingConfigured, setHasSchedulingConfigured] = useState(readiness.hasSchedulingConfigured);
+
+  // Inline configuration form states
+  const [expandedStep, setExpandedStep] = useState<"email" | "calendar" | null>(null);
+  const [replyToInput, setReplyToInput] = useState(readiness.replyToEmail || "");
+  const [signatureInput, setSignatureInput] = useState(readiness.signature || "");
+  const [schedulingInput, setSchedulingInput] = useState(readiness.schedulingLink || "");
+  const [savingInline, setSavingInline] = useState(false);
+  const [inlineFeedback, setInlineFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // Calculate completed count
   const steps = [
@@ -35,6 +53,7 @@ export function OnboardingChecklist({ readiness }: OnboardingChecklistProps) {
       href: "/dashboard/settings#sheet-import",
       actionText: readiness.hasSheetConnected ? "Manage Sheet in Settings →" : "Link Google Sheet →",
       primaryAction: !readiness.hasSheetConnected,
+      isInline: false,
     },
     {
       id: "email",
@@ -42,10 +61,11 @@ export function OnboardingChecklist({ readiness }: OnboardingChecklistProps) {
       title: "Configure Reply-To Email & Signature",
       description:
         "Set your professional email signature and reply-to address so guest responses arrive directly in your inbox.",
-      isComplete: readiness.hasEmailConfigured,
+      isComplete: hasEmailConfigured,
       href: "/dashboard/settings",
-      actionText: readiness.hasEmailConfigured ? "Update in Settings →" : "Configure Email & Signature →",
-      primaryAction: !readiness.hasEmailConfigured && readiness.hasSheetConnected,
+      actionText: hasEmailConfigured ? "Edit Email & Signature ✎" : "Quick-Configure Here ↓",
+      primaryAction: !hasEmailConfigured && readiness.hasSheetConnected,
+      isInline: true,
     },
     {
       id: "calendar",
@@ -53,10 +73,11 @@ export function OnboardingChecklist({ readiness }: OnboardingChecklistProps) {
       title: "Add Zoom / Calendly Scheduling Link",
       description:
         "Provide your calendar booking link so Zoom invitations never go out without a 1-click scheduling link.",
-      isComplete: readiness.hasSchedulingConfigured,
+      isComplete: hasSchedulingConfigured,
       href: "/dashboard/settings",
-      actionText: readiness.hasSchedulingConfigured ? "Update Link →" : "Add Scheduling Link →",
-      primaryAction: !readiness.hasSchedulingConfigured && readiness.hasEmailConfigured,
+      actionText: hasSchedulingConfigured ? "Update Link ✎" : "Quick-Add Link Here ↓",
+      primaryAction: !hasSchedulingConfigured && hasEmailConfigured,
+      isInline: true,
     },
     {
       id: "outreach",
@@ -67,7 +88,8 @@ export function OnboardingChecklist({ readiness }: OnboardingChecklistProps) {
       isComplete: readiness.hasFirstOutreachSent,
       href: "#interviews-section",
       actionText: readiness.hasFirstOutreachSent ? "View Interviews Below ↓" : "Start First Outreach Below ↓",
-      primaryAction: !readiness.hasFirstOutreachSent && readiness.hasSchedulingConfigured,
+      primaryAction: !readiness.hasFirstOutreachSent && hasSchedulingConfigured,
+      isInline: false,
     },
   ];
 
@@ -104,6 +126,73 @@ export function OnboardingChecklist({ readiness }: OnboardingChecklistProps) {
     }
   };
 
+  const handleSaveEmailInline = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setSavingInline(true);
+      setInlineFeedback(null);
+      const res = await fetch("/api/clients/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          replyToEmail: replyToInput.trim(),
+          signature: signatureInput.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update email settings.");
+      }
+      setHasEmailConfigured(Boolean(replyToInput.trim() || signatureInput.trim()));
+      setInlineFeedback({ type: "success", message: "✓ Reply-to email and signature saved successfully!" });
+      router.refresh();
+      setTimeout(() => {
+        setExpandedStep(null);
+        setInlineFeedback(null);
+      }, 2000);
+    } catch (err) {
+      setInlineFeedback({
+        type: "error",
+        message: err instanceof Error ? err.message : "Failed to save settings.",
+      });
+    } finally {
+      setSavingInline(false);
+    }
+  };
+
+  const handleSaveCalendarInline = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setSavingInline(true);
+      setInlineFeedback(null);
+      const res = await fetch("/api/clients/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          schedulingLink: schedulingInput.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update scheduling link.");
+      }
+      setHasSchedulingConfigured(Boolean(schedulingInput.trim()));
+      setInlineFeedback({ type: "success", message: "✓ Scheduling link saved successfully!" });
+      router.refresh();
+      setTimeout(() => {
+        setExpandedStep(null);
+        setInlineFeedback(null);
+      }, 2000);
+    } catch (err) {
+      setInlineFeedback({
+        type: "error",
+        message: err instanceof Error ? err.message : "Failed to save scheduling link.",
+      });
+    } finally {
+      setSavingInline(false);
+    }
+  };
+
   if (isDismissed) {
     return null;
   }
@@ -111,12 +200,12 @@ export function OnboardingChecklist({ readiness }: OnboardingChecklistProps) {
   // Collapsed Pill View
   if (isCollapsed) {
     return (
-      <div className="mb-6 flex items-center justify-between rounded-xl border border-slate-200/80 bg-gradient-to-r from-slate-50 via-white to-indigo-50/30 px-4 py-2.5 shadow-xs transition-all hover:border-slate-300">
+      <div className="mb-6 flex items-center justify-between rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50/70 via-sky-50/50 to-white px-4 py-3 shadow-2xs">
         <div className="flex items-center gap-3">
           <span
             className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
               allComplete
-                ? "bg-emerald-100 text-emerald-700"
+                ? "bg-emerald-600 text-white"
                 : "bg-indigo-100 text-indigo-700"
             }`}
           >
@@ -256,7 +345,21 @@ export function OnboardingChecklist({ readiness }: OnboardingChecklistProps) {
             </div>
 
             <div className="mt-4 pt-3 border-t border-slate-100">
-              {step.href.startsWith("#") ? (
+              {step.isInline ? (
+                <button
+                  type="button"
+                  onClick={() => setExpandedStep(expandedStep === step.id ? null : (step.id as "email" | "calendar"))}
+                  className={`w-full inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                    step.primaryAction
+                      ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-2xs"
+                      : expandedStep === step.id
+                      ? "bg-indigo-50 text-indigo-700 border border-indigo-300"
+                      : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200"
+                  }`}
+                >
+                  {step.actionText}
+                </button>
+              ) : step.href.startsWith("#") ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -287,6 +390,183 @@ export function OnboardingChecklist({ readiness }: OnboardingChecklistProps) {
           </div>
         ))}
       </div>
+
+      {/* Inline Quick-Setup Form Drawers */}
+      {expandedStep === "email" && (
+        <form
+          onSubmit={handleSaveEmailInline}
+          className="mt-5 rounded-xl border border-indigo-200 bg-white p-5 shadow-sm space-y-4 animate-fade-in"
+        >
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h4 className="text-sm font-bold text-slate-900">
+                Step 2: Configure Reply-To Email &amp; Professional Signature
+              </h4>
+              <p className="text-xs text-slate-500">
+                Save directly to your account profile without leaving your dashboard.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setExpandedStep(null); setInlineFeedback(null); }}
+              className="text-xs font-medium text-slate-400 hover:text-slate-600"
+            >
+              ✕ Close
+            </button>
+          </div>
+
+          {inlineFeedback && (
+            <div
+              className={`p-3 rounded-lg text-xs font-semibold border ${
+                inlineFeedback.type === "success"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                  : "bg-rose-50 border-rose-200 text-rose-800"
+              }`}
+            >
+              {inlineFeedback.message}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Reply-To Email Address
+              </label>
+              <input
+                type="email"
+                required
+                value={replyToInput}
+                onChange={(e) => setReplyToInput(e.target.value)}
+                placeholder="yourname@company.com"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+              />
+              <p className="text-[11px] text-slate-400 mt-1">
+                Guest replies will be routed directly to this address.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Email Signature
+              </label>
+              <textarea
+                rows={3}
+                value={signatureInput}
+                onChange={(e) => setSignatureInput(e.target.value)}
+                placeholder="Best regards,&#10;Your Name&#10;Founder & CEO"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-mono focus:border-indigo-500 focus:outline-none"
+              />
+              <p className="text-[11px] text-slate-400 mt-1">
+                Appended automatically to follow-up emails and Zoom invites.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+            <Link
+              href="/dashboard/settings"
+              className="text-xs font-medium text-indigo-600 hover:text-indigo-800 hover:underline"
+            >
+              Open Full Settings →
+            </Link>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setExpandedStep(null); setInlineFeedback(null); }}
+                className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg text-xs hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={savingInline || !replyToInput.trim()}
+                className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              >
+                {savingInline ? "Saving..." : "Save Email Settings"}
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
+
+      {expandedStep === "calendar" && (
+        <form
+          onSubmit={handleSaveCalendarInline}
+          className="mt-5 rounded-xl border border-indigo-200 bg-white p-5 shadow-sm space-y-4 animate-fade-in"
+        >
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h4 className="text-sm font-bold text-slate-900">
+                Step 3: Add Zoom / Calendly Scheduling Link
+              </h4>
+              <p className="text-xs text-slate-500">
+                Enables 1-click booking directly inside VIP follow-up Zoom invitations.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setExpandedStep(null); setInlineFeedback(null); }}
+              className="text-xs font-medium text-slate-400 hover:text-slate-600"
+            >
+              ✕ Close
+            </button>
+          </div>
+
+          {inlineFeedback && (
+            <div
+              className={`p-3 rounded-lg text-xs font-semibold border ${
+                inlineFeedback.type === "success"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                  : "bg-rose-50 border-rose-200 text-rose-800"
+              }`}
+            >
+              {inlineFeedback.message}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Calendly, Zoom, or Google Calendar Booking URL
+            </label>
+            <input
+              type="url"
+              required
+              value={schedulingInput}
+              onChange={(e) => setSchedulingInput(e.target.value)}
+              placeholder="https://calendly.com/your-name/15-min-authority-chat"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+            />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Must be a valid web link (e.g. starting with https://).
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+            <Link
+              href="/dashboard/settings"
+              className="text-xs font-medium text-indigo-600 hover:text-indigo-800 hover:underline"
+            >
+              Open Full Settings →
+            </Link>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setExpandedStep(null); setInlineFeedback(null); }}
+                className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg text-xs hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={savingInline || !schedulingInput.trim()}
+                className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              >
+                {savingInline ? "Saving..." : "Save Scheduling Link"}
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
     </div>
   );
 }

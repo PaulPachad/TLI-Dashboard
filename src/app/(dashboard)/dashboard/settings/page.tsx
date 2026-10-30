@@ -1,13 +1,15 @@
 "use client";
 
 // ==============================================================================
-// Settings Page — Client settings and profile defaults
+// Settings Page — Client settings, spreadsheet auto-sync & password management
 // ==============================================================================
 
 import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { SheetImportForm } from "@/components/admin/sheet-import-form";
+
+const SERVICE_ACCOUNT_EMAIL = "tli-dashboard@gen-lang-client-0870177061.iam.gserviceaccount.com";
 
 export default function SettingsPage() {
   const sessionContext = useSession();
@@ -40,10 +42,10 @@ export default function SettingsPage() {
         throw new Error(data.error || "Failed to load settings.");
       }
       if (data.client) {
-          setForm({
-            name: data.client.name || "",
-            email: data.client.email || "",
-            signature: data.client.signature || "",
+        setForm({
+          name: data.client.name || "",
+          email: data.client.email || "",
+          signature: data.client.signature || "",
           schedulingLink: data.client.schedulingLink || "",
           defaultHashtags: data.client.defaultHashtags || "",
           defaultSignoff: data.client.defaultSignoff || "",
@@ -55,8 +57,7 @@ export default function SettingsPage() {
     } catch (err) {
       setBannerMessage({
         type: "error",
-        text:
-          err instanceof Error ? err.message : "Failed to load settings.",
+        text: err instanceof Error ? err.message : "Failed to load settings.",
       });
     } finally {
       setFetching(false);
@@ -65,8 +66,6 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (session?.user && isClient) {
-      // Fetching is the external synchronization performed by this effect.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchSettings();
     }
   }, [session?.user, isClient]);
@@ -87,7 +86,24 @@ export default function SettingsPage() {
         throw new Error(data.error || "Failed to update settings.");
       }
 
-      setBannerMessage({ type: "success", text: "Settings updated successfully!" });
+      let successText = "Settings updated successfully!";
+
+      // If topicsSheetUrl is non-empty, auto-trigger topics & events sync
+      if (form.topicsSheetUrl && form.topicsSheetUrl.trim()) {
+        try {
+          const syncRes = await fetch("/api/sync-topics", { method: "POST" });
+          const syncData = await syncRes.json();
+          if (syncRes.ok) {
+            successText = `Settings saved! Auto-synced ${syncData.topicsCount ?? 0} topics and ${syncData.eventsCount ?? 0} events from your sheet.`;
+          } else {
+            successText = `Settings saved, but topics sync encountered an issue: ${syncData.error || "Please verify Google Sheets viewer permissions."}`;
+          }
+        } catch (syncErr) {
+          successText = `Settings saved, but auto-sync could not complete: ${syncErr instanceof Error ? syncErr.message : "Network error"}`;
+        }
+      }
+
+      setBannerMessage({ type: "success", text: successText });
     } catch (err: unknown) {
       setBannerMessage({
         type: "error",
@@ -114,10 +130,13 @@ export default function SettingsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Account Settings</h1>
-        <p className="text-slate-500 mt-1">Manage your account profile and default options</p>
+        <p className="text-slate-500 mt-1">Manage your account profile, spreadsheet auto-sync, and default options</p>
       </div>
 
-      {(bannerMessage !== null ? (
+      {/* Google Service Account Chip */}
+      <ServiceAccountChip />
+
+      {bannerMessage && (
         <div
           role="alert"
           className={`p-4 rounded-xl text-sm font-medium border animate-fade-in ${
@@ -128,11 +147,11 @@ export default function SettingsPage() {
         >
           {bannerMessage.text}
         </div>
-      ) : null) as React.ReactNode}
+      )}
 
       {/* Grid */}
       <div className="grid gap-6 md:grid-cols-3">
-        {/* Profile Details (Read-only Card) */}
+        {/* Left Column: Profile Card + Password Change Card */}
         <div className="md:col-span-1 space-y-6">
           <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
             <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">
@@ -159,6 +178,9 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+
+          {/* Self-Service Password Change */}
+          <PasswordChangeCard />
         </div>
 
         {/* Configurations Form */}
@@ -166,7 +188,7 @@ export default function SettingsPage() {
           {isClient ? (
             <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="p-6 space-y-6">
-                <h2 className="text-lg font-semibold text-slate-900">Profile & Incubator Defaults</h2>
+                <h2 className="text-lg font-semibold text-slate-900">Profile &amp; Incubator Defaults</h2>
 
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div>
@@ -196,7 +218,7 @@ export default function SettingsPage() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="grid gap-6 sm:grid-cols-2">
                   {/* Reply-To Email */}
                   <div>
@@ -219,7 +241,7 @@ export default function SettingsPage() {
                   {/* Scheduling Link */}
                   <div>
                     <label htmlFor="schedulingLink" className="block text-sm font-medium text-slate-700 mb-1">
-                      Zoom/Scheduling Link
+                      Zoom / Scheduling Link
                     </label>
                     <input
                       type="url"
@@ -265,7 +287,8 @@ export default function SettingsPage() {
                       className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
                     />
                   </div>
-                  {/* Topics Sheet URL */}
+
+                  {/* Authority Column URL */}
                   <div className="sm:col-span-2">
                     <label htmlFor="authorityColumnUrl" className="block text-sm font-medium text-slate-700 mb-1">
                       Authority / Medium Column URL
@@ -279,14 +302,18 @@ export default function SettingsPage() {
                       className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
                     />
                     <p className="text-xs text-slate-400 mt-1">
-                      Adds a top dashboard button to your main Authority Magazine or Medium column.
+                      Adds a top dashboard button linking to your main Authority Magazine or Medium column.
                     </p>
                   </div>
 
-                  {/* Topics Sheet URL */}
-                  <div className="sm:col-span-2">
+                  {/* Section 1: Topics & Events Google Sheet */}
+                  <div id="topics-sheet" className="sm:col-span-2 scroll-mt-6 border-t border-slate-100 pt-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">1</span>
+                      <h3 className="text-base font-semibold text-slate-900">1. Topics &amp; Events Google Sheet</h3>
+                    </div>
                     <label htmlFor="topicsSheetUrl" className="block text-sm font-medium text-slate-700 mb-1">
-                      Topics & Events Google Sheet URL
+                      Google Sheet URL (Topics &amp; Events)
                     </label>
                     <input
                       type="url"
@@ -296,8 +323,8 @@ export default function SettingsPage() {
                       placeholder="e.g. https://docs.google.com/spreadsheets/d/..."
                       className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
                     />
-                    <p className="text-xs text-slate-400 mt-1">
-                      The Google Sheet containing your Topics and Events. Ensure the TLI Google Service Account has viewer access.
+                    <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                      Powers your <strong>Topics</strong> and <strong>Events</strong> tabs. Saving settings automatically triggers an immediate sync. Ensure the Google Service Account has viewer access.
                     </p>
                   </div>
                 </div>
@@ -312,7 +339,7 @@ export default function SettingsPage() {
                     rows={4}
                     value={form.signature}
                     onChange={(e) => setForm({ ...form, signature: e.target.value })}
-                    placeholder="John Doe&#10;Founder & CEO, MyCompany"
+                    placeholder="John Doe&#10;Founder &amp; CEO, MyCompany"
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none font-mono text-xs"
                   />
                   <p className="text-xs text-slate-400 mt-1">
@@ -327,9 +354,9 @@ export default function SettingsPage() {
                   type="submit"
                   id="save-settings-btn"
                   disabled={loading}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-sm"
                 >
-                  {loading ? "Saving..." : "Save Settings"}
+                  {loading ? "Saving & Syncing..." : "Save Settings"}
                 </button>
               </div>
             </form>
@@ -353,16 +380,168 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Google Sheet Import — only for CLIENT users */}
+      {/* Section 2: Published & Upcoming Interviews Google Sheet */}
       {isClient && (session?.user as { clientId?: string })?.clientId && (
-        <div id="sheet-import" className="animate-slide-up scroll-mt-6" style={{ animationDelay: '100ms' }}>
-          <h2 className="text-lg font-semibold text-slate-900 mb-1">Google Sheet</h2>
-          <p className="text-sm text-slate-500 mb-4">
-            Link your Authority Magazine interview spreadsheet to import and sync your data.
+        <div id="sheet-import" className="animate-slide-up scroll-mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm" style={{ animationDelay: '100ms' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">2</span>
+            <h2 className="text-lg font-semibold text-slate-900">2. Published &amp; Upcoming Interviews Google Sheet</h2>
+          </div>
+          <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+            Link your master Authority Magazine interview spreadsheet to import and sync interview progress, published articles, and VIP records.
           </p>
-          <SheetImportForm clientId={(session!.user as { clientId?: string }).clientId as string} />
+          <SheetImportForm
+            clientId={(session!.user as { clientId?: string }).clientId as string}
+            initialTopicsSheetUrl={form.topicsSheetUrl}
+          />
         </div>
       )}
+    </div>
+  );
+}
+
+function ServiceAccountChip() {
+  const [copied, setCopied] = useState(false);
+
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-indigo-100 bg-indigo-50/70 p-4">
+      <div className="space-y-1">
+        <p className="text-xs font-bold uppercase tracking-wider text-indigo-900">
+          Google Sheets Service Account Access
+        </p>
+        <p className="text-xs text-indigo-700">
+          Share your Google Sheets with this address as <strong className="font-semibold text-indigo-950">Viewer</strong> to enable automated sync:
+        </p>
+        <code className="inline-block mt-0.5 font-mono text-xs text-slate-800 bg-white/90 px-2 py-1 rounded border border-indigo-200 break-all select-all">
+          {SERVICE_ACCOUNT_EMAIL}
+        </code>
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          navigator.clipboard.writeText(SERVICE_ACCOUNT_EMAIL);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }}
+        className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 rounded-lg border border-indigo-300 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-700 shadow-2xs hover:bg-indigo-50 transition-colors"
+      >
+        {copied ? "✓ Copied Email!" : "📋 Copy Service Account Email"}
+      </button>
+    </div>
+  );
+}
+
+function PasswordChangeCard() {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  async function handlePasswordChange(e: React.FormEvent) {
+    e.preventDefault();
+    setMessage(null);
+
+    if (newPassword.length < 8) {
+      setMessage({ type: "error", text: "New password must be at least 8 characters long." });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setMessage({ type: "error", text: "New password and confirmation do not match." });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const res = await fetch("/api/clients/settings/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to change password.");
+      }
+
+      setMessage({ type: "success", text: "Password changed successfully!" });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to change password.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+      <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">
+        Change Password
+      </h2>
+      <form onSubmit={handlePasswordChange} className="space-y-4">
+        {message && (
+          <div
+            role="alert"
+            className={`p-3 rounded-lg text-xs font-medium border ${
+              message.type === "success"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                : "bg-rose-50 border-rose-200 text-rose-800"
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
+        <div>
+          <label className="text-xs font-semibold text-slate-600 block mb-1">
+            Current Password
+          </label>
+          <input
+            type="password"
+            required
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-slate-600 block mb-1">
+            New Password
+          </label>
+          <input
+            type="password"
+            required
+            minLength={8}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none"
+          />
+          <span className="text-[11px] text-slate-400 mt-0.5 block">Minimum 8 characters</span>
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-slate-600 block mb-1">
+            Confirm New Password
+          </label>
+          <input
+            type="password"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={submitting || !currentPassword || !newPassword || !confirmPassword}
+          className="w-full mt-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50 shadow-sm"
+        >
+          {submitting ? "Updating..." : "Update Password"}
+        </button>
+      </form>
     </div>
   );
 }

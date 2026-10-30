@@ -210,6 +210,7 @@ export function InterviewGrid({ clientId, onStartTour }: InterviewGridProps) {
   const [topicFilter, setTopicFilter] = useState("");
   const [topicOptions, setTopicOptions] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<"recommended" | "vip_score" | "progress" | "name">("recommended");
   const [activeAction, setActiveAction] =
     useState<InterviewActionType | null>(null);
   const [activeInterviewId, setActiveInterviewId] = useState<string | null>(null);
@@ -581,6 +582,35 @@ export function InterviewGrid({ clientId, onStartTour }: InterviewGridProps) {
     ? [...interviews].filter((i) => dismissedIds.has(i.id))
     : [...interviews].filter((i) => !dismissedIds.has(i.id));
   const sortedInterviews = filteredByDismissed.sort((a, b) => {
+    if (sortBy === "vip_score") {
+      const diff = getProminenceSortScore(b) - getProminenceSortScore(a);
+      if (diff !== 0) return diff;
+      return (a.intervieweeName || "").localeCompare(b.intervieweeName || "");
+    }
+    if (sortBy === "progress") {
+      const getProgressCount = (item: InterviewView) => {
+        const successful = item.actions?.filter((x) => x.status === "SUCCESS").length ?? 0;
+        if (successful > 0) return successful;
+        const s = item.actionSummary;
+        if (!s) return 0;
+        return (
+          (s.liveEmailSent ? 1 : 0) +
+          (s.zoomInviteSent ? 1 : 0) +
+          (s.linkedinGenerated ? 1 : 0) +
+          (s.socialImageGenerated ? 1 : 0) +
+          (s.markedShared ? 1 : 0)
+        );
+      };
+      const countA = getProgressCount(a);
+      const countB = getProgressCount(b);
+      if (countB !== countA) return countB - countA;
+      return getProminenceSortScore(b) - getProminenceSortScore(a);
+    }
+    if (sortBy === "name") {
+      return (a.intervieweeName || "").localeCompare(b.intervieweeName || "");
+    }
+
+    // Default "recommended"
     const getScore = (interview: InterviewView) => {
       if (interview.currentStatus === "leveraged") return 3; // Lowest priority
       if (isUpcoming(interview)) return 2; // Medium priority
@@ -709,32 +739,52 @@ export function InterviewGrid({ clientId, onStartTour }: InterviewGridProps) {
 
         <div
           data-tour="interview-filters"
-          className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"
+          className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
         >
-          <div className="relative w-full lg:max-w-sm">
-            <label htmlFor="interview-topic-filter" className="sr-only">
-              Topic
-            </label>
-            <select
-              id="interview-topic-filter"
-              value={topicFilter}
-              onChange={(event) => setTopicFilter(event.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 shadow-sm
-                         focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-                         disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
-            >
-              <option value="">All topics</option>
-              {topicOptions.length === 0 ? (
-                <option value="" disabled>
-                  No synced topics found
-                </option>
-              ) : null}
-              {topicOptions.map((topic) => (
-                <option key={topic} value={topic}>
-                  {topic}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-col sm:flex-row gap-3 w-full lg:max-w-xl">
+            <div className="relative flex-1">
+              <label htmlFor="interview-topic-filter" className="sr-only">
+                Topic
+              </label>
+              <select
+                id="interview-topic-filter"
+                value={topicFilter}
+                onChange={(event) => setTopicFilter(event.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                           disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+              >
+                <option value="">All topics</option>
+                {topicOptions.length === 0 ? (
+                  <option value="" disabled>
+                    No synced topics found
+                  </option>
+                ) : null}
+                {topicOptions.map((topic) => (
+                  <option key={topic} value={topic}>
+                    {topic}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="relative sm:w-64 shrink-0">
+              <label htmlFor="interview-sort-select" className="sr-only">
+                Sort By
+              </label>
+              <select
+                id="interview-sort-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="w-full rounded-lg border border-indigo-200 bg-indigo-50/50 px-3 py-2 text-sm font-semibold text-indigo-900 shadow-sm
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              >
+                <option value="recommended">Sort: Recommended / Ready First</option>
+                <option value="vip_score">Sort: Highest VIP Score First</option>
+                <option value="progress">Sort: Outreach Progress (Most Complete)</option>
+                <option value="name">Sort: Guest Name (A–Z)</option>
+              </select>
+            </div>
           </div>
 
           <div className="flex gap-1.5 overflow-x-auto pb-1">
@@ -989,6 +1039,11 @@ export function InterviewGrid({ clientId, onStartTour }: InterviewGridProps) {
           interview={activeDetailInterview}
           initialFocus={activeDetail.focus}
           onClose={() => setActiveDetail(null)}
+          onAction={(id, action) => {
+            setActiveInterviewId(id);
+            setActiveAction(action);
+          }}
+          onResearchProminence={researchProminence}
         />
       )}
     </div>

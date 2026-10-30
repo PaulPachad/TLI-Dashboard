@@ -8,22 +8,36 @@ import { buildTopicInvitationEmailBody } from "@/lib/email/copy";
 interface TopicDetailPanelProps {
   topic: Topic;
   onClose: () => void;
+  initialScrollToInvite?: boolean;
 }
 
-export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
+export function TopicDetailPanel({
+  topic,
+  onClose,
+  initialScrollToInvite,
+}: TopicDetailPanelProps) {
   const [mounted, setMounted] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
+  const inviteSectionRef = useRef<HTMLDivElement>(null);
+
   const [recipients, setRecipients] = useState("");
+  const [cc, setCc] = useState("");
   const [subject, setSubject] = useState(
     `Invitation to participate in Authority Magazine: ${topic.title}`
   );
   const [body, setBody] = useState(buildTopicInvitationEmailBody(topic));
   const [sending, setSending] = useState(false);
+  const [testSending, setTestSending] = useState(false);
+  const [testSuccessBanner, setTestSuccessBanner] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copiedPitch, setCopiedPitch] = useState(false);
+
+  const pitchUrl = extractFirstUrl(topic.sourceRequests);
+  const responsesUrl = extractFirstUrl(topic.responses);
 
   useLayoutEffect(() => {
     const messageElement = messageRef.current;
@@ -39,6 +53,14 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
     const previousOverflow = document.documentElement.style.overflow;
     document.documentElement.style.overflow = "hidden";
     closeButtonRef.current?.focus({ preventScroll: true });
+
+    if (initialScrollToInvite) {
+      setTimeout(() => {
+        inviteSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+        const toInput = inviteSectionRef.current?.querySelector("textarea");
+        toInput?.focus();
+      }, 200);
+    }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
@@ -68,7 +90,39 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
       document.documentElement.style.overflow = previousOverflow;
       previouslyFocused?.focus({ preventScroll: true });
     };
-  }, [onClose]);
+  }, [onClose, initialScrollToInvite]);
+
+  async function handleSendTest() {
+    try {
+      setTestSending(true);
+      setError(null);
+      setNotice(null);
+      setTestSuccessBanner(null);
+
+      const response = await fetch(`/api/outreach/topics/${topic.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipients: recipients.trim() || undefined,
+          cc: cc.trim() || undefined,
+          subject,
+          body,
+          isTest: true,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Could not send test invitation.");
+      }
+      setTestSuccessBanner(
+        data.note || `Test preview sent${data.sentTo ? ` to ${data.sentTo}` : ""}. Check your inbox!`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send test email.");
+    } finally {
+      setTestSending(false);
+    }
+  }
 
   async function handleSendInvitation(event: React.FormEvent) {
     event.preventDefault();
@@ -80,7 +134,12 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
       const response = await fetch(`/api/outreach/topics/${topic.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipients, subject, body }),
+        body: JSON.stringify({
+          recipients,
+          cc: cc.trim() || undefined,
+          subject,
+          body,
+        }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -115,26 +174,55 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
         role="dialog"
         aria-modal="true"
         aria-label="Topic details"
-        className="fixed right-0 top-0 z-50 flex h-dvh w-full max-w-lg flex-col overflow-hidden bg-slate-50 shadow-2xl
-                      animate-slide-in-right"
+        className="fixed right-0 top-0 z-50 flex h-dvh w-full max-w-lg flex-col overflow-hidden bg-slate-50 shadow-2xl animate-slide-in-right"
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-5 flex items-start justify-between z-10 shadow-sm">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 pr-4 leading-tight">{topic.title}</h2>
-            <p className="text-sm text-slate-500 mt-1">Synced from Google Sheets</p>
+        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-5 flex flex-col z-10 shadow-sm">
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 pr-4 leading-tight">{topic.title}</h2>
+              <p className="text-sm text-slate-500 mt-1">Synced from Google Sheets</p>
+            </div>
+            <button
+              ref={closeButtonRef}
+              id="close-topic-panel"
+              onClick={onClose}
+              aria-label="Close topic details"
+              className="p-2 -mr-2 rounded-lg hover:bg-slate-100 transition-colors shrink-0"
+            >
+              <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
-          <button
-            ref={closeButtonRef}
-            id="close-topic-panel"
-            onClick={onClose}
-            aria-label="Close topic details"
-            className="p-2 -mr-2 rounded-lg hover:bg-slate-100 transition-colors shrink-0"
-          >
-            <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+
+          {(pitchUrl || responsesUrl) && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {pitchUrl && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(pitchUrl);
+                    setCopiedPitch(true);
+                    setTimeout(() => setCopiedPitch(false), 2000);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
+                >
+                  📋 {copiedPitch ? "Pitch Link Copied!" : "Copy Pitch Link"}
+                </button>
+              )}
+              {responsesUrl && (
+                <a
+                  href={responsesUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
+                >
+                  ↗ Open Responses
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
         <div ref={contentRef} className="flex-1 space-y-6 overflow-y-auto p-6">
@@ -162,79 +250,120 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
             </Section>
           )}
 
-          {topic.interviewQuestions && (
-            <Section title="Invite Participants" colorClass="text-indigo-600">
-              <form onSubmit={handleSendInvitation} className="space-y-4">
-                <div className="sticky top-0 z-20 -mx-5 -mt-5 flex items-center justify-between gap-3 border-b border-slate-100 bg-white/95 px-5 py-4 backdrop-blur">
-                  <p className="text-xs font-medium text-slate-500">
-                    Review the invitation and send it when ready.
+          {Boolean(topic.interviewQuestions || topic.sourceRequests) && (
+            <div ref={inviteSectionRef}>
+              <Section title="Invite Participants" colorClass="text-indigo-600">
+                <form onSubmit={handleSendInvitation} className="space-y-4">
+                  <p className="text-xs text-slate-500">
+                    Send an email inviting potential guests or sources to participate in this topic.
                   </p>
-                  <button
-                    type="submit"
-                    disabled={sending || !recipients.trim()}
-                    className="shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
-                  >
-                    {sending ? "Sending..." : "Send Invitation"}
-                  </button>
-                </div>
 
-                {notice && (
-                  <div role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-                    {notice}
+                  {testSuccessBanner && (
+                    <div role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 flex items-center justify-between">
+                      <span>✉ {testSuccessBanner}</span>
+                      <button
+                        type="button"
+                        onClick={() => setTestSuccessBanner(null)}
+                        className="text-xs font-semibold text-emerald-700 hover:underline ml-2"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  )}
+
+                  {notice && (
+                    <div role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                      {notice}
+                    </div>
+                  )}
+                  {error && (
+                    <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                      {error}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-500">
+                      Recipients
+                    </label>
+                    <textarea
+                      required
+                      rows={2}
+                      value={recipients}
+                      onChange={(event) => setRecipients(event.target.value)}
+                      placeholder="one@example.com, two@example.com"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                    />
+                    <p className="mt-1 text-xs text-slate-400">
+                      Separate multiple email addresses with commas, spaces, or semicolons.
+                    </p>
                   </div>
-                )}
-                {error && (
-                  <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-                    {error}
+
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-500">
+                      CC (Optional)
+                    </label>
+                    <input
+                      value={cc}
+                      onChange={(event) => setCc(event.target.value)}
+                      placeholder="colleague@example.com"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                    />
                   </div>
-                )}
 
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-500">
-                    Recipients
-                  </label>
-                  <textarea
-                    required
-                    rows={2}
-                    value={recipients}
-                    onChange={(event) => setRecipients(event.target.value)}
-                    placeholder="one@example.com, two@example.com"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
-                  />
-                  <p className="mt-1 text-xs text-slate-400">
-                    Separate multiple email addresses with commas, spaces, or semicolons.
-                  </p>
-                </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-500">
+                      Subject
+                    </label>
+                    <input
+                      required
+                      value={subject}
+                      onChange={(event) => setSubject(event.target.value)}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                    />
+                  </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-500">
-                    Subject
-                  </label>
-                  <input
-                    required
-                    value={subject}
-                    onChange={(event) => setSubject(event.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
-                  />
-                </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-500">
+                      Message
+                    </label>
+                    <textarea
+                      ref={messageRef}
+                      required
+                      rows={4}
+                      value={body}
+                      onChange={(event) => setBody(event.target.value)}
+                      className="w-full resize-none overflow-hidden rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs leading-relaxed focus:border-indigo-500 focus:outline-none"
+                    />
+                  </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-500">
-                    Message
-                  </label>
-                  <textarea
-                    ref={messageRef}
-                    required
-                    rows={1}
-                    value={body}
-                    onChange={(event) => setBody(event.target.value)}
-                    className="w-full resize-none overflow-hidden rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs leading-relaxed focus:border-indigo-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="h-2" />
-              </form>
-            </Section>
+                  <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                    <button
+                      type="button"
+                      disabled={testSending || sending}
+                      onClick={handleSendTest}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      {testSending ? (
+                        <>
+                          <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+                          Sending Test...
+                        </>
+                      ) : (
+                        <>✉ Send Test to Myself</>
+                      )}
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={sending || testSending || !recipients.trim()}
+                      className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                      {sending ? "Sending..." : "Send Invitation"}
+                    </button>
+                  </div>
+                </form>
+              </Section>
+            </div>
           )}
 
           {!topic.sourceRequests && !topic.responses && !topic.interviewQuestions && (
@@ -249,9 +378,15 @@ export function TopicDetailPanel({ topic, onClose }: TopicDetailPanelProps) {
   );
 }
 
+function extractFirstUrl(text: string | null): string | null {
+  if (!text) return null;
+  const match = text.match(/https?:\/\/[^\s"'<>)]+/);
+  return match ? match[0] : null;
+}
+
 function renderTextWithLinks(text: string) {
   if (!text) return null;
-  
+
   const mdRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
   const parts = [];
   let lastIndex = 0;
@@ -289,7 +424,7 @@ function autoLinkRawUrls(text: string) {
   const parts = [];
   let lastIndex = 0;
   let match;
-  
+
   while ((match = urlRegex.exec(text)) !== null) {
     if (match.index > lastIndex) {
       parts.push(text.substring(lastIndex, match.index));

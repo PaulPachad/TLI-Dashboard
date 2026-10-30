@@ -16,6 +16,17 @@ interface InterviewDetailPanelProps {
   interview: InterviewView;
   onClose: () => void;
   initialFocus?: "sources";
+  onAction?: (
+    interviewId: string,
+    actionType:
+      | "add_contact"
+      | "send_live_email"
+      | "generate_linkedin"
+      | "mark_shared"
+      | "send_zoom_invite"
+      | "generate_social_image"
+  ) => void;
+  onResearchProminence?: (interviewId: string) => void;
 }
 
 const PROMINENCE_TONES: Record<string, string> = {
@@ -30,6 +41,8 @@ export function InterviewDetailPanel({
   interview,
   onClose,
   initialFocus,
+  onAction,
+  onResearchProminence,
 }: InterviewDetailPanelProps) {
   const [mounted, setMounted] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -99,11 +112,10 @@ export function InterviewDetailPanel({
         role="dialog"
         aria-modal="true"
         aria-label="Interview details"
-        className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-2xl z-50 overflow-y-auto
-                      animate-slide-in-right"
+        className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-2xl z-50 flex flex-col animate-slide-in-right"
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10 shrink-0">
           <h2 className="text-lg font-semibold text-slate-900">Interview Details</h2>
           <button
             ref={closeButtonRef}
@@ -118,7 +130,7 @@ export function InterviewDetailPanel({
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Interviewee info */}
           <Section title="Interviewee">
             <DetailRow label="Name" value={interview.intervieweeName} />
@@ -319,6 +331,58 @@ export function InterviewDetailPanel({
               <p className="text-sm text-slate-400 italic">No actions taken yet</p>
             )}
           </Section>
+        </div>
+
+        {/* Sticky 1→5 Quick Outreach Action Bar */}
+        <div className="sticky bottom-0 z-20 border-t border-slate-200 bg-white/95 p-3.5 backdrop-blur shadow-lg shrink-0">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              1→5 Quick Outreach Actions:
+            </span>
+            <span className="text-[11px] text-slate-400">Launch in 1-click</span>
+          </div>
+          <div className="grid grid-cols-5 gap-1.5">
+            <button
+              type="button"
+              onClick={() => onResearchProminence?.(interview.id)}
+              className="flex flex-col items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50/70 p-2 text-center text-[10px] font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors shadow-2xs"
+            >
+              <span className="font-bold">Step 1</span>
+              <span className="truncate w-full mt-0.5">Research VIP</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onAction?.(interview.id, "send_live_email")}
+              className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-50 p-2 text-center text-[10px] font-semibold text-slate-700 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-colors shadow-2xs"
+            >
+              <span className="font-bold">Step 2</span>
+              <span className="truncate w-full mt-0.5">Live Email</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onAction?.(interview.id, "send_zoom_invite")}
+              className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-50 p-2 text-center text-[10px] font-semibold text-slate-700 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-colors shadow-2xs"
+            >
+              <span className="font-bold">Step 3</span>
+              <span className="truncate w-full mt-0.5">Zoom Invite</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onAction?.(interview.id, "generate_linkedin")}
+              className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-50 p-2 text-center text-[10px] font-semibold text-slate-700 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-colors shadow-2xs"
+            >
+              <span className="font-bold">Step 4</span>
+              <span className="truncate w-full mt-0.5">LinkedIn</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onAction?.(interview.id, "generate_social_image")}
+              className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-50 p-2 text-center text-[10px] font-semibold text-slate-700 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-colors shadow-2xs"
+            >
+              <span className="font-bold">Step 5</span>
+              <span className="truncate w-full mt-0.5">Graphic</span>
+            </button>
+          </div>
         </div>
       </div>
     </>,

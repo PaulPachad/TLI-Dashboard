@@ -18,6 +18,7 @@ interface EmailEvent {
 interface EmailTopic {
   title: string;
   interviewQuestions?: string | null;
+  sourceRequests?: string | null;
 }
 
 export function buildLiveLinkEmailBody(
@@ -92,7 +93,9 @@ Yitzi Weiner`;
 export function buildTopicInvitationEmailBody(topic: EmailTopic): string {
   const interviewQuestions =
     topic.interviewQuestions?.trim() ||
-    "The interview questions and upload link will be shared shortly.";
+    (topic.sourceRequests?.trim()
+      ? `Pitch Form / Submission Link:\n${topic.sourceRequests.trim()}`
+      : "The interview questions and upload link will be shared shortly.");
 
   return `Dear Friends
 

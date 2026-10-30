@@ -177,6 +177,84 @@ export async function PUT(request: NextRequest) {
   }
 }
 
+// PATCH - Partial update of specific client settings (signature, replyTo, schedulingLink, etc.)
+export async function PATCH(request: NextRequest) {
+  try {
+    const user = await requireApiAuth();
+
+    if (!user.clientId) {
+      return NextResponse.json(
+        { error: "Only client users can update settings." },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const updateData: Record<string, unknown> = {};
+
+    if ("signature" in body) {
+      updateData.signature = String(body.signature || "").trim() || null;
+    }
+    if ("replyToEmail" in body) {
+      const email = String(body.replyToEmail || "").trim().toLowerCase();
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return NextResponse.json(
+          { error: "Enter a valid reply-to email address." },
+          { status: 400 }
+        );
+      }
+      updateData.replyToEmail = email || null;
+    }
+    if ("schedulingLink" in body) {
+      const link = String(body.schedulingLink || "").trim();
+      if (link) {
+        try {
+          const url = new URL(link);
+          if (!["http:", "https:"].includes(url.protocol)) throw new Error();
+          updateData.schedulingLink = url.toString();
+        } catch {
+          return NextResponse.json(
+            { error: "Enter a valid HTTP or HTTPS scheduling link." },
+            { status: 400 }
+          );
+        }
+      } else {
+        updateData.schedulingLink = null;
+      }
+    }
+    if ("topicsSheetUrl" in body) {
+      updateData.topicsSheetUrl = String(body.topicsSheetUrl || "").trim() || null;
+    }
+    if ("defaultSignoff" in body) {
+      updateData.defaultSignoff = String(body.defaultSignoff || "").trim() || "Warmly";
+    }
+    if ("defaultHashtags" in body) {
+      updateData.defaultHashtags = String(body.defaultHashtags || "").trim() || null;
+    }
+
+    const updated = await db.client.update({
+      where: { id: user.clientId },
+      data: updateData,
+      select: clientSettingsSelect,
+    });
+
+    return NextResponse.json({
+      success: true,
+      client: updated,
+    });
+  } catch (error: unknown) {
+    const err = error as { status?: number; message?: string };
+    if (err.status) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    console.error("Error in PATCH /api/clients/settings:", error);
+    return NextResponse.json(
+      { error: "Failed to update client settings." },
+      { status: 500 }
+    );
+  }
+}
+
 async function getAuthorityColumnUrlIfAvailable(
   clientId: string
 ): Promise<string | null> {
