@@ -58,13 +58,13 @@ Warmly,
 Thank you for your interest in Authority Magazine.
 
 Can you please choose one of our ongoing interview series topics from our list here:
-[📚 Browse Ongoing Interview Series](https://medium.com/authority-magazine/ongoing-interview-series-in-authority-magazine-7d633a349753)
+[📚 Browse Ongoing Interview Series](https://authoritymag.co/storylines)
 
 If you'd like help finding the best match, you can ask our AI Bot here:
 [🤖 Ask Authority Magazine AI Bot](https://chatgpt.com/g/g-DOnEg59Sc-authority-magazine-bot)
 
 Once you've selected a topic that fits your expertise, please submit your selection in our pitch form here:
-[📝 Submit Pitch Form](https://docs.google.com/forms/d/e/1FAIpQLSdkUiiJpgE53-I6pDQOm-zWveNeCXkGFonoVX5ULmN0dPsfxA/viewform)
+[📝 Submit Pitch Form](https://authoritymag.co/pitch)
 
 Best regards,
 Authority Magazine Editorial Team`,
@@ -146,11 +146,11 @@ Thank you so much for sending your press release or pitch to Authority Magazine.
 
 To get started, please review our available interview storylines below:
 
-[**Interview Storylines**](https://medium.com/authority-magazine/ongoing-interview-series-in-authority-magazine-7d633a349753)
+[**Interview Storylines**](https://authoritymag.co/storylines)
 
 We're also excited to announce these upcoming storylines:
 
-[**Upcoming Storylines**](https://medium.com/authority-magazine/new-interview-series-topics-we-are-working-on-bdae530b5bf4)
+[**Upcoming Storylines**](https://authoritymag.co/storylines?filter=featured)
 
 If you are unsure about which topic is best for you, you can ask our AI Bot to recommend a few ideas for you. All you have to do is add your bio to the link below.
 
@@ -158,7 +158,7 @@ If you are unsure about which topic is best for you, you can ask our AI Bot to r
 
 Please take a moment to choose the best fit for your interview. Once you've made your selection, click the link below to provide your basic information, and we'll be in touch shortly with our interview questions.
 
-[**Add Your Basic Info Here**](https://docs.google.com/forms/d/e/1FAIpQLSdkUiiJpgE53-I6pDQOm-zWveNeCXkGFonoVX5ULmN0dPsfxA/viewform)
+[**Add Your Basic Info Here**](https://authoritymag.co/pitch)
 
 Looking forward to learning more about you and your story!
 

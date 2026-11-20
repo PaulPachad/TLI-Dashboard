@@ -899,7 +899,7 @@ function GenericWorkflowPanel({
                 <p>To get started, please review our available interview storylines below:</p>
                 <div className="my-2">
                   <a
-                    href="https://medium.com/authority-magazine/ongoing-interview-series-in-authority-magazine-7d633a349753"
+                    href="https://authoritymag.co/storylines"
                     target="_blank"
                     rel="noreferrer"
                     className="inline-block rounded-md bg-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700"
@@ -910,7 +910,7 @@ function GenericWorkflowPanel({
                 <p>We&apos;re also excited to announce these upcoming storylines:</p>
                 <div className="my-2">
                   <a
-                    href="https://medium.com/authority-magazine/new-interview-series-topics-we-are-working-on-bdae530b5bf4"
+                    href="https://authoritymag.co/storylines?filter=featured"
                     target="_blank"
                     rel="noreferrer"
                     className="inline-block rounded-md bg-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700"
@@ -936,7 +936,7 @@ function GenericWorkflowPanel({
                 </p>
                 <div className="my-2">
                   <a
-                    href="https://docs.google.com/forms/d/e/1FAIpQLSdkUiiJpgE53-I6pDQOm-zWveNeCXkGFonoVX5ULmN0dPsfxA/viewform"
+                    href="https://authoritymag.co/pitch"
                     target="_blank"
                     rel="noreferrer"
                     className="inline-block rounded-md bg-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700"
@@ -958,20 +958,20 @@ function GenericWorkflowPanel({
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Verified Hyperlinks in Response</h4>
                 <div className="grid gap-2 sm:grid-cols-2 text-xs">
                   <a
-                    href="https://medium.com/authority-magazine/ongoing-interview-series-in-authority-magazine-7d633a349753"
+                    href="https://authoritymag.co/storylines"
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center gap-1.5 text-indigo-600 hover:underline p-2 rounded bg-slate-50 border border-slate-100"
                   >
-                    <span>&#128279;</span> Interview Storylines (Medium)
+                    <span>&#128279;</span> Interview Storylines (AuthorityMag.co)
                   </a>
                   <a
-                    href="https://medium.com/authority-magazine/new-interview-series-topics-we-are-working-on-bdae530b5bf4"
+                    href="https://authoritymag.co/storylines?filter=featured"
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center gap-1.5 text-indigo-600 hover:underline p-2 rounded bg-slate-50 border border-slate-100"
                   >
-                    <span>&#128279;</span> Upcoming Storylines (Medium)
+                    <span>&#128279;</span> Upcoming Storylines (AuthorityMag.co)
                   </a>
                   <a
                     href="https://chatgpt.com/g/g-DOnEg59Sc-authority-magazine-bot"
@@ -982,12 +982,12 @@ function GenericWorkflowPanel({
                     <span>&#128279;</span> AI Recommendation Bot (ChatGPT)
                   </a>
                   <a
-                    href="https://docs.google.com/forms/d/e/1FAIpQLSdkUiiJpgE53-I6pDQOm-zWveNeCXkGFonoVX5ULmN0dPsfxA/viewform"
+                    href="https://authoritymag.co/pitch"
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center gap-1.5 text-indigo-600 hover:underline p-2 rounded bg-slate-50 border border-slate-100"
                   >
-                    <span>&#128279;</span> Submission Form (Google Forms)
+                    <span>&#128279;</span> Submission Portal (AuthorityMag.co)
                   </a>
                 </div>
               </div>

@@ -58,7 +58,8 @@ test("default templates use modern desktop copy and valid variables", async () =
   const noMatch = DEFAULT_AUTOMATION_TEMPLATES.find((t) => t.templateKey === "pitch_no_match");
   assert.ok(noMatch, "pitch_no_match should exist");
   assert.ok(noMatch.body.includes("chatgpt.com/g/g-DOnEg59Sc-authority-magazine-bot"), "Fallback must contain AI Bot link");
-  assert.ok(noMatch.body.includes("docs.google.com/forms"), "Fallback must contain pitch form link");
+  assert.ok(noMatch.body.includes("https://authoritymag.co/pitch"), "Fallback must contain pitch portal link");
+  assert.ok(noMatch.body.includes("https://authoritymag.co/storylines"), "Fallback must contain storylines link");
 
   const multipleMatch = DEFAULT_AUTOMATION_TEMPLATES.find((t) => t.templateKey === "pitch_multiple_match");
   assert.ok(multipleMatch, "pitch_multiple_match should exist");
@@ -188,13 +189,13 @@ test("generic response template contains exact body copy and all 4 links", async
   );
   assert.ok(
     genericTemplate.body.includes(
-      "https://medium.com/authority-magazine/ongoing-interview-series-in-authority-magazine-7d633a349753"
+      "https://authoritymag.co/storylines"
     ),
     "Generic template must contain Interview Storylines link"
   );
   assert.ok(
     genericTemplate.body.includes(
-      "https://medium.com/authority-magazine/new-interview-series-topics-we-are-working-on-bdae530b5bf4"
+      "https://authoritymag.co/storylines?filter=featured"
     ),
     "Generic template must contain Upcoming Storylines link"
   );
@@ -204,9 +205,9 @@ test("generic response template contains exact body copy and all 4 links", async
   );
   assert.ok(
     genericTemplate.body.includes(
-      "https://docs.google.com/forms/d/e/1FAIpQLSdkUiiJpgE53-I6pDQOm-zWveNeCXkGFonoVX5ULmN0dPsfxA/viewform"
+      "https://authoritymag.co/pitch"
     ),
-    "Generic template must contain Google Forms link"
+    "Generic template must contain AuthorityMag.co Pitch link"
   );
 
   const invalidVars = validateTemplateVariables(genericTemplate.body, genericTemplate.subject, [
